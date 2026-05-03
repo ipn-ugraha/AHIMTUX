@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Update Data AHI MTU</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg:#0d1524;--surface:#111e30;--surface2:#162236;
+  --border:#1e3048;--border2:#172038;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#4e6a8a;
+  --accent:#38bdf8;--good:#10b981;--warn:#f97316;--err:#ef4444;
+  --adj:#a78bfa;
+  --mono:'JetBrains Mono',monospace;--ff:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--ff);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:36px 20px}
+h1{font-size:20px;font-weight:700;color:var(--accent);margin-bottom:4px}
+.sub{font-size:11px;color:var(--text3);margin-bottom:28px;font-family:var(--mono)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px 28px;width:100%;max-width:640px;margin-bottom:14px}
+.card-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.badge{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:11px;font-weight:700;background:var(--surface2);color:var(--text3);border:1px solid var(--border);flex-shrink:0}
+.badge.active{background:rgba(56,189,248,.15);color:var(--accent);border-color:var(--accent)}
+.badge.done{background:rgba(16,185,129,.15);color:var(--good);border-color:var(--good)}
+/* Drop zone */
+.drop-zone{border:2px dashed var(--border);border-radius:10px;padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--accent);background:rgba(56,189,248,.04)}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-icon{font-size:32px;margin-bottom:8px}
+.drop-text{font-size:13px;color:var(--text2)}
+.drop-hint{font-size:10px;color:var(--text3);margin-top:5px;font-family:var(--mono)}
+.file-ok{font-size:12px;color:var(--good);margin-top:8px;font-family:var(--mono);font-weight:700;display:none}
+/* Inputs */
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field label{font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.4px}
+.field label span{color:var(--err)}
+.field input,.field select{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:12px;font-family:var(--mono);outline:none;width:100%}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.field input.ok{border-color:rgba(16,185,129,.5)}
+.field .hint{font-size:10px;color:var(--text3);line-height:1.5}
+/* Col mapping grid */
+.col-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.col-sel{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:11px;font-family:var(--mono);outline:none;width:100%}
+.col-sel:focus{border-color:var(--accent)}
+.col-sel.ok{border-color:rgba(16,185,129,.4)}
+.col-sel.miss{border-color:rgba(239,68,68,.4)}
+.col-lbl{font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px}
+.col-lbl span{color:var(--err)}
+/* Log */
+.log{background:var(--surface2);border-radius:8px;padding:12px;font-family:var(--mono);font-size:11px;line-height:1.7;max-height:180px;overflow-y:auto}
+.log .ok{color:var(--good)}.log .warn{color:var(--warn)}.log .err{color:var(--err)}.log .info{color:var(--text2)}
+/* Progress */
+.prog-wrap{background:var(--surface2);border-radius:4px;height:5px;overflow:hidden;margin:10px 0}
+.prog-bar{height:100%;background:var(--accent);border-radius:4px;transition:width .3s;width:0%}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:700;font-family:var(--ff);transition:all .15s}
+.btn-primary{background:var(--accent);color:#0d1524}
+.btn-primary:hover{background:#7dd3fc}
+.btn-primary:disabled{background:var(--surface2);color:var(--text3);cursor:not-allowed}
+.btn-green{background:rgba(16,185,129,.15);color:var(--good);border:1px solid rgba(16,185,129,.3)}
+.btn-green:hover{background:rgba(16,185,129,.25)}
+.btn-green:disabled{opacity:.4;cursor:not-allowed}
+.btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--text)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.stat{background:var(--surface2);border-radius:8px;padding:10px;text-align:center}
+.stat-val{font-size:20px;font-weight:700;font-family:var(--mono);color:var(--accent)}
+.stat-lbl{font-size:10px;color:var(--text3);margin-top:2px}
+/* GitHub section */
+.gh-status{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;font-size:11px;font-family:var(--mono);background:var(--surface2);margin-bottom:12px}
+.gh-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.gh-dot.ok{background:var(--good)}.gh-dot.err{background:var(--err)}.gh-dot.loading{background:var(--warn);animation:blink .8s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.upload-result{padding:12px;border-radius:8px;font-size:11px;font-family:var(--mono);margin-top:10px;display:none}
+.upload-result.ok{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.3);color:var(--good)}
+.upload-result.err{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);color:var(--err)}
+/* Token input toggle */
+.token-wrap{position:relative}
+.token-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;line-height:1}
+.divider{height:1px;background:var(--border2);margin:16px 0}
+</style>
+</head>
+<body>
+
+<h1>&#x26A1; Update Data AHI MTU</h1>
+<p class="sub">Upload Excel &rarr; Generate JSON &rarr; Push ke GitHub</p>
+
+<!-- ── STEP 1: GitHub Config ──────────────────────────── -->
+<div class="card" id="cardGH">
+  <div class="card-title"><span class="badge active" id="b1">1</span> Konfigurasi GitHub</div>
+
+  <div class="gh-status" id="ghStatus">
+    <span class="gh-dot" id="ghDot"></span>
+    <span id="ghStatusText">Belum terhubung</span>
+  </div>
+
+  <div class="field">
+    <label>Personal Access Token (PAT) <span>*</span></label>
+    <div class="token-wrap">
+      <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" oninput="clearGHStatus()">
+      <button class="token-toggle" onclick="toggleToken()" title="Tampilkan/sembunyikan">&#x1F441;</button>
+    </div>
+    <div class="hint">
+      Buat di: GitHub &rarr; Settings &rarr; Developer settings &rarr; Personal access tokens &rarr; Tokens (classic)<br>
+      Centang permission: <strong>repo</strong> (full control)
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Username GitHub <span>*</span></label>
+    <input type="text" id="ghUser" placeholder="username-anda" oninput="clearGHStatus()">
+  </div>
+
+  <div class="field">
+    <label>Nama Repository <span>*</span></label>
+    <input type="text" id="ghRepo" placeholder="nama-repo" oninput="clearGHStatus()">
+  </div>
+
+  <div class="field">
+    <label>Branch</label>
+    <input type="text" id="ghBranch" value="main" placeholder="main">
+  </div>
+
+  <div class="field">
+    <label>Path file di repo</label>
+    <input type="text" id="ghPath" value="ahi_data.json" placeholder="ahi_data.json">
+    <div class="hint">Contoh: <code>ahi_data.json</code> atau <code>data/ahi_data.json</code></div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap">
+    <button class="btn btn-primary" onclick="testGH()">&#x1F517; Test Koneksi</button>
+    <button class="btn btn-ghost" onclick="saveGHConfig()">&#x1F4BE; Simpan di Browser</button>
+    <button class="btn btn-ghost" onclick="clearGHConfig()">&#x1F5D1; Hapus Tersimpan</button>
+  </div>
+  <label style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:11px;color:var(--text3);cursor:pointer">
+    <input type="checkbox" id="chkSaveToken" style="width:auto"> Simpan token di browser ini (jangan centang di PC bersama)
+  </label>
+
+  <div class="divider"></div>
+  <details style="font-size:10px;color:var(--text3);line-height:1.8">
+    <summary style="cursor:pointer;color:var(--text2);font-weight:700;margin-bottom:6px">&#x2753; Cara membuat Personal Access Token (PAT)</summary>
+    <ol style="padding-left:16px;margin-top:8px">
+      <li>Buka <a href="https://github.com/settings/tokens" target="_blank" style="color:var(--accent)">github.com/settings/tokens</a></li>
+      <li>Klik <strong>Generate new token (classic)</strong></li>
+      <li>Beri nama, misal: <em>AHI MTU Dashboard</em></li>
+      <li>Set Expiration sesuai kebutuhan (90 days / No expiration)</li>
+      <li>Centang permission: <strong>repo</strong> (full control of private repositories)</li>
+      <li>Klik <strong>Generate token</strong> — salin token, simpan di tempat aman</li>
+      <li>Token hanya tampil sekali — jika hilang, buat baru</li>
+    </ol>
+    <div style="margin-top:8px;padding:8px;background:rgba(239,68,68,.08);border-radius:6px;color:var(--err)">
+      &#x26A0; Jangan bagikan token ke orang lain. Setiap anggota tim sebaiknya membuat token sendiri.
+    </div>
+  </details>
+  <div style="font-size:10px;color:var(--text3);line-height:1.7;margin-top:10px">
+    &#x1F512; Token hanya dikirim langsung ke GitHub API — tidak melewati server lain.<br>
+    &#x26A0; Di PC bersama: isi token tiap kali, jangan centang <em>Simpan token</em>.
+  </div>
+</div>
+
+<!-- ── STEP 2: Upload Excel ──────────────────────────── -->
+<div class="card" id="cardFile">
+  <div class="card-title"><span class="badge" id="b2">2</span> Upload File Excel</div>
+  <div class="drop-zone" id="dropZone">
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+    <div class="drop-icon">&#x1F4C4;</div>
+    <div class="drop-text">Klik atau drag & drop file Excel / CSV</div>
+    <div class="drop-hint">.xlsx &nbsp; .xls &nbsp; .csv &nbsp;&mdash;&nbsp; Max 50MB</div>
+    <div class="file-ok" id="fileOK"></div>
+  </div>
+</div>
+
+<!-- ── STEP 3: Column Mapping ────────────────────────── -->
+<div class="card" id="cardMap" style="display:none">
+  <div class="card-title"><span class="badge" id="b3">3</span> Pemetaan Kolom</div>
+  <p style="font-size:11px;color:var(--text3);margin-bottom:12px">Cocokkan kolom di file dengan field yang dibutuhkan. <span style="color:var(--err)">*</span> = wajib.</p>
+  <div class="col-grid" id="colGrid"></div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="processData()">&#x2699;&#xFE0F; Proses Data</button>
+  </div>
+</div>
+
+<!-- ── STEP 4: Processing ────────────────────────────── -->
+<div class="card" id="cardProc" style="display:none">
+  <div class="card-title"><span class="badge" id="b4">4</span> Memproses Data</div>
+  <div class="prog-wrap"><div class="prog-bar" id="progBar"></div></div>
+  <div class="log" id="logBox"></div>
+  <div class="stats" id="statsGrid" style="display:none"></div>
+</div>
+
+<!-- ── STEP 5: Upload to GitHub ──────────────────────── -->
+<div class="card" id="cardUpload" style="display:none">
+  <div class="card-title"><span class="badge" id="b5">5</span> Upload ke GitHub</div>
+
+  <div class="gh-status" id="uploadStatus">
+    <span class="gh-dot" id="uploadDot"></span>
+    <span id="uploadStatusText">Siap upload</span>
+  </div>
+
+  <div class="field">
+    <label>Commit message</label>
+    <input type="text" id="commitMsg" value="Update ahi_data.json">
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-green" id="btnUpload" onclick="uploadToGH()">&#x2B06; Upload ke GitHub</button>
+    <button class="btn btn-ghost" onclick="downloadJSON()">&#x2B07; Download JSON saja</button>
+    <button class="btn btn-ghost" onclick="location.reload()">&#x21BA; Mulai Ulang</button>
+  </div>
+
+  <div class="upload-result" id="uploadResult"></div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════
+   FIELDS CONFIG
+   ════════════════════════════════════════════════════ */
+var FIELDS = [
+  {key:'equip',    label:'Jenis Equip (#)',       req:true,  a:['#','Equip','equip']},
+  {key:'upt',      label:'UPT',                   req:true,  a:['Upt','UPT','upt']},
+  {key:'gi',       label:'Gardu Induk',           req:true,  a:['Gi','GI','gi']},
+  {key:'bay',      label:'Bay',                   req:true,  a:['Bay','bay']},
+  {key:'statusHi', label:'Status HI',             req:true,  a:['Status Hi','Status HI','statusHi']},
+  {key:'nilaiHi',  label:'Nilai HI',              req:true,  a:['Nilai Hi','Nilai HI','nilaiHi']},
+  {key:'phasa',    label:'Phasa',                 req:false, a:['Phasa','phasa']},
+  {key:'daya',     label:'Daya (kV)',             req:false, a:['Daya','daya']},
+  {key:'merek',    label:'Merek',                 req:false, a:['Merek','merek']},
+  {key:'tipe',     label:'Tipe',                  req:false, a:['Tipe','tipe']},
+  {key:'thnBuat',  label:'Tahun Buat',            req:false, a:['Tahun Buat','thnBuat']},
+  {key:'thnOps',   label:'Tahun Operasi',         req:false, a:['Tahun Operasi','thnOps']},
+  {key:'mtu',      label:'Jenis MTU',             req:false, a:['Mtu','mtu','MTU']},
+  {key:'justif',   label:'Justifikasi',           req:false, a:['Justifikasi Prioritas','justif']},
+  {key:'statusUsia',label:'Status Usia',          req:false, a:['Status Usia','statusUsia']},
+  {key:'rencana',  label:'Rencana',               req:false, a:['Rencana','rencana']},
+];
+
+var sheetData=[], headers=[], resultJSON=null, resultStr='';
+var YEAR = new Date().getFullYear();
+var HI   = ['CRITICAL','POOR','FAIR','GOOD','VERY GOOD'];
+
+/* ════════════════════════════════════════════════════
+   GITHUB CONFIG
+   ════════════════════════════════════════════════════ */
+(function loadSaved(){
+  var cfg = localStorage.getItem('ghCfg');
+  if (!cfg) return;
+  try {
+    var c = JSON.parse(cfg);
+    if (c.token)  { document.getElementById('ghToken').value = c.token; document.getElementById('chkSaveToken').checked = true; }
+    if (c.user)   document.getElementById('ghUser').value   = c.user;
+    if (c.repo)   document.getElementById('ghRepo').value   = c.repo;
+    if (c.branch) document.getElementById('ghBranch').value = c.branch;
+    if (c.path)   document.getElementById('ghPath').value   = c.path;
+  } catch(e){}
+})();
+
+function saveGHConfig() {
+  var saveToken = document.getElementById('chkSaveToken').checked;
+  localStorage.setItem('ghCfg', JSON.stringify({
+    token:  saveToken ? document.getElementById('ghToken').value : '',
+    user:   document.getElementById('ghUser').value,
+    repo:   document.getElementById('ghRepo').value,
+    branch: document.getElementById('ghBranch').value,
+    path:   document.getElementById('ghPath').value,
+  }));
+  setGHStatus(saveToken ? 'Config + token tersimpan' : 'Config tersimpan (token tidak disimpan)', 'ok');
+}
+
+function clearGHConfig() {
+  localStorage.removeItem('ghCfg');
+  document.getElementById('ghToken').value = '';
+  setGHStatus('Config dihapus dari browser', 'ok');
+}
+
+function clearGHStatus() {
+  document.getElementById('ghDot').className = 'gh-dot';
+  document.getElementById('ghStatusText').textContent = 'Belum terhubung';
+}
+
+function setGHStatus(msg, type) {
+  document.getElementById('ghDot').className = 'gh-dot ' + (type||'');
+  document.getElementById('ghStatusText').textContent = msg;
+}
+
+function toggleToken() {
+  var el = document.getElementById('ghToken');
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+function getGHConfig() {
+  return {
+    token:  document.getElementById('ghToken').value.trim(),
+    user:   document.getElementById('ghUser').value.trim(),
+    repo:   document.getElementById('ghRepo').value.trim(),
+    branch: document.getElementById('ghBranch').value.trim() || 'main',
+    path:   document.getElementById('ghPath').value.trim()   || 'ahi_data.json',
+  };
+}
+
+async function testGH() {
+  var c = getGHConfig();
+  if (!c.token || !c.user || !c.repo) { alert('Token, username, dan repo wajib diisi.'); return; }
+  setGHStatus('Menghubungkan...', 'loading');
+  try {
+    var r = await fetch('https://api.github.com/repos/'+c.user+'/'+c.repo, {
+      headers: { 'Authorization': 'token '+c.token, 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if (r.ok) {
+      var d = await r.json();
+      setGHStatus('Terhubung: ' + d.full_name + ' (' + d.default_branch + ')', 'ok');
+      document.getElementById('b1').className = 'badge done';
+      saveGHConfig();
+    } else {
+      var e = await r.json();
+      setGHStatus('Error: ' + (e.message||r.status), 'err');
+    }
+  } catch(e) {
+    setGHStatus('Gagal: ' + e.message, 'err');
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   FILE UPLOAD
+   ════════════════════════════════════════════════════ */
+var dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', function(){ dz.classList.remove('drag'); });
+dz.addEventListener('drop', function(e){ e.preventDefault(); dz.classList.remove('drag'); handleFile(e.dataTransfer.files[0]); });
+document.getElementById('fileInput').addEventListener('change', function(){ handleFile(this.files[0]); });
+
+function handleFile(file) {
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var wb = XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:true});
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      sheetData = XLSX.utils.sheet_to_json(ws, {raw:false, defval:''});
+      if (!sheetData.length) { alert('Sheet kosong!'); return; }
+      headers = Object.keys(sheetData[0]);
+      var ok = document.getElementById('fileOK');
+      ok.textContent = '✓ ' + file.name + ' — ' + sheetData.length.toLocaleString('id-ID') + ' baris';
+      ok.style.display = 'block';
+      document.getElementById('b2').className = 'badge done';
+      buildColMap();
+      document.getElementById('cardMap').style.display = 'block';
+      document.getElementById('b3').className = 'badge active';
+    } catch(err) { alert('Error: ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ════════════════════════════════════════════════════
+   COLUMN MAPPING
+   ════════════════════════════════════════════════════ */
+function buildColMap() {
+  var g = document.getElementById('colGrid');
+  g.innerHTML = '';
+  FIELDS.forEach(function(f) {
+    var match = '';
+    f.a.forEach(function(a){ if(!match){ var h=headers.find(function(h){ return h.toLowerCase().trim()===a.toLowerCase().trim(); }); if(h) match=h; } });
+    var opts = '<option value="">— tidak dipakai —</option>';
+    headers.forEach(function(h){ opts += '<option value="'+escHtml(h)+'"'+(h===match?' selected':'')+'>'+escHtml(h)+'</option>'; });
+    var cls = match ? 'ok' : (f.req ? 'miss' : '');
+    g.innerHTML += '<div><div class="col-lbl">'+escHtml(f.label)+(f.req?' <span>*</span>':'')+'</div>'
+      + '<select class="col-sel '+cls+'" id="col_'+f.key+'">'+opts+'</select></div>';
+  });
+}
+
+function getMap() {
+  var m = {};
+  FIELDS.forEach(function(f){ var s=document.getElementById('col_'+f.key); m[f.key]=s?s.value:''; });
+  return m;
+}
+
+/* ════════════════════════════════════════════════════
+   PROCESS DATA
+   ════════════════════════════════════════════════════ */
+function processData() {
+  var m = getMap();
+  var miss = FIELDS.filter(function(f){ return f.req && !m[f.key]; }).map(function(f){ return f.label; });
+  if (miss.length) { alert('Kolom wajib belum dipetakan:\n' + miss.join('\n')); return; }
+
+  document.getElementById('cardProc').style.display = 'block';
+  document.getElementById('b4').className = 'badge active';
+  document.getElementById('cardMap').querySelector('.btn-row').style.display = 'none';
+
+  var log = document.getElementById('logBox');
+  var prg = document.getElementById('progBar');
+  function lg(msg,cls){ log.innerHTML+='<div class="'+(cls||'info')+'">'+msg+'</div>'; log.scrollTop=9999; }
+  function pg(n){ prg.style.width=n+'%'; }
+
+  setTimeout(function(){
+    lg('Membaca '+sheetData.length.toLocaleString('id-ID')+' baris...');
+    pg(5);
+
+    var rows = sheetData.filter(function(r){
+      var upt=(r[m.upt]||'').trim(), gi=(r[m.gi]||'').trim();
+      return upt && upt!=='-' && !gi.startsWith('UPT ');
+    });
+    lg('Valid: '+rows.length.toLocaleString('id-ID')+' baris', 'ok');
+    pg(15);
+
+    function s(v){ var sv=String(v||'').trim(); return sv&&sv!=='undefined'&&sv!=='null'?sv:'-'; }
+    function num(v){ var n=parseInt(v); return isNaN(n)?0:n; }
+    function yr(v){
+      if(!v) return 0;
+      if(v instanceof Date) return v.getFullYear();
+      var sv=String(v).trim(), m=sv.match(/^(\d{4})/);
+      return m?parseInt(m[1]):0;
+    }
+    function kl(d){ d=parseFloat(d)||0; return d===500?'500 kV':d===150||d===167?'150 kV':d===66||d===70?'70 kV':'20 kV ke bawah'; }
+    function zc(){ return {CRITICAL:0,POOR:0,FAIR:0,GOOD:0,'VERY GOOD':0}; }
+    var EQ=['CT','CVT','LA','PMS','PMT','TRAFO'];
+
+    var gi_idx={},kl_idx={},upt_idx={},eq_idx={},det={},bay_crit={},bay_poor={};
+    var total=rows.length, step=Math.max(1,Math.floor(total/20)), done=0;
+
+    rows.forEach(function(r){
+      var upt=s(r[m.upt]),gi=s(r[m.gi]),bay=s(r[m.bay]);
+      var eq=s(r[m.equip]),ph=s(r[m.phasa]),mr=s(r[m.merek]),tp=s(r[m.tipe]);
+      var hi=s(r[m.statusHi]),nhi=num(r[m.nilaiHi]);
+      var tB=yr(r[m.thnBuat]),tO=yr(r[m.thnOps]),dy=parseFloat(r[m.daya])||0;
+      var kln=kl(dy),ju=s(r[m.justif]),rc=s(r[m.rencana]),su=s(r[m.statusUsia]);
+
+      if(!gi_idx[gi]) gi_idx[gi]={upt:upt,c:zc(),t:0};
+      if(gi_idx[gi].c[hi]!==undefined) gi_idx[gi].c[hi]++; gi_idx[gi].t++;
+
+      if(!kl_idx[kln]) kl_idx[kln]={c:zc(),t:0,eq:{}};
+      if(kl_idx[kln].c[hi]!==undefined) kl_idx[kln].c[hi]++; kl_idx[kln].t++;
+      if(EQ.indexOf(eq)>=0){
+        if(!kl_idx[kln].eq[eq]) kl_idx[kln].eq[eq]={c:zc(),t:0};
+        if(kl_idx[kln].eq[eq].c[hi]!==undefined) kl_idx[kln].eq[eq].c[hi]++; kl_idx[kln].eq[eq].t++;
+      }
+
+      if(!upt_idx[upt]) upt_idx[upt]={c:zc(),t:0,kl:{}};
+      if(upt_idx[upt].c[hi]!==undefined) upt_idx[upt].c[hi]++; upt_idx[upt].t++;
+      if(!upt_idx[upt].kl[kln]) upt_idx[upt].kl[kln]={c:zc(),t:0};
+      if(upt_idx[upt].kl[kln].c[hi]!==undefined) upt_idx[upt].kl[kln].c[hi]++; upt_idx[upt].kl[kln].t++;
+
+      if(!eq_idx[eq]) eq_idx[eq]={c:zc(),t:0};
+      if(eq_idx[eq].c[hi]!==undefined) eq_idx[eq].c[hi]++; eq_idx[eq].t++;
+
+      if(!det[upt]) det[upt]={};
+      if(!det[upt][gi]) det[upt][gi]={};
+      if(!det[upt][gi][bay]) det[upt][gi][bay]=[];
+      det[upt][gi][bay].push([eq,ph,mr,tp,tB,tO,hi,nhi,su,ju,rc]);
+
+      if(hi==='CRITICAL'){ if(!bay_crit[gi]) bay_crit[gi]=[]; bay_crit[gi].push({eq:eq,bay:bay,phasa:ph,merek:mr,tipe:tp,nilai_hi:nhi,upt:upt,justif:ju,rencana:rc}); }
+      if(hi==='POOR'){     if(!bay_poor[gi]) bay_poor[gi]=[]; bay_poor[gi].push({eq:eq,bay:bay,phasa:ph,merek:mr,tipe:tp,nilai_hi:nhi,upt:upt,justif:ju,rencana:rc}); }
+
+      done++; if(done%step===0) pg(15+done/total*70);
+    });
+
+    pg(90);
+    var giN=Object.keys(gi_idx).length;
+    var totC=0,totP=0;
+    Object.values(gi_idx).forEach(function(g){ totC+=g.c.CRITICAL||0; totP+=g.c.POOR||0; });
+    lg(giN+' GI diproses', 'ok');
+    lg('Critical: '+totC+' | Poor: '+totP, 'warn');
+
+    var now = new Date();
+    var updStr = now.getFullYear()+'-'+(now.getMonth()+1<10?'0':'')+(now.getMonth()+1)+'-'+(now.getDate()<10?'0':'')+now.getDate()
+                 +' '+(now.getHours()<10?'0':'')+now.getHours()+':'+(now.getMinutes()<10?'0':'')+now.getMinutes();
+    resultJSON = {updated:updStr,gi:gi_idx,kl:kl_idx,upt:upt_idx,eq:eq_idx,det:det,bay_crit:bay_crit,bay_poor:bay_poor};
+    document.getElementById('commitMsg').value = 'Update ahi_data.json - ' + updStr;
+    /* Pre-compute adjusted GI index */
+    var adj_gi={}, adj_count=0;
+    var ADJ=[{eq:'TRAFO',max:20,from:'FAIR',to:'GOOD'},{eq:'PMT',max:15,from:'FAIR',to:'GOOD'}];
+    rows.forEach(function(r){
+      var gi2=s(r[m.gi]),upt2=s(r[m.upt]),hi2=s(r[m.statusHi]);
+      var tO2=yr(r[m.thnOps]),usia2=tO2?YEAR-tO2:999;
+      var adjHi=hi2;
+      ADJ.forEach(function(rule){ if(s(r[m.equip])===rule.eq&&hi2===rule.from&&usia2<rule.max){adjHi=rule.to;adj_count++;} });
+      if(!adj_gi[gi2]) adj_gi[gi2]={upt:upt2,c:zc(),t:0};
+      if(adj_gi[gi2].c[adjHi]!==undefined) adj_gi[gi2].c[adjHi]++;
+      adj_gi[gi2].t++;
+    });
+    resultJSON.adj_gi = adj_gi;
+    resultJSON.adj_count = adj_count;
+    lg('Adjustment: '+adj_count+' unit FAIR → GOOD', 'ok');
+
+    /* Split det for separate upload */
+    var detJSON = resultJSON.det;
+    delete resultJSON.det;
+    resultStr    = JSON.stringify(resultJSON, null, 0);
+    window._detStr = JSON.stringify(detJSON, null, 0);
+    pg(100);
+
+    var sg=document.getElementById('statsGrid');
+    sg.style.display='grid';
+    sg.innerHTML = [
+      [giN,'Gardu Induk'],[rows.length.toLocaleString('id-ID'),'Total MTU'],[totC,'Critical']
+    ].map(function(x){ return '<div class="stat"><div class="stat-val">'+x[0]+'</div><div class="stat-lbl">'+x[1]+'</div></div>'; }).join('');
+
+    lg('✅ Data siap!', 'ok');
+    setTimeout(function(){
+      document.getElementById('cardUpload').style.display='block';
+      document.getElementById('b4').className='badge done';
+      document.getElementById('b5').className='badge active';
+    }, 400);
+  }, 80);
+}
+
+/* ════════════════════════════════════════════════════
+   DOWNLOAD JSON
+   ════════════════════════════════════════════════════ */
+function downloadJSON() {
+  if (!resultStr) return;
+  var b1=new Blob([resultStr],{type:'application/json'});
+  var a1=document.createElement('a'); a1.href=URL.createObjectURL(b1); a1.download='ahi_data.json'; a1.click();
+  setTimeout(function(){
+    if (!window._detStr) return;
+    var b2=new Blob([window._detStr],{type:'application/json'});
+    var a2=document.createElement('a'); a2.href=URL.createObjectURL(b2); a2.download='ahi_det.json'; a2.click();
+  }, 500);
+}
+
+/* ════════════════════════════════════════════════════
+   UPLOAD TO GITHUB
+   ════════════════════════════════════════════════════ */
+async function uploadToGH() {
+  if (!resultStr) { alert('Proses data dulu!'); return; }
+  var c = getGHConfig();
+  if (!c.token || !c.user || !c.repo) { alert('Lengkapi konfigurasi GitHub terlebih dahulu.'); return; }
+
+  var btn = document.getElementById('btnUpload');
+  btn.disabled = true; btn.textContent = 'Mengupload...';
+  setUploadStatus('Menghubungkan ke GitHub...', 'loading');
+
+  var apiURL = 'https://api.github.com/repos/'+c.user+'/'+c.repo+'/contents/'+c.path;
+  var headers = {
+    'Authorization': 'token '+c.token,
+    'Accept': 'application/vnd.github.v3+json',
+    'Content-Type': 'application/json'
+  };
+
+  try {
+    /* Get current file SHA (needed for update) */
+    setUploadStatus('Mengambil SHA file lama...', 'loading');
+    var sha = null;
+    var getR = await fetch(apiURL+'?ref='+c.branch, {headers:headers});
+    if (getR.ok) {
+      var existing = await getR.json();
+      sha = existing.sha;
+    } else if (getR.status !== 404) {
+      throw new Error('Gagal cek file: HTTP ' + getR.status);
+    }
+
+    /* Encode to base64 */
+    setUploadStatus('Mengenkode data...', 'loading');
+    var b64 = btoa(unescape(encodeURIComponent(resultStr)));
+
+    /* Commit */
+    setUploadStatus('Mengupload ke GitHub...', 'loading');
+    var msg = document.getElementById('commitMsg').value || 'Update ahi_data.json';
+    var body = { message:msg, content:b64, branch:c.branch };
+    if (sha) body.sha = sha;
+
+    var putR = await fetch(apiURL, {
+      method: 'PUT', headers: headers,
+      body: JSON.stringify(body)
+    });
+
+    if (putR.ok) {
+      var putD = await putR.json();
+      /* Upload ahi_det.json */
+      setUploadStatus('Upload ahi_det.json...', 'loading');
+      var detPath = c.path.replace('ahi_data.json','ahi_det.json');
+      var detURL  = 'https://api.github.com/repos/'+c.user+'/'+c.repo+'/contents/'+detPath;
+      var detSHA  = null;
+      var detGet  = await fetch(detURL+'?ref='+c.branch, {headers:headers});
+      if (detGet.ok) { var dg=await detGet.json(); detSHA=dg.sha; }
+      var detB64  = btoa(unescape(encodeURIComponent(window._detStr||'{}')));
+      var detBody = {message:msg+' (det)', content:detB64, branch:c.branch};
+      if (detSHA) detBody.sha = detSHA;
+      var detPut  = await fetch(detURL, {method:'PUT', headers:headers, body:JSON.stringify(detBody)});
+      setUploadStatus('Berhasil upload 2 file!', 'ok');
+      document.getElementById('b5').className = 'badge done';
+      var detOK = detPut.ok;
+      showUploadResult('ok',
+        '✅ Berhasil upload ke GitHub!
+'
+        +'Commit: '+putD.commit.sha.slice(0,7)+'
+'
+        +(detOK?'ahi_data.json + ahi_det.json OK':'ahi_data.json OK, ahi_det.json gagal')+'
+'
+        +'Dashboard akan update dalam beberapa detik.');
