@@ -820,7 +820,7 @@ function giHtml(g){
   const bc=g.maxhi>=150?'#ef4444':g.maxhi>=100?'#f59e0b':g.maxhi>=50?'#eab308':'#22c55e';
   // collect rencana from all MTU rows that have it
   const rencanaList=[...new Set(g.rows.map(r=>(r.Rencana||'').trim()).filter(v=>v&&v!=='nan'&&v!=='#N/A'))];
-  const rencanaStr=rencanaList.slice(0,2).join(' | ')+(rencanaList.length>2?` (+${rencanaList.length-2})`):'';
+  const rencanaStr=rencanaList.slice(0,2).join(' | ')+(rencanaList.length>2?` (+${rencanaList.length-2})`:'');
   let h=`<tr class="row-gi">
     <td style="text-align:center;padding:7px 6px">
       <span class="exp-icon${isOpen?' open':''}" style="color:var(--accent)">▶</span>
