@@ -326,11 +326,12 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
             <th onclick="sb('crit')" data-col="crit">Criticality</th>
             <th onclick="sb('upt')" data-col="upt">UPT</th>
             <th onclick="sb('worst')" data-col="worst">Worst Status</th>
-            <th onclick="sb('ncr')" data-col="ncr">Critical</th>
+            <th onclick="sb('ncr')" data-col="ncr">Justifikasi</th>
             <th onclick="sb('npo')" data-col="npo">Poor</th>
             <th onclick="sb('maxhi')" data-col="maxhi">Max Hi</th>
             <th onclick="sb('nbay')" data-col="nbay">Bay</th>
             <th onclick="sb('nmtu')" data-col="nmtu">MTU</th>
+            <th>Rencana</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -560,14 +561,22 @@ function updCharts(){
     `<div class="li"><span class="ld" style="background:${ST_COL[i]}"></span><span class="ln">${s}</span><span class="lv">${dc_counts[i].toLocaleString('id-ID')}</span></div>`
   ).join('');
 
-  // UPT
+  // UPT — horizontal stacked bar
   dc('u');
   const upts=[...new Set(filtered.map(r=>r.Upt).filter(v=>v&&v!=='-'))].sort();
   charts.u=new Chart(document.getElementById('uptC').getContext('2d'),{
     type:'bar',
     data:{labels:upts.map(u=>u.replace('UPT ','')),
       datasets:ST_LST.map((s,i)=>({label:s,data:upts.map(u=>filtered.filter(r=>r.Upt===u&&r._se===s).length),backgroundColor:ST_COL[i],borderRadius:3,borderSkipped:false}))},
-    options:copt(true,false)
+    options:{
+      indexAxis:'y',
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+      scales:{
+        x:{stacked:true,ticks:{color:'#8a9099',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{stacked:true,ticks:{color:'#8a9099',font:{size:12}},grid:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
   });
 
   // kV clusters
@@ -712,7 +721,7 @@ function renderTable(){
   const tot=g.length, pages=Math.max(1,Math.ceil(tot/PAGE));
   const st=(page-1)*PAGE, sl=g.slice(st,st+PAGE);
   const tbody=document.getElementById('tbody');
-  if(!sl.length){tbody.innerHTML='<tr><td colspan="11" class="empty">Tidak ada data</td></tr>';}
+  if(!sl.length){tbody.innerHTML='<tr><td colspan="12" class="empty">Tidak ada data</td></tr>';}
   else tbody.innerHTML=sl.map(x=>giHtml(x)).join('');
   document.getElementById('pi').textContent=
     `${(st+1).toLocaleString('id-ID')}–${Math.min(st+PAGE,tot).toLocaleString('id-ID')} dari ${tot.toLocaleString('id-ID')} GI`;
@@ -724,6 +733,9 @@ function giHtml(g){
   const isOpen=expGi.has(g.gi), krit=giKrit.has((g.gi||'').trim());
   const bw=Math.min(55,g.maxhi/300*55);
   const bc=g.maxhi>=150?'#ef4444':g.maxhi>=100?'#f59e0b':g.maxhi>=50?'#eab308':'#22c55e';
+  // collect rencana from all MTU rows that have it
+  const rencanaList=[...new Set(g.rows.map(r=>(r.Rencana||'').trim()).filter(v=>v&&v!=='nan'&&v!=='#N/A'))];
+  const rencanaStr=rencanaList.slice(0,2).join(' | ')+(rencanaList.length>2?` (+${rencanaList.length-2})`):'';
   let h=`<tr class="row-gi">
     <td style="text-align:center;padding:7px 6px">
       <span class="exp-icon${isOpen?' open':''}" style="color:var(--accent)">▶</span>
@@ -740,6 +752,7 @@ function giHtml(g){
     <td><div class="hiwrap"><div class="hibar" style="width:${bw}px;background:${bc}"></div><span class="hival">${g.maxhi||'—'}</span></div></td>
     <td><span style="font-family:var(--mono);font-size:11px;color:var(--text2)">${g.nbay}</span></td>
     <td><span style="font-family:var(--mono);font-size:11px;color:var(--text2)">${g.nmtu}</span></td>
+    <td style="font-size:10px;color:var(--text3);max-width:200px;overflow:hidden;text-overflow:ellipsis" title="${e(rencanaList.join('\n'))}">${e(rencanaStr||'—')}</td>
   </tr>`;
   if(isOpen) h+=g.bays.map(b=>bayHtml(g,b)).join('');
   return h;
@@ -750,12 +763,17 @@ function bayHtml(g,b){
   const bk=(g.gi||'')+'\x00'+(b.bay||''), isOpen=expBay.has(bk);
   const bw=Math.min(50,b.maxhi/300*50);
   const bc=b.maxhi>=150?'#ef4444':b.maxhi>=100?'#f59e0b':b.maxhi>=50?'#eab308':'#22c55e';
+  // Rencana per bay: collect unique non-empty entries
+  const rBay=[...new Set(b.mtus.map(r=>(r.Rencana||'').trim()).filter(v=>v&&v!=='nan'&&v!=='#N/A'))];
+  const rBayStr=rBay[0]?e(rBay[0].substring(0,80)+(rBay[0].length>80?'…':'')):'—';
+  // encode key safely for inline onclick
+  const bkSafe=btoa(unescape(encodeURIComponent(bk)));
   let h=`<tr class="row-bay">
     <td style="text-align:center;padding:6px 6px">
       <span class="exp-icon${isOpen?' open':''}">▶</span>
     </td>
-    <td colspan="1" style="padding-left:28px">
-      <span class="bay-tgl" onclick="tgBay('${e(bk).replace(/'/g,"\\'")}')">
+    <td style="padding-left:28px">
+      <span class="bay-tgl" onclick="tgBayB64('${bkSafe}')">
         <span class="bname">${e(b.bay||'—')}</span>
       </span>
     </td>
@@ -766,6 +784,7 @@ function bayHtml(g,b){
     <td>${b.npo>0?`<span style="color:var(--amb);font-family:var(--mono)">${b.npo}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
     <td><div class="hiwrap"><div class="hibar" style="width:${bw}px;background:${bc}"></div><span class="hival">${b.maxhi||'—'}</span></div></td>
     <td colspan="2"></td>
+    <td style="font-size:10px;color:var(--text3);max-width:180px;overflow:hidden;text-overflow:ellipsis" title="${e(rBay.join('\n'))}">${rBayStr}</td>
   </tr>`;
   if(isOpen) h+=b.mtus.map(r=>mtuH(r)).join('');
   return h;
@@ -775,21 +794,26 @@ function bayHtml(g,b){
 function mtuH(r){
   const hi=+r['Nilai Hi']||0, bw=Math.min(40,hi/300*40);
   const bc=hi>=150?'#ef4444':hi>=100?'#f59e0b':hi>=50?'#eab308':'#22c55e';
+  const ren=(r.Rencana||'').trim();
+  const renClean=(ren==='nan'||ren==='#N/A')?'':ren;
   return `<tr class="row-mtu">
     <td></td>
     <td style="padding-left:52px"><span class="badge" style="background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.2);font-size:9px">${e(r['#']||'—')}</span></td>
     <td style="color:var(--text2)">${e(r.Merek||'—')} <span style="color:var(--text3);font-size:10px">${e(r.Tipe||'')}</span></td>
     <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${r.Phasa||'—'}</td>
-    <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${r['Tahun Buat']||'—'} ${r._age!=null?`<span style="color:var(--text3)">(${r._age}th)</span>`:''}</td>
+    <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${r['Tahun Buat']||'—'}${r._age!=null?` <span style="color:var(--text3)">(${r._age}th)</span>`:''}</td>
     <td>${stH(r._se)}${r._adj?'<span class="badge b-adj">adj</span>':''}</td>
-    <td colspan="2" style="font-size:10px;color:var(--text3);max-width:220px;overflow:hidden;text-overflow:ellipsis" title="${e(r['Justifikasi Prioritas']||'')}">${e(r['Justifikasi Prioritas']||'—')}</td>
+    <td style="font-size:10px;color:var(--text3);max-width:180px;overflow:hidden;text-overflow:ellipsis" title="${e(r['Justifikasi Prioritas']||'')}">${e(r['Justifikasi Prioritas']||'—')}</td>
+    <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${e(r['Serial Id']||'—')}</td>
     <td><div class="hiwrap"><div class="hibar" style="width:${bw}px;background:${bc}"></div><span class="hival">${hi||'—'}</span></div></td>
-    <td colspan="2" style="font-family:var(--mono);font-size:10px;color:var(--text3)">${e(r['Serial Id']||'—')}</td>
+    <td colspan="2"></td>
+    <td style="font-size:10px;color:var(--text2);max-width:220px;overflow:hidden;text-overflow:ellipsis" title="${e(renClean)}">${e(renClean.substring(0,80)+(renClean.length>80?'…':''))||'—'}</td>
   </tr>`;
 }
 
 function tgGi(gi){ expGi.has(gi)?expGi.delete(gi):expGi.add(gi); renderTable(); }
 function tgBay(bk){ expBay.has(bk)?expBay.delete(bk):expBay.add(bk); renderTable(); }
+function tgBayB64(b64){ try{const bk=decodeURIComponent(escape(atob(b64)));tgBay(bk);}catch(e2){} }
 
 function expandAll(lvl){
   // lvl=2: buka semua GI saja, lvl=3: buka GI + Bay
