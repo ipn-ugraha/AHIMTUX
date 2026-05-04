@@ -170,8 +170,13 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
 
 <div class="lov" id="loading">
   <div class="llogo">AHI · MTU</div>
-  <div class="lbw"><div class="lb"></div></div>
-  <div class="ltxt" id="ltxt">Memuat data...</div>
+  <div style="width:220px">
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+      <span class="ltxt" id="ltxt">Memuat data...</span>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--accent)" id="lpct">0%</span>
+    </div>
+    <div class="lbw" style="width:100%"><div class="lb" id="lbar" style="animation:none;width:0%;transition:width .3s"></div></div>
+  </div>
 </div>
 
 <header class="topbar">
@@ -366,23 +371,46 @@ let page=1, scol='maxhi', sdir='desc', tab='all';
 let expGi=new Set(), expBay=new Set(), charts={};
 
 async function init(){
-  ld('Memuat GI kritikal...');
+  setP(5,'Memuat GI kritikal...');
   try{
     const r=await fetch(CSV_KRIT);
     Papa.parse(await r.text(),{header:true,skipEmptyLines:true})
       .data.forEach(x=>{const g=(x.Gi||x.gi||'').trim();if(g)giKrit.add(g);});
   }catch(e){}
 
-  ld('Memuat data MTU...');
-  const r2=await fetch(CSV_AHI);
-  ld('Memproses...');
-  const p=Papa.parse(await r2.text(),{header:true,skipEmptyLines:true,dynamicTyping:false});
+  setP(15,'Mengunduh data MTU...');
 
-  raw=p.data.filter(r=>{
+  // Fetch with progress tracking
+  const resp = await fetch(CSV_AHI);
+  const contentLen = +resp.headers.get('Content-Length') || 0;
+  let received = 0;
+  const chunks = [];
+  const reader = resp.body.getReader();
+  while(true){
+    const {done, value} = await reader.read();
+    if(done) break;
+    chunks.push(value);
+    received += value.length;
+    if(contentLen){
+      const pct = Math.min(75, 15 + Math.round((received/contentLen)*60));
+      setP(pct, `Mengunduh... ${Math.round(received/1024)} KB`);
+    }
+  }
+  setP(78,'Parsing CSV...');
+
+  // Decode and parse
+  const blob = new Blob(chunks);
+  const text = await blob.text();
+
+  setP(85,'Memproses data...');
+  const parsed = Papa.parse(text,{header:true,skipEmptyLines:true,dynamicTyping:false});
+
+  raw = parsed.data.filter(r=>{
     const gi=(r.Gi||'').trim();
     return gi && VALID_PFX.some(px=>gi.startsWith(px));
   });
 
+  setP(92,'Menghitung nilai...');
   raw.forEach(r=>{
     const yr=r['Tahun Operasi']?new Date(r['Tahun Operasi']).getFullYear():null;
     r._age = yr ? YR-yr : null;
@@ -393,19 +421,34 @@ async function init(){
     r._kv  = m?+m[1]:null;
   });
 
+  setP(96,'Menyiapkan tampilan...');
   updToggle();
   document.getElementById('last-update').textContent=
     'Data: '+new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
   const gk=document.getElementById('gkbadge');
   if(gk) gk.style.display='flex';
-  document.querySelectorAll('#gkn').forEach(e=>e.textContent=giKrit.size);
+  document.querySelectorAll('#gkn').forEach(el=>el.textContent=giKrit.size);
 
   buildFilters();
+
+  setP(99,'Rendering...');
+  // Defer heavy render to next frame so progress hits 99% visibly
+  await new Promise(r=>setTimeout(r,30));
   applyFilters();
+
+  setP(100,'Selesai');
+  await new Promise(r=>setTimeout(r,200));
   document.getElementById('loading').style.display='none';
 }
 
-function ld(t){document.getElementById('ltxt').textContent=t;}
+function setP(pct, txt){
+  const bar=document.getElementById('lbar');
+  const label=document.getElementById('ltxt');
+  const num=document.getElementById('lpct');
+  if(bar) bar.style.width=pct+'%';
+  if(label) label.textContent=txt;
+  if(num) num.textContent=pct+'%';
+}
 
 function updToggle(){
   const nt=raw.filter(r=>r['#']==='TRAFO'&&r._so==='FAIR'&&r._age!=null&&r._age<20).length;
@@ -512,25 +555,29 @@ function resetFilters(){
 
 function updStats(){
   const d=filtered, n=d.length;
-  const c=s=>d.filter(r=>r._se===s).length;
-  const cr=c('CRITICAL'),po=c('POOR'),fa=c('FAIR');
-  const go=d.filter(r=>['GOOD','VERY GOOD'].includes(r._se)).length;
-  const tua=d.filter(r=>(r['Status Usia']||'').toUpperCase()==='SANGAT TUA').length;
-  const his=d.map(r=>+r['Nilai Hi']).filter(v=>!isNaN(v)&&v>0);
-  const avg=his.length?(his.reduce((a,b)=>a+b,0)/his.length):0;
-  const mxh=his.length?Math.max(...his):0;
-  const mxr=d.find(r=>+r['Nilai Hi']===mxh);
-  const ngi=new Set(d.map(r=>r.Gi)).size;
-  const nbay=new Set(d.map(r=>(r.Gi||'')+'\x00'+(r.Bay||''))).size;
+  let cr=0,po=0,fa=0,go=0,tua=0,hiSum=0,hiMax=0,hiMaxR=null,ngiSet=new Set(),nbaySet=new Set();
+  d.forEach(r=>{
+    const st=r._se;
+    if(st==='CRITICAL') cr++;
+    else if(st==='POOR') po++;
+    else if(st==='FAIR') fa++;
+    else if(st==='GOOD'||st==='VERY GOOD') go++;
+    if((r['Status Usia']||'').toUpperCase()==='SANGAT TUA') tua++;
+    const hi=+r['Nilai Hi'];
+    if(!isNaN(hi)&&hi>0){ hiSum+=hi; if(hi>hiMax){hiMax=hi;hiMaxR=r;} }
+    ngiSet.add(r.Gi);
+    nbaySet.add((r.Gi||'')+'\x00'+(r.Bay||''));
+  });
+  const avg=n&&hiMax?hiSum/d.filter(r=>{const h=+r['Nilai Hi'];return !isNaN(h)&&h>0;}).length:0;
   const pct=(v,n)=>n?(v/n*100).toFixed(1)+'%':'—';
   const sg=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
-  sg('s-n',n.toLocaleString('id-ID')); sg('s-gi',ngi.toLocaleString('id-ID')); sg('s-bay',nbay.toLocaleString('id-ID'));
+  sg('s-n',n.toLocaleString('id-ID')); sg('s-gi',ngiSet.size.toLocaleString('id-ID')); sg('s-bay',nbaySet.size.toLocaleString('id-ID'));
   sg('s-cr',cr.toLocaleString('id-ID')); sg('s-crp',pct(cr,n));
   sg('s-po',po.toLocaleString('id-ID')); sg('s-pop',pct(po,n));
   sg('s-fa',fa.toLocaleString('id-ID')); sg('s-fap',pct(fa,n));
   sg('s-go',go.toLocaleString('id-ID')); sg('s-gop',pct(go,n));
-  sg('s-avg',avg.toFixed(1)); sg('s-max',mxh);
-  sg('s-maxgi',mxr?(mxr.Gi||'').replace(/G[IS]*ET? \d+KV /,'').replace(/GI \d+KV /,''):'—');
+  sg('s-avg',avg.toFixed(1)); sg('s-max',hiMax);
+  sg('s-maxgi',hiMaxR?(hiMaxR.Gi||'').replace(/G[IS]*ET? \d+KV /,'').replace(/GI \d+KV /,''):'—');
   sg('s-tua',tua.toLocaleString('id-ID')); sg('s-tuap',pct(tua,n));
 }
 
@@ -548,9 +595,48 @@ const copt=(stacked,legShow)=>({
 });
 
 function updCharts(){
-  // Donut
+  // ── Single-pass aggregation ──────────────────────────────────────────────
+  // Counters: uptSt[upt][status], kvSt[kv][status], jenisSt[jenis][status],
+  //           usiaSt[bucketIdx][status], stCount[status]
+  const uptSt={}, kvSt={}, jenisSt={}, usiaSt={}, stCount={};
+  ST_LST.forEach(s=>stCount[s]=0);
+
+  filtered.forEach(r=>{
+    const st=r._se, upt=r.Upt||'', kv=r._kv||'', jen=r['#']||'';
+    // status total
+    if(stCount[st]!==undefined) stCount[st]++;
+    // UPT
+    if(upt&&upt!=='-'){
+      if(!uptSt[upt]) uptSt[upt]={};
+      uptSt[upt][st]=(uptSt[upt][st]||0)+1;
+    }
+    // kV
+    if(kv){
+      if(!kvSt[kv]) kvSt[kv]={};
+      kvSt[kv][st]=(kvSt[kv][st]||0)+1;
+    }
+    // Jenis
+    if(jen){
+      if(!jenisSt[jen]) jenisSt[jen]={};
+      jenisSt[jen][st]=(jenisSt[jen][st]||0)+1;
+    }
+    // Usia bucket
+    if(r._age!=null){
+      const bi=USIA_BUCKETS.findIndex(b=>r._age>=b.min&&r._age<=b.max);
+      if(bi>=0){
+        if(!usiaSt[bi]) usiaSt[bi]={};
+        usiaSt[bi][st]=(usiaSt[bi][st]||0)+1;
+      }
+    }
+  });
+
+  const upts=Object.keys(uptSt).sort();
+  const kvs=Object.keys(kvSt).map(Number).sort((a,b)=>a-b);
+  const jenis=Object.keys(jenisSt).sort();
+
+  // ── Donut ────────────────────────────────────────────────────────────────
   dc('d');
-  const dc_counts=ST_LST.map(s=>filtered.filter(r=>r._se===s).length);
+  const dc_counts=ST_LST.map(s=>stCount[s]||0);
   charts.d=new Chart(document.getElementById('donutC').getContext('2d'),{
     type:'doughnut',
     data:{labels:ST_LST,datasets:[{data:dc_counts,backgroundColor:ST_COL,borderWidth:2,borderColor:'#13161b'}]},
@@ -561,16 +647,20 @@ function updCharts(){
     `<div class="li"><span class="ld" style="background:${ST_COL[i]}"></span><span class="ln">${s}</span><span class="lv">${dc_counts[i].toLocaleString('id-ID')}</span></div>`
   ).join('');
 
-  // UPT — horizontal stacked bar
+  // ── UPT horizontal stacked ───────────────────────────────────────────────
   dc('u');
-  const upts=[...new Set(filtered.map(r=>r.Upt).filter(v=>v&&v!=='-'))].sort();
   charts.u=new Chart(document.getElementById('uptC').getContext('2d'),{
     type:'bar',
-    data:{labels:upts.map(u=>u.replace('UPT ','')),
-      datasets:ST_LST.map((s,i)=>({label:s,data:upts.map(u=>filtered.filter(r=>r.Upt===u&&r._se===s).length),backgroundColor:ST_COL[i],borderRadius:3,borderSkipped:false}))},
+    data:{
+      labels:upts.map(u=>u.replace('UPT ','')),
+      datasets:ST_LST.map((s,i)=>({
+        label:s,
+        data:upts.map(u=>(uptSt[u]&&uptSt[u][s])||0),
+        backgroundColor:ST_COL[i],borderRadius:3,borderSkipped:false
+      }))
+    },
     options:{
-      indexAxis:'y',
-      responsive:true,maintainAspectRatio:false,
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
       scales:{
         x:{stacked:true,ticks:{color:'#8a9099',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},
@@ -579,47 +669,48 @@ function updCharts(){
     }
   });
 
-  // kV clusters
+  // ── kV clusters ──────────────────────────────────────────────────────────
   dc('kv');
-  const kvs=[...new Set(filtered.map(r=>r._kv).filter(Boolean))].sort((a,b)=>a-b);
   charts.kv=new Chart(document.getElementById('kvC').getContext('2d'),{
     type:'bar',
-    data:{labels:kvs.map(k=>k+' kV'),
-      datasets:ST_LST.map((s,i)=>({label:s,data:kvs.map(kv=>filtered.filter(r=>r._kv===kv&&r._se===s).length),backgroundColor:ST_COL[i],borderRadius:3,borderSkipped:false}))},
+    data:{
+      labels:kvs.map(k=>k+' kV'),
+      datasets:ST_LST.map((s,i)=>({
+        label:s,
+        data:kvs.map(kv=>(kvSt[kv]&&kvSt[kv][s])||0),
+        backgroundColor:ST_COL[i],borderRadius:3,borderSkipped:false
+      }))
+    },
     options:copt(true,false)
   });
 
-  // Jenis MTU
+  // ── Jenis MTU ─────────────────────────────────────────────────────────────
   dc('j');
-  const jenis=[...new Set(filtered.map(r=>r['#']).filter(Boolean))].sort();
   charts.j=new Chart(document.getElementById('jenisC').getContext('2d'),{
     type:'bar',
-    data:{labels:jenis,
-      datasets:ST_LST.map((s,i)=>({label:s,data:jenis.map(j=>filtered.filter(r=>r['#']===j&&r._se===s).length),backgroundColor:ST_COL[i],borderRadius:3,borderSkipped:false}))},
+    data:{
+      labels:jenis,
+      datasets:ST_LST.map((s,i)=>({
+        label:s,
+        data:jenis.map(j=>(jenisSt[j]&&jenisSt[j][s])||0),
+        backgroundColor:ST_COL[i],borderRadius:3,borderSkipped:false
+      }))
+    },
     options:copt(true,true)
   });
 
-  // Usia distribusi — grouped bar: jumlah MTU per bucket + warna per status
+  // ── Usia distribusi ───────────────────────────────────────────────────────
   dc('us');
-  const uBkts=USIA_BUCKETS.map(b=>({
-    ...b,
-    rows:filtered.filter(r=>r._age!=null && r._age>=b.min && r._age<=b.max)
-  }));
+  const GRAD=['#14b8a6','#22c55e','#84cc16','#eab308','#f59e0b','#f97316','#ef4444','#b91c1c'];
   charts.us=new Chart(document.getElementById('usiaC').getContext('2d'),{
     type:'bar',
     data:{
-      labels:uBkts.map(b=>b.lbl),
+      labels:USIA_BUCKETS.map(b=>b.lbl),
       datasets:[{
         label:'Jumlah MTU',
-        data:uBkts.map(b=>b.rows.length),
-        backgroundColor:uBkts.map(b=>{
-          // warna gradien biru muda → merah sesuai usia
-          const idx=USIA_BUCKETS.indexOf(b);
-          const grad=['#14b8a6','#22c55e','#84cc16','#eab308','#f59e0b','#f97316','#ef4444','#b91c1c'];
-          return grad[idx]||'#555c66';
-        }),
-        borderRadius:4,
-        borderSkipped:false
+        data:USIA_BUCKETS.map((_,i)=>Object.values(usiaSt[i]||{}).reduce((a,b)=>a+b,0)),
+        backgroundColor:USIA_BUCKETS.map((_,i)=>GRAD[i]),
+        borderRadius:4,borderSkipped:false
       }]
     },
     options:{
@@ -627,12 +718,8 @@ function updCharts(){
       plugins:{legend:{display:false},tooltip:{callbacks:{
         label:c=>`${c.raw.toLocaleString('id-ID')} MTU`,
         afterLabel:c=>{
-          const bkt=uBkts[c.dataIndex];
-          const n=bkt.rows.length; if(!n) return '';
-          return ST_LST.map(s=>{
-            const cnt=bkt.rows.filter(r=>r._se===s).length;
-            return cnt?`  ${s}: ${cnt}`:'';
-          }).filter(Boolean).join('\n');
+          const bi=c.dataIndex, bst=usiaSt[bi]||{};
+          return ST_LST.map(s=>bst[s]?`  ${s}: ${bst[s]}`:'').filter(Boolean).join('\n');
         }
       }}},
       scales:{
@@ -642,7 +729,7 @@ function updCharts(){
     }
   });
 
-  // Usia × Status — stacked bar
+  // ── Usia × Status stacked ─────────────────────────────────────────────────
   dc('ust');
   charts.ust=new Chart(document.getElementById('usiaStC').getContext('2d'),{
     type:'bar',
@@ -650,9 +737,7 @@ function updCharts(){
       labels:USIA_BUCKETS.map(b=>b.lbl),
       datasets:ST_LST.map((s,i)=>({
         label:s,
-        data:USIA_BUCKETS.map(b=>
-          filtered.filter(r=>r._age!=null&&r._age>=b.min&&r._age<=b.max&&r._se===s).length
-        ),
+        data:USIA_BUCKETS.map((_,bi)=>(usiaSt[bi]&&usiaSt[bi][s])||0),
         backgroundColor:ST_COL[i],borderRadius:3,borderSkipped:false
       }))
     },
