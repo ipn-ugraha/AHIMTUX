@@ -9,919 +9,707 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-  :root {
-    --bg: #0d0f12;
-    --bg2: #13161b;
-    --bg3: #1a1e25;
-    --bg4: #22272f;
-    --border: rgba(255,255,255,0.07);
-    --border2: rgba(255,255,255,0.12);
-    --text: #e8eaed;
-    --text2: #8a9099;
-    --text3: #555c66;
-    --accent: #3b82f6;
-    --accent2: #1d4ed8;
-    --red: #ef4444;
-    --red-bg: rgba(239,68,68,0.1);
-    --red-border: rgba(239,68,68,0.25);
-    --amber: #f59e0b;
-    --amber-bg: rgba(245,158,11,0.1);
-    --amber-border: rgba(245,158,11,0.25);
-    --green: #22c55e;
-    --green-bg: rgba(34,197,94,0.1);
-    --green-border: rgba(34,197,94,0.25);
-    --teal: #14b8a6;
-    --teal-bg: rgba(20,184,166,0.1);
-    --font: 'IBM Plex Sans', sans-serif;
-    --mono: 'IBM Plex Mono', monospace;
-    --radius: 8px;
-    --radius-lg: 12px;
-  }
+:root{
+  --bg:#0d0f12;--bg2:#13161b;--bg3:#1a1e25;--bg4:#22272f;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#e8eaed;--text2:#8a9099;--text3:#555c66;
+  --accent:#3b82f6;--accent2:#1d4ed8;
+  --red:#ef4444;--red-bg:rgba(239,68,68,0.1);--red-bdr:rgba(239,68,68,0.25);
+  --amb:#f59e0b;--amb-bg:rgba(245,158,11,0.1);--amb-bdr:rgba(245,158,11,0.25);
+  --yel:#eab308;
+  --grn:#22c55e;--grn-bg:rgba(34,197,94,0.1);--grn-bdr:rgba(34,197,94,0.25);
+  --tel:#14b8a6;--pur:#a78bfa;
+  --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;
+  --r:8px;--rl:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.6;min-height:100vh}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:200}
+.logo{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--accent);letter-spacing:.05em}
+.tdiv{width:1px;height:18px;background:var(--border)}
+.ttitle{font-size:12px;color:var(--text2)}
+.tright{display:flex;align-items:center;gap:10px}
+#last-update{font-family:var(--mono);font-size:11px;color:var(--text3)}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font);
-    font-size: 14px;
-    line-height: 1.6;
-    min-height: 100vh;
-  }
+/* TOGGLE BAR */
+.toggle-bar{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.tbar-lbl{font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.tgrp{display:flex;align-items:center;gap:8px}
+.tdesc{font-size:12px;color:var(--text2)}
+.tsw{position:relative;width:36px;height:20px;cursor:pointer;flex-shrink:0}
+.tsw input{opacity:0;width:0;height:0}
+.tslider{position:absolute;inset:0;background:var(--bg4);border-radius:20px;transition:.2s;border:1px solid var(--border2)}
+.tslider::before{content:'';position:absolute;width:14px;height:14px;left:2px;top:2px;background:var(--text3);border-radius:50%;transition:.2s}
+.tsw input:checked+.tslider{background:rgba(34,197,94,.2);border-color:var(--grn)}
+.tsw input:checked+.tslider::before{background:var(--grn);transform:translateX(16px)}
+.tbadge{font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:4px;background:var(--grn-bg);color:var(--grn);border:1px solid var(--grn-bdr);display:none}
+.tbadge.on{display:inline}
+#gkbadge{margin-left:auto;display:none;align-items:center;gap:6px;background:var(--red-bg);border:1px solid var(--red-bdr);padding:3px 10px;border-radius:20px;font-size:11px;color:var(--red);font-family:var(--mono)}
+.bdot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
-  /* TOPBAR */
-  .topbar {
-    background: var(--bg2);
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 56px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .topbar-left { display: flex; align-items: center; gap: 16px; }
-  .logo {
-    font-family: var(--mono);
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--accent);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-  .topbar-divider { width: 1px; height: 20px; background: var(--border); }
-  .topbar-title { font-size: 13px; color: var(--text2); }
-  .topbar-right { display: flex; align-items: center; gap: 12px; }
-  #last-update { font-family: var(--mono); font-size: 11px; color: var(--text3); }
-  #gi-kritikal-badge {
-    display: flex; align-items: center; gap: 6px;
-    background: var(--red-bg); border: 1px solid var(--red-border);
-    padding: 3px 10px; border-radius: 20px;
-    font-size: 11px; color: var(--red);
-    font-family: var(--mono);
-  }
-  .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red); animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.main{padding:16px 24px;max-width:1700px;margin:0 auto}
 
-  /* MAIN LAYOUT */
-  .main { padding: 20px 24px; max-width: 1600px; margin: 0 auto; }
+/* FILTER BAR */
+.fbar{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:12px 14px;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:16px}
+.fg{display:flex;flex-direction:column;gap:3px}
+.fl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono)}
+.fs,.fi{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:5px 9px;border-radius:var(--r);font-family:var(--font);font-size:12px;cursor:pointer;outline:none;transition:border-color .15s;appearance:none;-webkit-appearance:none}
+.fs:focus,.fi:focus{border-color:var(--accent)}
+.fi{min-width:190px}
+.fbtn{background:var(--accent);color:#fff;border:none;padding:6px 14px;border-radius:var(--r);font-size:12px;cursor:pointer;font-family:var(--font);font-weight:500;align-self:flex-end}
+.fbtn:hover{background:var(--accent2)}
+.fbtn.rst{background:transparent;color:var(--text2);border:1px solid var(--border2)}
+.fbtn.rst:hover{background:var(--bg3)}
+.fcnt{align-self:flex-end;font-family:var(--mono);font-size:11px;color:var(--text3);padding-bottom:6px;margin-left:auto}
+.fcnt span{color:var(--accent)}
+select option{background:#22272f}
 
-  /* FILTERS */
-  .filter-bar {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 14px 16px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: flex-end;
-    margin-bottom: 20px;
-  }
-  .filter-group { display: flex; flex-direction: column; gap: 4px; min-width: 130px; }
-  .filter-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--mono); }
-  .filter-select, .filter-input {
-    background: var(--bg3);
-    border: 1px solid var(--border2);
-    color: var(--text);
-    padding: 6px 10px;
-    border-radius: var(--radius);
-    font-family: var(--font);
-    font-size: 13px;
-    cursor: pointer;
-    outline: none;
-    transition: border-color 0.15s;
-    appearance: none;
-    -webkit-appearance: none;
-  }
-  .filter-select:hover, .filter-input:hover { border-color: rgba(255,255,255,0.22); }
-  .filter-select:focus, .filter-input:focus { border-color: var(--accent); }
-  .filter-input { min-width: 200px; }
-  .filter-btn {
-    background: var(--accent); color: #fff;
-    border: none; padding: 7px 16px;
-    border-radius: var(--radius); font-size: 13px;
-    cursor: pointer; font-family: var(--font);
-    font-weight: 500; transition: background 0.15s;
-    align-self: flex-end;
-  }
-  .filter-btn:hover { background: var(--accent2); }
-  .filter-btn.reset {
-    background: transparent; color: var(--text2);
-    border: 1px solid var(--border2);
-  }
-  .filter-btn.reset:hover { border-color: var(--border2); background: var(--bg3); }
-  .filter-count {
-    align-self: flex-end;
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--text3);
-    padding-bottom: 8px;
-    margin-left: auto;
-  }
-  .filter-count span { color: var(--accent); }
+/* STATS */
+.srow{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px;margin-bottom:16px}
+.sc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:12px 14px}
+.sc:hover{border-color:var(--border2)}
+.sl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono);margin-bottom:5px}
+.sv{font-size:24px;font-weight:600;line-height:1;margin-bottom:2px}
+.ss{font-size:10px;color:var(--text3);font-family:var(--mono)}
 
-  /* STATS ROW */
-  .stats-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-  .stat-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 16px;
-    transition: border-color 0.15s;
-  }
-  .stat-card:hover { border-color: var(--border2); }
-  .stat-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--mono); margin-bottom: 8px; }
-  .stat-value { font-size: 28px; font-weight: 600; line-height: 1; margin-bottom: 4px; }
-  .stat-sub { font-size: 11px; color: var(--text3); font-family: var(--mono); }
-  .stat-critical .stat-value { color: var(--red); }
-  .stat-poor .stat-value { color: var(--amber); }
-  .stat-good .stat-value { color: var(--green); }
-  .stat-total .stat-value { color: var(--text); }
-  .stat-gi .stat-value { color: var(--teal); }
+/* CHARTS */
+.cgrid1{display:grid;grid-template-columns:230px 1fr;gap:12px;margin-bottom:12px}
+.cgrid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.ccard{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px}
+.ctitle{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono);margin-bottom:10px}
+.dwrap{position:relative;height:145px;width:145px;margin:0 auto}
+.leglist{margin-top:10px;display:flex;flex-direction:column;gap:5px}
+.li{display:flex;align-items:center;gap:7px;font-size:11px}
+.ld{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.ln{color:var(--text2);flex:1}
+.lv{font-family:var(--mono);font-size:10px;color:var(--text3)}
+.cwrap{position:relative;height:205px}
+.cwrap2{position:relative;height:225px}
 
-  /* CHARTS ROW */
-  .charts-row {
-    display: grid;
-    grid-template-columns: 260px 1fr;
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-  .chart-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 16px;
-  }
-  .chart-title { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--mono); margin-bottom: 12px; }
-  .donut-wrap { position: relative; height: 160px; width: 160px; margin: 0 auto; }
-  .legend-list { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
-  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
-  .legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
-  .legend-name { color: var(--text2); flex: 1; }
-  .legend-val { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+/* TABLE */
+.tsec{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.thead{padding:11px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.thead-l{font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em}
+.thead-hint{font-size:10px;color:var(--text3);margin-left:8px;font-family:var(--font);text-transform:none;letter-spacing:0}
+.thead-r{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.tab{background:transparent;border:1px solid transparent;color:var(--text3);font-size:11px;padding:3px 10px;border-radius:var(--r);cursor:pointer;font-family:var(--font);transition:all .15s}
+.tab:hover{color:var(--text);background:var(--bg3)}
+.tab.on{background:var(--bg3);border-color:var(--border2);color:var(--text)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:var(--bg3);padding:7px 10px;text-align:left;font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+thead th:hover{color:var(--text2)}
+thead th.sa::after{content:' ↑';color:var(--accent)}
+thead th.sd::after{content:' ↓';color:var(--accent)}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:hover{background:rgba(255,255,255,0.02)}
+tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
 
-  /* UPT bar chart */
-  .bar-chart-wrap { position: relative; height: 220px; }
+/* BAY rows */
+tr.bay-row{}
+tr.bay-row td:nth-child(3){color:var(--text);font-weight:500}
+.bay-tgl{cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.bay-tgl:hover .bname{color:var(--accent);text-decoration:underline}
+.exp-icon{color:var(--text3);font-size:10px;transition:transform .2s;display:inline-block;width:10px;text-align:center}
+.exp-icon.open{transform:rotate(90deg)}
 
-  /* TABLE SECTION */
-  .table-section {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-  }
-  .table-header {
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-  .table-header-left { font-size: 11px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.06em; }
-  .table-header-right { display: flex; gap: 8px; align-items: center; }
-  .tab-btn {
-    background: transparent; border: 1px solid transparent;
-    color: var(--text3); font-size: 12px;
-    padding: 4px 12px; border-radius: var(--radius);
-    cursor: pointer; font-family: var(--font);
-    transition: all 0.15s;
-  }
-  .tab-btn:hover { color: var(--text); background: var(--bg3); }
-  .tab-btn.active { background: var(--bg3); border-color: var(--border2); color: var(--text); }
+/* MTU sub-rows */
+tr.mtu-row td{padding:5px 10px;font-size:11px;color:var(--text3);background:rgba(59,130,246,0.02)}
+tr.mtu-row:hover td{background:rgba(59,130,246,0.05)}
 
-  .table-wrap { overflow-x: auto; }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12px;
-  }
-  thead th {
-    background: var(--bg3);
-    padding: 10px 12px;
-    text-align: left;
-    font-size: 10px;
-    color: var(--text3);
-    font-family: var(--mono);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    white-space: nowrap;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    user-select: none;
-  }
-  thead th:hover { color: var(--text2); }
-  thead th.sort-asc::after { content: ' ↑'; color: var(--accent); }
-  thead th.sort-desc::after { content: ' ↓'; color: var(--accent); }
-  tbody tr {
-    border-bottom: 1px solid var(--border);
-    transition: background 0.1s;
-  }
-  tbody tr:hover { background: var(--bg3); }
-  tbody td { padding: 9px 12px; color: var(--text2); white-space: nowrap; }
-  tbody td:first-child { color: var(--text); font-weight: 500; }
+/* BADGES */
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.03em;white-space:nowrap}
+.b-cr{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bdr)}
+.b-po{background:var(--amb-bg);color:var(--amb);border:1px solid var(--amb-bdr)}
+.b-fa{background:rgba(234,179,8,.1);color:var(--yel);border:1px solid rgba(234,179,8,.25)}
+.b-go{background:var(--grn-bg);color:var(--grn);border:1px solid var(--grn-bdr)}
+.b-vg{background:rgba(20,184,166,.1);color:var(--tel);border:1px solid rgba(20,184,166,.25)}
+.b-ex{background:rgba(239,68,68,.08);color:#f87171;border:1px solid rgba(239,68,68,.18)}
+.b-st{background:rgba(245,158,11,.08);color:#fbbf24;border:1px solid rgba(245,158,11,.18)}
+.b-mo{background:rgba(99,102,241,.08);color:#818cf8;border:1px solid rgba(99,102,241,.18)}
+.b-re{background:rgba(34,197,94,.08);color:#4ade80;border:1px solid rgba(34,197,94,.18)}
+.b-adj{background:rgba(34,197,94,.15);color:var(--grn);border:1px dashed var(--grn-bdr);font-size:9px;margin-left:4px}
+.gkd{width:5px;height:5px;border-radius:50%;background:var(--red);display:inline-block;margin-right:3px;vertical-align:middle;flex-shrink:0}
 
-  /* STATUS BADGES */
-  .badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-family: var(--mono);
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    white-space: nowrap;
-  }
-  .badge-critical { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
-  .badge-poor { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
-  .badge-fair { background: rgba(234,179,8,0.1); color: #eab308; border: 1px solid rgba(234,179,8,0.25); }
-  .badge-good { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
-  .badge-very-good { background: rgba(20,184,166,0.1); color: var(--teal); border: 1px solid rgba(20,184,166,0.25); }
-  .badge-extreme { background: rgba(239,68,68,0.08); color: #f87171; border: 1px solid rgba(239,68,68,0.18); }
-  .badge-tinggi { background: rgba(245,158,11,0.08); color: #fbbf24; border: 1px solid rgba(245,158,11,0.18); }
-  .badge-moderat { background: rgba(99,102,241,0.08); color: #818cf8; border: 1px solid rgba(99,102,241,0.18); }
-  .badge-rendah { background: rgba(34,197,94,0.08); color: #4ade80; border: 1px solid rgba(34,197,94,0.18); }
+/* HI BAR */
+.hiwrap{display:flex;align-items:center;gap:6px}
+.hibar{height:4px;border-radius:2px;min-width:2px}
+.hival{font-family:var(--mono);font-size:11px;color:var(--text2);min-width:26px}
 
-  /* NILAI HI BAR */
-  .hi-bar-wrap { display: flex; align-items: center; gap: 8px; }
-  .hi-bar { height: 4px; border-radius: 2px; min-width: 2px; }
-  .hi-val { font-family: var(--mono); font-size: 11px; color: var(--text2); min-width: 30px; }
+/* PAGINATION */
+.pag{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border)}
+.pag-info{color:var(--text3);font-family:var(--mono);font-size:11px}
+.pag-btns{display:flex;gap:5px}
+.pb{background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:3px 8px;border-radius:var(--r);cursor:pointer;font-size:11px;font-family:var(--font);transition:all .12s}
+.pb:hover{border-color:var(--border2);color:var(--text)}
+.pb.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.pb:disabled{opacity:.3;cursor:not-allowed}
 
-  /* GI KRITIKAL indicator */
-  .gi-krit-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red); display: inline-block; margin-right: 4px; }
+/* LOADING */
+.lov{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:14px}
+.llogo{font-family:var(--mono);font-size:16px;color:var(--accent);letter-spacing:.1em}
+.lbw{width:180px;height:2px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.lb{height:100%;background:var(--accent);border-radius:2px;animation:lba 1.5s ease-in-out infinite}
+@keyframes lba{0%{width:0%;margin-left:0}50%{width:60%;margin-left:40%}100%{width:0%;margin-left:100%}}
+.ltxt{font-size:12px;color:var(--text3)}
+.empty{padding:32px;text-align:center;color:var(--text3);font-size:12px}
 
-  /* PAGINATION */
-  .pagination {
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-top: 1px solid var(--border);
-    font-size: 12px;
-  }
-  .pagination-info { color: var(--text3); font-family: var(--mono); }
-  .pagination-btns { display: flex; gap: 6px; }
-  .page-btn {
-    background: var(--bg3); border: 1px solid var(--border);
-    color: var(--text2); padding: 4px 10px;
-    border-radius: var(--radius); cursor: pointer;
-    font-size: 12px; font-family: var(--font);
-    transition: all 0.12s;
-  }
-  .page-btn:hover { border-color: var(--border2); color: var(--text); }
-  .page-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
-  /* LOADING */
-  .loading-overlay {
-    position: fixed; inset: 0;
-    background: var(--bg);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    z-index: 999; gap: 16px;
-  }
-  .loading-logo { font-family: var(--mono); font-size: 16px; color: var(--accent); letter-spacing: 0.1em; }
-  .loading-bar-wrap { width: 200px; height: 2px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
-  .loading-bar { height: 100%; background: var(--accent); border-radius: 2px; animation: loadbar 1.5s ease-in-out infinite; }
-  @keyframes loadbar { 0%{width:0%;margin-left:0} 50%{width:60%;margin-left:40%} 100%{width:0%;margin-left:100%} }
-  .loading-text { font-size: 12px; color: var(--text3); }
-
-  /* EMPTY STATE */
-  .empty-state { padding: 40px; text-align: center; color: var(--text3); font-size: 13px; }
-
-  /* TOOLTIP for GI */
-  .gi-name { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
-
-  /* RESPONSIVE */
-  @media (max-width: 900px) {
-    .charts-row { grid-template-columns: 1fr; }
-    .main { padding: 12px; }
-    .topbar { padding: 0 12px; }
-    .topbar-title { display: none; }
-  }
-
-  select option { background: #22272f; }
+@media(max-width:900px){
+  .cgrid1,.cgrid2{grid-template-columns:1fr}
+  .main{padding:10px}
+  .topbar,.toggle-bar{padding:0 12px}
+  .toggle-bar{padding:8px 12px}
+  .ttitle{display:none}
+}
 </style>
 </head>
 <body>
 
-<div class="loading-overlay" id="loading">
-  <div class="loading-logo">AHI · MTU</div>
-  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
-  <div class="loading-text" id="loading-text">Memuat data...</div>
+<div class="lov" id="loading">
+  <div class="llogo">AHI · MTU</div>
+  <div class="lbw"><div class="lb"></div></div>
+  <div class="ltxt" id="ltxt">Memuat data...</div>
 </div>
 
-<!-- TOPBAR -->
 <header class="topbar">
-  <div class="topbar-left">
+  <div style="display:flex;align-items:center;gap:14px">
     <span class="logo">AHI MTU</span>
-    <div class="topbar-divider"></div>
-    <span class="topbar-title">Dashboard Health Index Peralatan — UIT JBM</span>
+    <div class="tdiv"></div>
+    <span class="ttitle">Dashboard Health Index Peralatan — UIT JBM</span>
   </div>
-  <div class="topbar-right">
+  <div class="tright">
     <span id="last-update">—</span>
-    <div id="gi-kritikal-badge" style="display:none">
-      <span class="badge-dot"></span>
-      <span id="gi-kritikal-count">0</span> GI Kritikal
-    </div>
+    <div id="gkbadge"><span class="bdot"></span><span id="gkn">0</span> GI Kritikal</div>
   </div>
 </header>
 
-<!-- MAIN -->
+<div class="toggle-bar">
+  <span class="tbar-lbl">Adjustment:</span>
+  <div class="tgrp">
+    <label class="tsw"><input type="checkbox" id="tog-trafo" onchange="onToggle()"><span class="tslider"></span></label>
+    <span class="tdesc">TRAFO usia &lt;20 th, FAIR → GOOD</span>
+    <span class="tbadge" id="badge-trafo">0 item</span>
+  </div>
+  <div class="tgrp">
+    <label class="tsw"><input type="checkbox" id="tog-pmt" onchange="onToggle()"><span class="tslider"></span></label>
+    <span class="tdesc">PMT usia &lt;15 th, FAIR → GOOD</span>
+    <span class="tbadge" id="badge-pmt">0 item</span>
+  </div>
+</div>
+
 <main class="main">
 
-  <!-- FILTER BAR -->
-  <div class="filter-bar">
-    <div class="filter-group">
-      <span class="filter-label">UPT</span>
-      <select class="filter-select" id="f-upt"><option value="">Semua UPT</option></select>
+  <div class="fbar">
+    <div class="fg">
+      <span class="fl">UPT</span>
+      <select class="fs" id="f-upt" onchange="onUptChange()" style="min-width:150px"><option value="">Semua UPT</option></select>
     </div>
-    <div class="filter-group">
-      <span class="filter-label">GI</span>
-      <select class="filter-select" id="f-gi" style="min-width:180px"><option value="">Semua GI</option></select>
+    <div class="fg">
+      <span class="fl">GI</span>
+      <select class="fs" id="f-gi" onchange="applyFilters()" style="min-width:200px"><option value="">Semua GI</option></select>
     </div>
-    <div class="filter-group">
-      <span class="filter-label">Jenis</span>
-      <select class="filter-select" id="f-jenis"><option value="">Semua</option></select>
+    <div class="fg">
+      <span class="fl">Tegangan GI</span>
+      <select class="fs" id="f-teg" onchange="applyFilters()"><option value="">Semua kV</option></select>
     </div>
-    <div class="filter-group">
-      <span class="filter-label">Tegangan (kV)</span>
-      <select class="filter-select" id="f-tegangan"><option value="">Semua</option></select>
+    <div class="fg">
+      <span class="fl">Jenis MTU</span>
+      <select class="fs" id="f-jenis" onchange="applyFilters()"><option value="">Semua</option></select>
     </div>
-    <div class="filter-group">
-      <span class="filter-label">Status Hi</span>
-      <select class="filter-select" id="f-status">
+    <div class="fg">
+      <span class="fl">Status Hi</span>
+      <select class="fs" id="f-status" onchange="applyFilters()">
         <option value="">Semua</option>
-        <option value="CRITICAL">CRITICAL</option>
-        <option value="POOR">POOR</option>
-        <option value="FAIR">FAIR</option>
-        <option value="GOOD">GOOD</option>
-        <option value="VERY GOOD">VERY GOOD</option>
+        <option>CRITICAL</option><option>POOR</option><option>FAIR</option>
+        <option>GOOD</option><option>VERY GOOD</option>
       </select>
     </div>
-    <div class="filter-group">
-      <span class="filter-label">Criticality GI</span>
-      <select class="filter-select" id="f-criticality">
+    <div class="fg">
+      <span class="fl">Criticality GI</span>
+      <select class="fs" id="f-crit" onchange="applyFilters()">
         <option value="">Semua</option>
-        <option value="EXTREME">EXTREME</option>
-        <option value="SANGAT TINGGI">SANGAT TINGGI</option>
-        <option value="TINGGI">TINGGI</option>
-        <option value="MODERAT">MODERAT</option>
-        <option value="RENDAH">RENDAH</option>
+        <option>EXTREME</option><option>SANGAT TINGGI</option>
+        <option>TINGGI</option><option>MODERAT</option><option>RENDAH</option>
       </select>
     </div>
-    <div class="filter-group">
-      <span class="filter-label">Status Usia</span>
-      <select class="filter-select" id="f-usia">
+    <div class="fg">
+      <span class="fl">Status Usia</span>
+      <select class="fs" id="f-usia" onchange="applyFilters()">
         <option value="">Semua</option>
-        <option value="SANGAT TUA">SANGAT TUA</option>
-        <option value="TUA">TUA</option>
-        <option value="MUDA">MUDA</option>
+        <option>SANGAT TUA</option><option>TUA</option><option>MUDA</option>
       </select>
     </div>
-    <div class="filter-group">
-      <span class="filter-label">GI Kritikal saja</span>
-      <select class="filter-select" id="f-gikrit">
+    <div class="fg">
+      <span class="fl">GI Kritikal</span>
+      <select class="fs" id="f-gk" onchange="applyFilters()">
         <option value="">Semua GI</option>
         <option value="1">Hanya GI Kritikal</option>
       </select>
     </div>
-    <div class="filter-group">
-      <span class="filter-label">Cari Bay / Serial</span>
-      <input type="text" class="filter-input" id="f-search" placeholder="ketik untuk mencari...">
+    <div class="fg">
+      <span class="fl">Cari</span>
+      <input type="text" class="fi" id="f-q" placeholder="Bay, Serial, GI, Merek...">
     </div>
-    <button class="filter-btn reset" onclick="resetFilters()">Reset</button>
-    <div class="filter-count" id="filter-count">Menampilkan <span>—</span> data</div>
+    <button class="fbtn rst" onclick="resetFilters()">Reset</button>
+    <div class="fcnt" id="fcnt">Menampilkan <span>—</span></div>
   </div>
 
-  <!-- STATS ROW -->
-  <div class="stats-row" id="stats-row">
-    <div class="stat-card stat-total">
-      <div class="stat-label">Total Peralatan</div>
-      <div class="stat-value" id="s-total">—</div>
-      <div class="stat-sub" id="s-total-sub">item terfilter</div>
+  <div class="srow">
+    <div class="sc"><div class="sl">Total Item</div><div class="sv" style="color:var(--text)" id="s-n">—</div><div class="ss">peralatan</div></div>
+    <div class="sc"><div class="sl">Jumlah GI</div><div class="sv" style="color:var(--tel)" id="s-gi">—</div><div class="ss">gardu induk</div></div>
+    <div class="sc"><div class="sl">Jumlah Bay</div><div class="sv" style="color:var(--accent)" id="s-bay">—</div><div class="ss">bay unik</div></div>
+    <div class="sc"><div class="sl">CRITICAL</div><div class="sv" style="color:var(--red)" id="s-cr">—</div><div class="ss" id="s-crp">—</div></div>
+    <div class="sc"><div class="sl">POOR</div><div class="sv" style="color:var(--amb)" id="s-po">—</div><div class="ss" id="s-pop">—</div></div>
+    <div class="sc"><div class="sl">FAIR</div><div class="sv" style="color:var(--yel)" id="s-fa">—</div><div class="ss" id="s-fap">—</div></div>
+    <div class="sc"><div class="sl">GOOD + VG</div><div class="sv" style="color:var(--grn)" id="s-go">—</div><div class="ss" id="s-gop">—</div></div>
+    <div class="sc"><div class="sl">Avg Nilai Hi</div><div class="sv" style="color:var(--accent)" id="s-avg">—</div><div class="ss">rata-rata</div></div>
+    <div class="sc"><div class="sl">Max Nilai Hi</div><div class="sv" style="color:var(--red)" id="s-max">—</div><div class="ss" id="s-maxgi">—</div></div>
+    <div class="sc"><div class="sl">Sangat Tua</div><div class="sv" style="color:var(--pur)" id="s-tua">—</div><div class="ss" id="s-tuap">—</div></div>
+  </div>
+
+  <div class="cgrid1">
+    <div class="ccard">
+      <div class="ctitle">Distribusi Status Hi</div>
+      <div class="dwrap"><canvas id="donutC" role="img" aria-label="Donut distribusi status Hi"></canvas></div>
+      <div class="leglist" id="donut-leg"></div>
     </div>
-    <div class="stat-card stat-critical">
-      <div class="stat-label">CRITICAL</div>
-      <div class="stat-value" id="s-critical">—</div>
-      <div class="stat-sub" id="s-critical-pct">—</div>
-    </div>
-    <div class="stat-card stat-poor">
-      <div class="stat-label">POOR</div>
-      <div class="stat-value" id="s-poor">—</div>
-      <div class="stat-sub" id="s-poor-pct">—</div>
-    </div>
-    <div class="stat-card stat-poor" style="--amber:#f59e0b">
-      <div class="stat-label">FAIR</div>
-      <div class="stat-value" style="color:#eab308" id="s-fair">—</div>
-      <div class="stat-sub" id="s-fair-pct">—</div>
-    </div>
-    <div class="stat-card stat-good">
-      <div class="stat-label">GOOD + VG</div>
-      <div class="stat-value" id="s-good">—</div>
-      <div class="stat-sub" id="s-good-pct">—</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Avg Nilai Hi</div>
-      <div class="stat-value" style="color:var(--accent)" id="s-avghi">—</div>
-      <div class="stat-sub">rata-rata skor</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Max Nilai Hi</div>
-      <div class="stat-value" style="color:var(--red)" id="s-maxhi">—</div>
-      <div class="stat-sub" id="s-maxhi-gi">—</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Sangat Tua</div>
-      <div class="stat-value" style="color:#a78bfa" id="s-tua">—</div>
-      <div class="stat-sub" id="s-tua-pct">—</div>
+    <div class="ccard">
+      <div class="ctitle">Status Hi per UPT</div>
+      <div class="cwrap"><canvas id="uptC" role="img" aria-label="Stacked bar per UPT"></canvas></div>
     </div>
   </div>
 
-  <!-- CHARTS ROW -->
-  <div class="charts-row">
-    <div class="chart-card">
-      <div class="chart-title">Distribusi Status Hi</div>
-      <div class="donut-wrap">
-        <canvas id="donutChart" role="img" aria-label="Donut chart distribusi status health index"></canvas>
-      </div>
-      <div class="legend-list" id="donut-legend"></div>
+  <div class="cgrid2">
+    <div class="ccard">
+      <div class="ctitle">Cluster per Level Tegangan GI</div>
+      <div class="cwrap2"><canvas id="kvC" role="img" aria-label="Bar chart per level tegangan"></canvas></div>
     </div>
-    <div class="chart-card">
-      <div class="chart-title">Status Hi per UPT</div>
-      <div class="bar-chart-wrap">
-        <canvas id="uptChart" role="img" aria-label="Stacked bar chart status hi per UPT"></canvas>
-      </div>
+    <div class="ccard">
+      <div class="ctitle">Status Hi per Jenis MTU</div>
+      <div class="cwrap2"><canvas id="jenisC" role="img" aria-label="Stacked bar per jenis MTU"></canvas></div>
     </div>
   </div>
 
-  <!-- TABLE -->
-  <div class="table-section">
-    <div class="table-header">
-      <div class="table-header-left">Data Peralatan</div>
-      <div class="table-header-right">
-        <button class="tab-btn active" onclick="setTab('all', this)">Semua</button>
-        <button class="tab-btn" onclick="setTab('critical', this)">Critical Only</button>
-        <button class="tab-btn" onclick="setTab('gi-krit', this)">GI Kritikal</button>
+  <div class="tsec">
+    <div class="thead">
+      <div class="thead-l">Data Bay &amp; MTU <span class="thead-hint">▶ klik nama Bay untuk detail MTU</span></div>
+      <div class="thead-r">
+        <button class="tab on" onclick="setTab('all',this)">Semua</button>
+        <button class="tab" onclick="setTab('critical',this)">Critical Only</button>
+        <button class="tab" onclick="setTab('gi-krit',this)">GI Kritikal</button>
+        <button class="tab" onclick="expandAll()">Buka Semua</button>
+        <button class="tab" onclick="collapseAll()">Tutup Semua</button>
       </div>
     </div>
-    <div class="table-wrap">
-      <table id="main-table">
+    <div class="tw">
+      <table>
         <thead>
           <tr>
-            <th onclick="sortBy('Jenis')" data-col="Jenis">Jenis</th>
-            <th onclick="sortBy('Upt')" data-col="Upt">UPT</th>
-            <th onclick="sortBy('Gi')" data-col="Gi">GI</th>
-            <th onclick="sortBy('Bay')" data-col="Bay">Bay</th>
-            <th onclick="sortBy('Phasa')" data-col="Phasa">Phasa</th>
-            <th onclick="sortBy('Daya/Tegangan')" data-col="Daya/Tegangan">kV</th>
-            <th onclick="sortBy('Merek')" data-col="Merek">Merek</th>
-            <th onclick="sortBy('Tahun Buat')" data-col="Tahun Buat">Tahun</th>
-            <th onclick="sortBy('Status Usia')" data-col="Status Usia">Usia</th>
-            <th onclick="sortBy('Criticality Gi')" data-col="Criticality Gi">Criticality</th>
-            <th onclick="sortBy('Status Hi')" data-col="Status Hi">Status Hi</th>
-            <th onclick="sortBy('Nilai Hi')" data-col="Nilai Hi">Nilai Hi</th>
-            <th>Justifikasi</th>
+            <th style="width:22px"></th>
+            <th onclick="sb('gi')" data-col="gi">GI</th>
+            <th onclick="sb('bay')" data-col="bay">Bay</th>
+            <th onclick="sb('kv')" data-col="kv">kV</th>
+            <th onclick="sb('crit')" data-col="crit">Criticality</th>
+            <th onclick="sb('worst')" data-col="worst">Worst Status</th>
+            <th onclick="sb('ncr')" data-col="ncr">Critical</th>
+            <th onclick="sb('npo')" data-col="npo">Poor</th>
+            <th onclick="sb('maxhi')" data-col="maxhi">Max Hi</th>
+            <th onclick="sb('nmtu')" data-col="nmtu">MTU</th>
+            <th>UPT</th>
           </tr>
         </thead>
-        <tbody id="table-body"></tbody>
+        <tbody id="tbody"></tbody>
       </table>
     </div>
-    <div class="pagination">
-      <div class="pagination-info" id="page-info">—</div>
-      <div class="pagination-btns" id="page-btns"></div>
+    <div class="pag">
+      <div class="pag-info" id="pi">—</div>
+      <div class="pag-btns" id="pb"></div>
     </div>
   </div>
 
 </main>
 
 <script>
-// ─── CONFIG ────────────────────────────────────────────────────────────────
-const CSV_AHI  = 'AHI_MTU.csv';
-const CSV_KRIT = 'gi_kritikal.csv';
-const PAGE_SIZE = 50;
+const CSV_AHI='AHI_MTU.csv', CSV_KRIT='gi_kritikal.csv';
+const PAGE=40, YR=new Date().getFullYear();
+const VALID_PFX=['GI ','GIS ','GITET ','GISTET '];
+const ST_ORD={'CRITICAL':0,'POOR':1,'FAIR':2,'GOOD':3,'VERY GOOD':4};
+const CRIT_ORD={'EXTREME':0,'SANGAT TINGGI':1,'TINGGI':2,'MODERAT':3,'MODERATE':3,'RENDAH':4};
+const ST_COL=['#ef4444','#f59e0b','#eab308','#22c55e','#14b8a6'];
+const ST_LST=['CRITICAL','POOR','FAIR','GOOD','VERY GOOD'];
 
-// ─── STATE ─────────────────────────────────────────────────────────────────
-let rawData = [];
-let giKritSet = new Set();
-let filteredData = [];
-let currentPage = 1;
-let sortCol = 'Nilai Hi';
-let sortDir = 'desc';
-let activeTab = 'all';
-let donutChart, uptChart;
+let raw=[], giKrit=new Set(), filtered=[], bays=[];
+let page=1, scol='maxhi', sdir='desc', tab='all';
+let expanded=new Set(), charts={};
 
-// ─── STATUS CONFIG ──────────────────────────────────────────────────────────
-const STATUS_COLORS = {
-  'CRITICAL':   { bg:'#ef4444', hex:'#ef4444' },
-  'POOR':       { bg:'#f59e0b', hex:'#f59e0b' },
-  'FAIR':       { bg:'#eab308', hex:'#eab308' },
-  'GOOD':       { bg:'#22c55e', hex:'#22c55e' },
-  'VERY GOOD':  { bg:'#14b8a6', hex:'#14b8a6' },
-};
+async function init(){
+  ld('Memuat GI kritikal...');
+  try{
+    const r=await fetch(CSV_KRIT);
+    Papa.parse(await r.text(),{header:true,skipEmptyLines:true})
+      .data.forEach(x=>{const g=(x.Gi||x.gi||'').trim();if(g)giKrit.add(g);});
+  }catch(e){}
 
-// ─── INIT ───────────────────────────────────────────────────────────────────
-async function init() {
-  setLoading('Memuat daftar GI kritikal...');
-  try {
-    const res1 = await fetch(CSV_KRIT);
-    const txt1 = await res1.text();
-    const p1 = Papa.parse(txt1, { header:true, skipEmptyLines:true });
-    p1.data.forEach(r => { const g = (r.Gi||r.gi||'').trim(); if(g) giKritSet.add(g); });
-    document.getElementById('gi-kritikal-count').textContent = giKritSet.size;
-    document.getElementById('gi-kritikal-badge').style.display = 'flex';
-  } catch(e) { console.warn('gi_kritikal.csv not found'); }
+  ld('Memuat data MTU...');
+  const r2=await fetch(CSV_AHI);
+  ld('Memproses...');
+  const p=Papa.parse(await r2.text(),{header:true,skipEmptyLines:true,dynamicTyping:false});
 
-  setLoading('Memuat data AHI MTU...');
-  const res2 = await fetch(CSV_AHI);
-  const txt2 = await res2.text();
-  setLoading('Memproses data...');
-  const parsed = Papa.parse(txt2, { header:true, skipEmptyLines:true, dynamicTyping:false });
-  rawData = parsed.data.filter(r => r.Gi && r.Gi.trim());
+  raw=p.data.filter(r=>{
+    const gi=(r.Gi||'').trim();
+    return gi && VALID_PFX.some(px=>gi.startsWith(px));
+  });
 
-  // Detect update date
-  const today = new Date();
-  document.getElementById('last-update').textContent = 'Data: ' +
-    today.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+  raw.forEach(r=>{
+    const yr=r['Tahun Operasi']?new Date(r['Tahun Operasi']).getFullYear():null;
+    r._age = yr ? YR-yr : null;
+    r._so  = (r['Status Hi']||'').toUpperCase().trim();
+    r._se  = r._so;
+    r._adj = false;
+    const m=(r.Gi||'').match(/(\d+)KV/i);
+    r._kv  = m?+m[1]:null;
+  });
+
+  updToggle();
+  document.getElementById('last-update').textContent=
+    'Data: '+new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+  const gk=document.getElementById('gkbadge');
+  if(gk){gk.style.display='flex';}
+  document.querySelectorAll('#gkn').forEach(e=>e.textContent=giKrit.size);
 
   buildFilters();
   applyFilters();
-  document.getElementById('loading').style.display = 'none';
+  document.getElementById('loading').style.display='none';
 }
 
-function setLoading(txt) {
-  document.getElementById('loading-text').textContent = txt;
+function ld(t){document.getElementById('ltxt').textContent=t;}
+
+function updToggle(){
+  const nt=raw.filter(r=>r['#']==='TRAFO'&&r._so==='FAIR'&&r._age!=null&&r._age<20).length;
+  const np=raw.filter(r=>r['#']==='PMT'  &&r._so==='FAIR'&&r._age!=null&&r._age<15).length;
+  const bt=document.getElementById('badge-trafo'), bp=document.getElementById('badge-pmt');
+  bt.textContent=nt+' item'; bt.classList.toggle('on',nt>0);
+  bp.textContent=np+' item'; bp.classList.toggle('on',np>0);
 }
 
-// ─── BUILD FILTER DROPDOWNS ─────────────────────────────────────────────────
-function buildFilters() {
-  const upts   = [...new Set(rawData.map(r=>r.Upt).filter(v=>v&&v!=='-'))].sort();
-  const gis    = [...new Set(rawData.map(r=>r.Gi).filter(Boolean))].sort();
-  const jenis  = [...new Set(rawData.map(r=>r['#']).filter(Boolean))].sort();
-  const tegs   = [...new Set(rawData.map(r=>r['Daya/Tegangan']).filter(Boolean))]
-                  .map(Number).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
-
-  fill('f-upt', upts);
-  fill('f-gi', gis);
-  fill('f-jenis', jenis);
-  fill('f-tegangan', tegs.map(t=>({value:t, label:t+' kV'})));
-}
-
-function fill(id, items) {
-  const sel = document.getElementById(id);
-  items.forEach(item => {
-    const opt = document.createElement('option');
-    if(typeof item === 'object') { opt.value = item.value; opt.textContent = item.label; }
-    else { opt.value = item; opt.textContent = item; }
-    sel.appendChild(opt);
+function onToggle(){
+  const tt=document.getElementById('tog-trafo').checked;
+  const tp=document.getElementById('tog-pmt').checked;
+  raw.forEach(r=>{
+    let e=r._so;
+    if(tt&&r['#']==='TRAFO'&&r._so==='FAIR'&&r._age!=null&&r._age<20) e='GOOD';
+    if(tp&&r['#']==='PMT'  &&r._so==='FAIR'&&r._age!=null&&r._age<15) e='GOOD';
+    r._se=e; r._adj=(e!==r._so);
   });
-}
-
-// ─── FILTER LOGIC ───────────────────────────────────────────────────────────
-function getFilters() {
-  return {
-    upt:        document.getElementById('f-upt').value,
-    gi:         document.getElementById('f-gi').value,
-    jenis:      document.getElementById('f-jenis').value,
-    tegangan:   document.getElementById('f-tegangan').value,
-    status:     document.getElementById('f-status').value,
-    criticality:document.getElementById('f-criticality').value,
-    usia:       document.getElementById('f-usia').value,
-    giKrit:     document.getElementById('f-gikrit').value,
-    search:     document.getElementById('f-search').value.trim().toLowerCase(),
-  };
-}
-
-function applyFilters() {
-  const f = getFilters();
-  let data = rawData;
-
-  if(f.upt)        data = data.filter(r => r.Upt === f.upt);
-  if(f.gi)         data = data.filter(r => r.Gi === f.gi);
-  if(f.jenis)      data = data.filter(r => r['#'] === f.jenis);
-  if(f.tegangan)   data = data.filter(r => r['Daya/Tegangan'] == f.tegangan);
-  if(f.status)     data = data.filter(r => (r['Status Hi']||'').toUpperCase() === f.status.toUpperCase());
-  if(f.criticality)data = data.filter(r => (r['Criticality Gi']||'').toUpperCase().includes(f.criticality.toUpperCase()));
-  if(f.usia)       data = data.filter(r => (r['Status Usia']||'').toUpperCase() === f.usia.toUpperCase());
-  if(f.giKrit==='1') data = data.filter(r => giKritSet.has((r.Gi||'').trim()));
-  if(f.search)     data = data.filter(r =>
-    (r.Bay||'').toLowerCase().includes(f.search) ||
-    (r['Serial Id']||'').toLowerCase().includes(f.search) ||
-    (r.Gi||'').toLowerCase().includes(f.search) ||
-    (r.Merek||'').toLowerCase().includes(f.search)
-  );
-
-  // Tab filter
-  if(activeTab === 'critical') data = data.filter(r => (r['Status Hi']||'').toUpperCase() === 'CRITICAL');
-  if(activeTab === 'gi-krit')  data = data.filter(r => giKritSet.has((r.Gi||'').trim()));
-
-  filteredData = data;
-  currentPage = 1;
-  updateStats();
-  updateCharts();
-  renderTable();
-  document.getElementById('filter-count').innerHTML = `Menampilkan <span>${filteredData.length.toLocaleString('id-ID')}</span> data`;
-}
-
-function resetFilters() {
-  ['f-upt','f-gi','f-jenis','f-tegangan','f-status','f-criticality','f-usia','f-gikrit'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  document.getElementById('f-search').value = '';
-  activeTab = 'all';
-  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
   applyFilters();
 }
 
-// ─── STATS ──────────────────────────────────────────────────────────────────
-function updateStats() {
-  const d = filteredData;
-  const n = d.length;
-  const count = st => d.filter(r=>(r['Status Hi']||'').toUpperCase()===st).length;
-  const crit = count('CRITICAL'), poor = count('POOR'), fair = count('FAIR');
-  const good = d.filter(r=>['GOOD','VERY GOOD'].includes((r['Status Hi']||'').toUpperCase())).length;
-  const tua  = d.filter(r=>(r['Status Usia']||'').toUpperCase()==='SANGAT TUA').length;
-  const hiVals = d.map(r=>+r['Nilai Hi']).filter(v=>!isNaN(v)&&v>0);
-  const avg = hiVals.length ? (hiVals.reduce((a,b)=>a+b,0)/hiVals.length) : 0;
-  const maxHi = hiVals.length ? Math.max(...hiVals) : 0;
-  const maxRow = d.find(r=>+r['Nilai Hi']===maxHi);
-
-  setText('s-total', n.toLocaleString('id-ID'));
-  setText('s-critical', crit.toLocaleString('id-ID'));
-  setText('s-critical-pct', pct(crit,n));
-  setText('s-poor', poor.toLocaleString('id-ID'));
-  setText('s-poor-pct', pct(poor,n));
-  setText('s-fair', fair.toLocaleString('id-ID'));
-  setText('s-fair-pct', pct(fair,n));
-  setText('s-good', good.toLocaleString('id-ID'));
-  setText('s-good-pct', pct(good,n));
-  setText('s-avghi', avg.toFixed(1));
-  setText('s-maxhi', maxHi);
-  setText('s-maxhi-gi', maxRow ? shortGi(maxRow.Gi) : '—');
-  setText('s-tua', tua.toLocaleString('id-ID'));
-  setText('s-tua-pct', pct(tua,n));
+function buildFilters(){
+  const upts=[...new Set(raw.map(r=>r.Upt).filter(v=>v&&v!=='-'))].sort();
+  fillS('f-upt',upts);
+  buildGiOpts('');
+  const kvs=[...new Set(raw.map(r=>r._kv).filter(Boolean))].sort((a,b)=>a-b);
+  fillS('f-teg',kvs.map(v=>({v,l:v+' kV'})));
+  const jenis=[...new Set(raw.map(r=>r['#']).filter(Boolean))].sort();
+  fillS('f-jenis',jenis);
 }
 
-function pct(v,n) { return n ? (v/n*100).toFixed(1)+'%' : '—'; }
-function setText(id,v) { const el=document.getElementById(id); if(el) el.textContent=v; }
-function shortGi(gi) { return (gi||'').replace('GI 150KV ','').replace('GITET 500KV ','').replace('GI 70KV ','').replace('GIS 150KV ','').replace('GISTET 500KV ',''); }
-
-// ─── CHARTS ─────────────────────────────────────────────────────────────────
-function updateCharts() {
-  updateDonut();
-  updateUptChart();
-}
-
-function updateDonut() {
-  const order = ['CRITICAL','POOR','FAIR','GOOD','VERY GOOD'];
-  const counts = order.map(s => filteredData.filter(r=>(r['Status Hi']||'').toUpperCase()===s).length);
-  const colors = order.map(s => STATUS_COLORS[s].hex);
-
-  if(donutChart) donutChart.destroy();
-  const ctx = document.getElementById('donutChart').getContext('2d');
-  donutChart = new Chart(ctx, {
-    type:'doughnut',
-    data: { labels:order, datasets:[{ data:counts, backgroundColor:colors, borderWidth:2, borderColor:'#13161b' }] },
-    options: {
-      responsive:true, maintainAspectRatio:false,
-      cutout:'68%',
-      plugins: { legend:{display:false}, tooltip:{
-        callbacks:{ label: ctx => ` ${ctx.label}: ${ctx.raw.toLocaleString('id-ID')}` }
-      }}
-    }
+function buildGiOpts(upt){
+  const sel=document.getElementById('f-gi'), cur=sel.value;
+  while(sel.options.length>1) sel.remove(1);
+  let rows=upt?raw.filter(r=>r.Upt===upt):raw;
+  const gis=[...new Set(rows.map(r=>r.Gi).filter(Boolean))].sort();
+  gis.forEach(g=>{
+    const o=document.createElement('option');
+    o.value=g; o.textContent=(giKrit.has(g)?'● ':'')+g;
+    sel.appendChild(o);
   });
+  sel.value=gis.includes(cur)?cur:'';
+}
 
-  // Legend
-  const leg = document.getElementById('donut-legend');
-  leg.innerHTML = '';
-  order.forEach((s,i) => {
-    leg.innerHTML += `<div class="legend-item">
-      <span class="legend-dot" style="background:${colors[i]}"></span>
-      <span class="legend-name">${s}</span>
-      <span class="legend-val">${counts[i].toLocaleString('id-ID')}</span>
-    </div>`;
+function fillS(id,items){
+  const s=document.getElementById(id);
+  items.forEach(x=>{
+    const o=document.createElement('option');
+    if(typeof x==='object'){o.value=x.v;o.textContent=x.l;}else{o.value=x;o.textContent=x;}
+    s.appendChild(o);
   });
 }
 
-function updateUptChart() {
-  const upts = [...new Set(filteredData.map(r=>r.Upt).filter(v=>v&&v!=='-'))].sort();
-  const statuses = ['CRITICAL','POOR','FAIR','GOOD','VERY GOOD'];
-  const colors   = ['#ef4444','#f59e0b','#eab308','#22c55e','#14b8a6'];
+function onUptChange(){buildGiOpts(document.getElementById('f-upt').value);applyFilters();}
 
-  const datasets = statuses.map((s,i) => ({
-    label:s,
-    data: upts.map(u => filteredData.filter(r=>r.Upt===u&&(r['Status Hi']||'').toUpperCase()===s).length),
-    backgroundColor: colors[i],
-    borderRadius: 3,
-    borderSkipped: false,
-  }));
-
-  if(uptChart) uptChart.destroy();
-  const ctx = document.getElementById('uptChart').getContext('2d');
-  uptChart = new Chart(ctx, {
-    type:'bar',
-    data:{ labels: upts.map(u=>u.replace('UPT ','')), datasets },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ display:false }, tooltip:{ mode:'index', intersect:false }},
-      scales:{
-        x:{ stacked:true, ticks:{ color:'#8a9099', font:{size:11} }, grid:{color:'rgba(255,255,255,0.04)'} },
-        y:{ stacked:true, ticks:{ color:'#8a9099', font:{size:11} }, grid:{color:'rgba(255,255,255,0.04)'} }
-      }
-    }
-  });
+function getF(){
+  return{
+    upt:  document.getElementById('f-upt').value,
+    gi:   document.getElementById('f-gi').value,
+    teg:  document.getElementById('f-teg').value,
+    jen:  document.getElementById('f-jenis').value,
+    sta:  document.getElementById('f-status').value,
+    crit: document.getElementById('f-crit').value,
+    usia: document.getElementById('f-usia').value,
+    gk:   document.getElementById('f-gk').value,
+    q:    document.getElementById('f-q').value.trim().toLowerCase(),
+  };
 }
 
-// ─── TABLE ──────────────────────────────────────────────────────────────────
-function sortBy(col) {
-  if(sortCol===col) sortDir = sortDir==='asc'?'desc':'asc';
-  else { sortCol=col; sortDir='desc'; }
-  document.querySelectorAll('thead th').forEach(th=>{
-    th.classList.remove('sort-asc','sort-desc');
-    if(th.dataset.col===col) th.classList.add(sortDir==='asc'?'sort-asc':'sort-desc');
-  });
-  currentPage=1;
-  renderTable();
+function applyFilters(){
+  const f=getF();
+  let d=raw;
+  if(f.upt)  d=d.filter(r=>r.Upt===f.upt);
+  if(f.gi)   d=d.filter(r=>r.Gi===f.gi);
+  if(f.teg)  d=d.filter(r=>r._kv==+f.teg);
+  if(f.jen)  d=d.filter(r=>r['#']===f.jen);
+  if(f.sta)  d=d.filter(r=>r._se===f.sta.toUpperCase());
+  if(f.crit) d=d.filter(r=>(r['Criticality Gi']||'').toUpperCase().includes(f.crit.toUpperCase()));
+  if(f.usia) d=d.filter(r=>(r['Status Usia']||'').toUpperCase()===f.usia.toUpperCase());
+  if(f.gk==='1') d=d.filter(r=>giKrit.has((r.Gi||'').trim()));
+  if(f.q)    d=d.filter(r=>
+    (r.Bay||'').toLowerCase().includes(f.q)||
+    (r['Serial Id']||'').toLowerCase().includes(f.q)||
+    (r.Gi||'').toLowerCase().includes(f.q)||
+    (r.Merek||'').toLowerCase().includes(f.q)
+  );
+  if(tab==='critical') d=d.filter(r=>r._se==='CRITICAL');
+  if(tab==='gi-krit')  d=d.filter(r=>giKrit.has((r.Gi||'').trim()));
+
+  filtered=d; page=1;
+  updStats(); updCharts(); buildBays(); renderTable();
+  document.getElementById('fcnt').innerHTML=`Menampilkan <span>${d.length.toLocaleString('id-ID')}</span> item`;
 }
 
-function renderTable() {
-  let data = [...filteredData];
+function resetFilters(){
+  ['f-upt','f-gi','f-teg','f-jenis','f-status','f-crit','f-usia','f-gk']
+    .forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-q').value='';
+  buildGiOpts('');
+  tab='all';
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('on',i===0));
+  applyFilters();
+}
 
-  // Sort
-  data.sort((a,b) => {
-    let va = a[sortCol]||'', vb = b[sortCol]||'';
-    if(sortCol==='Nilai Hi'||sortCol==='Tahun Buat'||sortCol==='Daya/Tegangan') {
-      va=+va||0; vb=+vb||0;
-      return sortDir==='asc'?va-vb:vb-va;
-    }
-    const order = {'CRITICAL':0,'POOR':1,'FAIR':2,'GOOD':3,'VERY GOOD':4};
-    if(sortCol==='Status Hi') {
-      const oa=order[va.toUpperCase()]??5, ob=order[vb.toUpperCase()]??5;
-      return sortDir==='asc'?oa-ob:ob-oa;
-    }
-    const crit = {'EXTREME':0,'SANGAT TINGGI':1,'TINGGI':2,'MODERAT':3,'MODERATE':3,'RENDAH':4};
-    if(sortCol==='Criticality Gi') {
-      const oa=crit[va.toUpperCase()]??5, ob=crit[vb.toUpperCase()]??5;
-      return sortDir==='asc'?oa-ob:ob-oa;
-    }
-    return sortDir==='asc'?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va));
-  });
+function updStats(){
+  const d=filtered, n=d.length;
+  const c=s=>d.filter(r=>r._se===s).length;
+  const cr=c('CRITICAL'),po=c('POOR'),fa=c('FAIR');
+  const go=d.filter(r=>['GOOD','VERY GOOD'].includes(r._se)).length;
+  const tua=d.filter(r=>(r['Status Usia']||'').toUpperCase()==='SANGAT TUA').length;
+  const his=d.map(r=>+r['Nilai Hi']).filter(v=>!isNaN(v)&&v>0);
+  const avg=his.length?(his.reduce((a,b)=>a+b,0)/his.length):0;
+  const mxh=his.length?Math.max(...his):0;
+  const mxr=d.find(r=>+r['Nilai Hi']===mxh);
+  const ngi=new Set(d.map(r=>r.Gi)).size;
+  const nbay=new Set(d.map(r=>(r.Gi||'')+'\x00'+(r.Bay||''))).size;
+  const pct=(v,n)=>n?(v/n*100).toFixed(1)+'%':'—';
+  const sg=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  sg('s-n',n.toLocaleString('id-ID')); sg('s-gi',ngi.toLocaleString('id-ID')); sg('s-bay',nbay.toLocaleString('id-ID'));
+  sg('s-cr',cr.toLocaleString('id-ID')); sg('s-crp',pct(cr,n));
+  sg('s-po',po.toLocaleString('id-ID')); sg('s-pop',pct(po,n));
+  sg('s-fa',fa.toLocaleString('id-ID')); sg('s-fap',pct(fa,n));
+  sg('s-go',go.toLocaleString('id-ID')); sg('s-gop',pct(go,n));
+  sg('s-avg',avg.toFixed(1)); sg('s-max',mxh);
+  sg('s-maxgi',mxr?(mxr.Gi||'').replace(/G[IS]*ET? \d+KV /,'').replace(/GI \d+KV /,''):'—');
+  sg('s-tua',tua.toLocaleString('id-ID')); sg('s-tuap',pct(tua,n));
+}
 
-  const total = data.length;
-  const pages = Math.max(1, Math.ceil(total/PAGE_SIZE));
-  const start = (currentPage-1)*PAGE_SIZE;
-  const slice = data.slice(start, start+PAGE_SIZE);
-
-  const tbody = document.getElementById('table-body');
-  if(slice.length===0) {
-    tbody.innerHTML = '<tr><td colspan="13" class="empty-state">Tidak ada data yang sesuai filter</td></tr>';
-  } else {
-    tbody.innerHTML = slice.map(r => rowHtml(r)).join('');
+function dc(k){if(charts[k]){charts[k].destroy();delete charts[k];}}
+const copt=(stacked,legShow)=>({
+  responsive:true,maintainAspectRatio:false,
+  plugins:{
+    legend:{display:legShow||false,position:'top',labels:{color:'#8a9099',font:{size:10},boxWidth:10,padding:8}},
+    tooltip:{mode:'index',intersect:false}
+  },
+  scales:{
+    x:{stacked,ticks:{color:'#8a9099',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},
+    y:{stacked,ticks:{color:'#8a9099',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}}
   }
+});
 
-  // Pagination
-  const info = document.getElementById('page-info');
-  info.textContent = `${(start+1).toLocaleString('id-ID')}–${Math.min(start+PAGE_SIZE,total).toLocaleString('id-ID')} dari ${total.toLocaleString('id-ID')}`;
-  renderPageBtns(pages);
+function updCharts(){
+  // Donut
+  dc('d');
+  const dc_counts=ST_LST.map(s=>filtered.filter(r=>r._se===s).length);
+  charts.d=new Chart(document.getElementById('donutC').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:ST_LST,datasets:[{data:dc_counts,backgroundColor:ST_COL,borderWidth:2,borderColor:'#13161b'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw.toLocaleString('id-ID')}`}}}}
+  });
+  document.getElementById('donut-leg').innerHTML=ST_LST.map((s,i)=>
+    `<div class="li"><span class="ld" style="background:${ST_COL[i]}"></span><span class="ln">${s}</span><span class="lv">${dc_counts[i].toLocaleString('id-ID')}</span></div>`
+  ).join('');
+
+  // UPT
+  dc('u');
+  const upts=[...new Set(filtered.map(r=>r.Upt).filter(v=>v&&v!=='-'))].sort();
+  charts.u=new Chart(document.getElementById('uptC').getContext('2d'),{
+    type:'bar',
+    data:{labels:upts.map(u=>u.replace('UPT ','')),
+      datasets:ST_LST.map((s,i)=>({label:s,data:upts.map(u=>filtered.filter(r=>r.Upt===u&&r._se===s).length),backgroundColor:ST_COL[i],borderRadius:3,borderSkipped:false}))},
+    options:copt(true,false)
+  });
+
+  // kV clusters
+  dc('kv');
+  const kvs=[...new Set(filtered.map(r=>r._kv).filter(Boolean))].sort((a,b)=>a-b);
+  charts.kv=new Chart(document.getElementById('kvC').getContext('2d'),{
+    type:'bar',
+    data:{labels:kvs.map(k=>k+' kV'),
+      datasets:ST_LST.map((s,i)=>({label:s,data:kvs.map(kv=>filtered.filter(r=>r._kv===kv&&r._se===s).length),backgroundColor:ST_COL[i],borderRadius:3,borderSkipped:false}))},
+    options:copt(true,false)
+  });
+
+  // Jenis MTU
+  dc('j');
+  const jenis=[...new Set(filtered.map(r=>r['#']).filter(Boolean))].sort();
+  charts.j=new Chart(document.getElementById('jenisC').getContext('2d'),{
+    type:'bar',
+    data:{labels:jenis,
+      datasets:ST_LST.map((s,i)=>({label:s,data:jenis.map(j=>filtered.filter(r=>r['#']===j&&r._se===s).length),backgroundColor:ST_COL[i],borderRadius:3,borderSkipped:false}))},
+    options:copt(true,true)
+  });
 }
 
-function rowHtml(r) {
-  const hi = +r['Nilai Hi']||0;
-  const maxHi = 300;
-  const barW = Math.min(80, hi/maxHi*80);
-  const barColor = hi>=150?'#ef4444':hi>=100?'#f59e0b':hi>=50?'#eab308':'#22c55e';
-  const isGiKrit = giKritSet.has((r.Gi||'').trim());
+function buildBays(){
+  const map=new Map();
+  filtered.forEach(r=>{
+    const k=(r.Gi||'')+'\x00'+(r.Bay||'');
+    if(!map.has(k)) map.set(k,{gi:r.Gi,bay:r.Bay,upt:r.Upt,crit:r['Criticality Gi'],kv:r._kv,mtus:[]});
+    map.get(k).mtus.push(r);
+  });
+  bays=[...map.values()].map(g=>{
+    const ss=g.mtus.map(r=>r._se);
+    const his=g.mtus.map(r=>+r['Nilai Hi']).filter(v=>!isNaN(v)&&v>0);
+    const wi=ss.reduce((b,s,i)=>(ST_ORD[s]??9)<(ST_ORD[ss[b]]??9)?i:b,0);
+    return{...g,worst:ss[wi]||'—',ncr:ss.filter(s=>s==='CRITICAL').length,
+      npo:ss.filter(s=>s==='POOR').length,maxhi:his.length?Math.max(...his):0,nmtu:g.mtus.length};
+  });
+}
 
-  return `<tr>
-    <td><span class="badge" style="background:rgba(99,102,241,0.1);color:#a5b4fc;border:1px solid rgba(99,102,241,0.2)">${esc(r['#']||'—')}</span></td>
-    <td style="color:var(--text3)">${esc((r.Upt||'').replace('UPT ',''))}</td>
-    <td><span class="gi-name">${isGiKrit?'<span class="gi-krit-dot"></span>':''}${esc(r.Gi||'—')}</span></td>
-    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis" title="${esc(r.Bay||'')}">${esc(r.Bay||'—')}</td>
-    <td style="color:var(--text3)">${esc(r.Phasa||'—')}</td>
-    <td style="color:var(--text3);font-family:var(--mono)">${r['Daya/Tegangan']||'—'}</td>
-    <td style="color:var(--text3)">${esc(r.Merek||'—')}</td>
-    <td style="font-family:var(--mono);color:var(--text3)">${r['Tahun Buat']||'—'}</td>
-    <td>${usiaHtml(r['Status Usia'])}</td>
-    <td>${critHtml(r['Criticality Gi'])}</td>
-    <td>${statusHtml(r['Status Hi'])}</td>
-    <td>
-      <div class="hi-bar-wrap">
-        <div class="hi-bar" style="width:${barW}px;background:${barColor}"></div>
-        <span class="hi-val">${hi||'—'}</span>
-      </div>
-    </td>
-    <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;color:var(--text3);font-size:11px" title="${esc(r['Justifikasi Prioritas']||'')}">${esc(r['Justifikasi Prioritas']||'—')}</td>
+function sb(col){
+  if(scol===col) sdir=sdir==='asc'?'desc':'asc'; else{scol=col;sdir='desc';}
+  document.querySelectorAll('thead th').forEach(th=>{
+    th.classList.remove('sa','sd');
+    if(th.dataset.col===col) th.classList.add(sdir==='asc'?'sa':'sd');
+  });
+  page=1; renderTable();
+}
+
+function renderTable(){
+  let g=[...bays];
+  const numC=['kv','ncr','npo','maxhi','nmtu'];
+  g.sort((a,b)=>{
+    if(numC.includes(scol)){const va=a[scol]??0,vb=b[scol]??0;return sdir==='asc'?va-vb:vb-va;}
+    if(scol==='worst'){const oa=ST_ORD[a.worst]??9,ob=ST_ORD[b.worst]??9;return sdir==='asc'?oa-ob:ob-oa;}
+    if(scol==='crit'){const oa=CRIT_ORD[(a.crit||'').toUpperCase()]??9,ob=CRIT_ORD[(b.crit||'').toUpperCase()]??9;return sdir==='asc'?oa-ob:ob-oa;}
+    const va=String(a[scol]||''),vb=String(b[scol]||'');
+    return sdir==='asc'?va.localeCompare(vb):vb.localeCompare(va);
+  });
+  const tot=g.length,pages=Math.max(1,Math.ceil(tot/PAGE));
+  const st=(page-1)*PAGE, sl=g.slice(st,st+PAGE);
+  const tbody=document.getElementById('tbody');
+  if(!sl.length){tbody.innerHTML='<tr><td colspan="11" class="empty">Tidak ada data</td></tr>';}
+  else tbody.innerHTML=sl.map(x=>bayHtml(x)).join('');
+  document.getElementById('pi').textContent=
+    `${(st+1).toLocaleString('id-ID')}–${Math.min(st+PAGE,tot).toLocaleString('id-ID')} dari ${tot.toLocaleString('id-ID')} bay`;
+  renderPag(pages);
+}
+
+function bkey(g){return(g.gi||'')+'\x00'+(g.bay||'');}
+
+function bayHtml(g){
+  const k=bkey(g), open=expanded.has(k), krit=giKrit.has((g.gi||'').trim());
+  const bw=Math.min(55,g.maxhi/300*55);
+  const bc=g.maxhi>=150?'#ef4444':g.maxhi>=100?'#f59e0b':g.maxhi>=50?'#eab308':'#22c55e';
+  let h=`<tr class="bay-row">
+    <td style="text-align:center;padding:7px 6px"><span class="exp-icon${open?' open':''}" id="ei-${e(k)}">▶</span></td>
+    <td><span style="font-size:11px;color:var(--text3)">${krit?'<span class="gkd"></span>':''}${e(g.gi||'—')}</span></td>
+    <td><span class="bay-tgl" onclick="tgBay('${e(k).replace(/'/g,"\\'")}')"><span class="bname">${e(g.bay||'—')}</span></span></td>
+    <td><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">${g.kv||'—'}</span></td>
+    <td>${critH(g.crit)}</td>
+    <td>${stH(g.worst)}</td>
+    <td>${g.ncr>0?`<span style="color:var(--red);font-family:var(--mono);font-weight:500">${g.ncr}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
+    <td>${g.npo>0?`<span style="color:var(--amb);font-family:var(--mono)">${g.npo}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
+    <td><div class="hiwrap"><div class="hibar" style="width:${bw}px;background:${bc}"></div><span class="hival">${g.maxhi||'—'}</span></div></td>
+    <td><span style="font-family:var(--mono);font-size:11px;color:var(--text2)">${g.nmtu}</span></td>
+    <td style="font-size:11px;color:var(--text3)">${e((g.upt||'').replace('UPT ',''))}</td>
+  </tr>`;
+  if(open) h+=g.mtus.map(r=>mtuH(r)).join('');
+  return h;
+}
+
+function mtuH(r){
+  const hi=+r['Nilai Hi']||0, bw=Math.min(45,hi/300*45);
+  const bc=hi>=150?'#ef4444':hi>=100?'#f59e0b':hi>=50?'#eab308':'#22c55e';
+  return `<tr class="mtu-row">
+    <td></td>
+    <td style="padding-left:28px"><span class="badge" style="background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.2);font-size:9px">${e(r['#']||'—')}</span></td>
+    <td style="color:var(--text2)">${e(r.Merek||'—')} <span style="color:var(--text3);font-size:10px">${e(r.Tipe||'')}</span></td>
+    <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${r._kv||'—'}</td>
+    <td></td>
+    <td>${stH(r._se)}${r._adj?'<span class="badge b-adj">adj</span>':''}</td>
+    <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${r.Phasa||'—'}</td>
+    <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${r['Tahun Buat']||'—'}</td>
+    <td><div class="hiwrap"><div class="hibar" style="width:${bw}px;background:${bc}"></div><span class="hival">${hi||'—'}</span></div></td>
+    <td style="font-size:10px;color:var(--text3);max-width:200px;overflow:hidden;text-overflow:ellipsis" title="${e(r['Justifikasi Prioritas']||'')}">${e(r['Justifikasi Prioritas']||'—')}</td>
+    <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${e(r['Serial Id']||'—')}</td>
   </tr>`;
 }
 
-function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function tgBay(k){expanded.has(k)?expanded.delete(k):expanded.add(k);renderTable();}
+function expandAll(){bays.forEach(g=>expanded.add(bkey(g)));renderTable();}
+function collapseAll(){expanded.clear();renderTable();}
 
-function statusHtml(s) {
-  const v = (s||'').toUpperCase().trim();
-  const cls = v==='CRITICAL'?'critical':v==='POOR'?'poor':v==='FAIR'?'fair':v==='VERY GOOD'?'very-good':'good';
-  return `<span class="badge badge-${cls}">${v||'—'}</span>`;
+const e=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function stH(s){
+  const v=(s||'').toUpperCase().trim();
+  const c=v==='CRITICAL'?'cr':v==='POOR'?'po':v==='FAIR'?'fa':v==='VERY GOOD'?'vg':'go';
+  return `<span class="badge b-${c}">${v||'—'}</span>`;
 }
 
-function critHtml(s) {
-  const v = (s||'').toUpperCase().trim();
-  if(v==='EXTREME') return `<span class="badge badge-extreme">EXTREME</span>`;
-  if(v.includes('SANGAT TINGGI')) return `<span class="badge badge-extreme">SANGAT TINGGI</span>`;
-  if(v==='TINGGI') return `<span class="badge badge-tinggi">TINGGI</span>`;
-  if(v==='MODERAT'||v==='MODERATE') return `<span class="badge badge-moderat">MODERAT</span>`;
-  if(v==='RENDAH') return `<span class="badge badge-rendah">RENDAH</span>`;
-  return `<span style="color:var(--text3)">${s||'—'}</span>`;
+function critH(s){
+  const v=(s||'').toUpperCase().trim();
+  if(v==='EXTREME') return `<span class="badge b-ex">EXTREME</span>`;
+  if(v.includes('SANGAT TINGGI')) return `<span class="badge b-ex">SANGAT TINGGI</span>`;
+  if(v==='TINGGI') return `<span class="badge b-st">TINGGI</span>`;
+  if(v==='MODERAT'||v==='MODERATE') return `<span class="badge b-mo">MODERAT</span>`;
+  if(v==='RENDAH') return `<span class="badge b-re">RENDAH</span>`;
+  return `<span style="color:var(--text3);font-size:11px">${s||'—'}</span>`;
 }
 
-function usiaHtml(s) {
-  const v = (s||'').toUpperCase().trim();
-  if(v==='SANGAT TUA') return `<span class="badge" style="background:rgba(167,139,250,0.1);color:#a78bfa;border:1px solid rgba(167,139,250,0.2)">SANGAT TUA</span>`;
-  if(v==='TUA') return `<span style="color:#f59e0b;font-size:11px">TUA</span>`;
-  return `<span style="color:var(--text3);font-size:11px">MUDA</span>`;
+function setTab(t,btn){
+  tab=t;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on'); page=1; applyFilters();
 }
 
-function renderPageBtns(pages) {
-  const wrap = document.getElementById('page-btns');
-  wrap.innerHTML = '';
-
-  const addBtn = (label, page, disabled=false, active=false) => {
-    const btn = document.createElement('button');
-    btn.className = 'page-btn' + (active?' active':'');
-    btn.textContent = label;
-    btn.disabled = disabled;
-    btn.onclick = () => { currentPage=page; renderTable(); };
-    wrap.appendChild(btn);
+function renderPag(pages){
+  const w=document.getElementById('pb'); w.innerHTML='';
+  const add=(lbl,pg,dis=false,act=false)=>{
+    const b=document.createElement('button');
+    b.className='pb'+(act?' on':'');b.textContent=lbl;b.disabled=dis;
+    b.onclick=()=>{page=pg;renderTable();};w.appendChild(b);
   };
-
-  addBtn('‹', currentPage-1, currentPage===1);
-  const range = pageRange(currentPage, pages);
-  range.forEach(p => {
-    if(p==='...') {
-      const sp = document.createElement('span');
-      sp.textContent='…'; sp.style.cssText='color:var(--text3);padding:0 4px;align-self:center;font-size:12px';
-      wrap.appendChild(sp);
-    } else addBtn(p, p, false, p===currentPage);
+  add('‹',page-1,page===1);
+  pgRange(page,pages).forEach(p=>{
+    if(p==='...'){const s=document.createElement('span');s.textContent='…';s.style.cssText='color:var(--text3);padding:0 3px;align-self:center;font-size:11px';w.appendChild(s);}
+    else add(p,p,false,p===page);
   });
-  addBtn('›', currentPage+1, currentPage===pages);
+  add('›',page+1,page===pages);
 }
 
-function pageRange(cur, total) {
-  if(total<=7) return Array.from({length:total},(_,i)=>i+1);
-  if(cur<=4) return [1,2,3,4,5,'...',total];
-  if(cur>=total-3) return [1,'...',total-4,total-3,total-2,total-1,total];
-  return [1,'...',cur-1,cur,cur+1,'...',total];
+function pgRange(c,t){
+  if(t<=7)return Array.from({length:t},(_,i)=>i+1);
+  if(c<=4)return[1,2,3,4,5,'...',t];
+  if(c>=t-3)return[1,'...',t-4,t-3,t-2,t-1,t];
+  return[1,'...',c-1,c,c+1,'...',t];
 }
 
-// ─── TAB ────────────────────────────────────────────────────────────────────
-function setTab(tab, btn) {
-  activeTab = tab;
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  currentPage = 1;
-  applyFilters();
-}
+let st_; document.getElementById('f-q').addEventListener('input',()=>{clearTimeout(st_);st_=setTimeout(applyFilters,300);});
 
-// ─── EVENT LISTENERS ─────────────────────────────────────────────────────────
-['f-upt','f-gi','f-jenis','f-tegangan','f-status','f-criticality','f-usia','f-gikrit'].forEach(id => {
-  document.getElementById(id).addEventListener('change', applyFilters);
-});
-let searchTimer;
-document.getElementById('f-search').addEventListener('input', () => {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(applyFilters, 300);
-});
-
-// ─── START ───────────────────────────────────────────────────────────────────
-init().catch(err => {
-  document.getElementById('loading-text').textContent = 'Gagal memuat data: ' + err.message;
-});
+init().catch(err=>{document.getElementById('ltxt').textContent='Gagal: '+err.message;});
 </script>
 </body>
 </html>
