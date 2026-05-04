@@ -2,716 +2,764 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard AHI MTU — PLN UIT JBM</title>
-<script>/* @license
-Papa Parse
-v5.5.3
-https://github.com/mholt/PapaParse
-License: MIT
-*/
-((e,t)=>{"function"==typeof define&&define.amd?define([],t):"object"==typeof module&&"undefined"!=typeof exports?module.exports=t():e.Papa=t()})(this,function r(){var n="undefined"!=typeof self?self:"undefined"!=typeof window?window:void 0!==n?n:{};var d,s=!n.document&&!!n.postMessage,a=n.IS_PAPA_WORKER||!1,o={},h=0,v={};function u(e){this._handle=null,this._finished=!1,this._completed=!1,this._halted=!1,this._input=null,this._baseIndex=0,this._partialLine="",this._rowCount=0,this._start=0,this._nextChunk=null,this.isFirstChunk=!0,this._completeResults={data:[],errors:[],meta:{}},function(e){var t=b(e);t.chunkSize=parseInt(t.chunkSize),e.step||e.chunk||(t.chunkSize=null);this._handle=new i(t),(this._handle.streamer=this)._config=t}.call(this,e),this.parseChunk=function(t,e){var i=parseInt(this._config.skipFirstNLines)||0;if(this.isFirstChunk&&0<i){let e=this._config.newline;e||(r=this._config.quoteChar||'"',e=this._handle.guessLineEndings(t,r)),t=[...t.split(e).slice(i)].join(e)}this.isFirstChunk&&U(this._config.beforeFirstChunk)&&void 0!==(r=this._config.beforeFirstChunk(t))&&(t=r),this.isFirstChunk=!1,this._halted=!1;var i=this._partialLine+t,r=(this._partialLine="",this._handle.parse(i,this._baseIndex,!this._finished));if(!this._handle.paused()&&!this._handle.aborted()){t=r.meta.cursor,i=(this._finished||(this._partialLine=i.substring(t-this._baseIndex),this._baseIndex=t),r&&r.data&&(this._rowCount+=r.data.length),this._finished||this._config.preview&&this._rowCount>=this._config.preview);if(a)n.postMessage({results:r,workerId:v.WORKER_ID,finished:i});else if(U(this._config.chunk)&&!e){if(this._config.chunk(r,this._handle),this._handle.paused()||this._handle.aborted())return void(this._halted=!0);this._completeResults=r=void 0}return this._config.step||this._config.chunk||(this._completeResults.data=this._completeResults.data.concat(r.data),this._completeResults.errors=this._completeResults.errors.concat(r.errors),this._completeResults.meta=r.meta),this._completed||!i||!U(this._config.complete)||r&&r.meta.aborted||(this._config.complete(this._completeResults,this._input),this._completed=!0),i||r&&r.meta.paused||this._nextChunk(),r}this._halted=!0},this._sendError=function(e){U(this._config.error)?this._config.error(e):a&&this._config.error&&n.postMessage({workerId:v.WORKER_ID,error:e,finished:!1})}}function f(e){var r;(e=e||{}).chunkSize||(e.chunkSize=v.RemoteChunkSize),u.call(this,e),this._nextChunk=s?function(){this._readChunk(),this._chunkLoaded()}:function(){this._readChunk()},this.stream=function(e){this._input=e,this._nextChunk()},this._readChunk=function(){if(this._finished)this._chunkLoaded();else{if(r=new XMLHttpRequest,this._config.withCredentials&&(r.withCredentials=this._config.withCredentials),s||(r.onload=y(this._chunkLoaded,this),r.onerror=y(this._chunkError,this)),r.open(this._config.downloadRequestBody?"POST":"GET",this._input,!s),this._config.downloadRequestHeaders){var e,t=this._config.downloadRequestHeaders;for(e in t)r.setRequestHeader(e,t[e])}var i;this._config.chunkSize&&(i=this._start+this._config.chunkSize-1,r.setRequestHeader("Range","bytes="+this._start+"-"+i));try{r.send(this._config.downloadRequestBody)}catch(e){this._chunkError(e.message)}s&&0===r.status&&this._chunkError()}},this._chunkLoaded=function(){4===r.readyState&&(r.status<200||400<=r.status?this._chunkError():(this._start+=this._config.chunkSize||r.responseText.length,this._finished=!this._config.chunkSize||this._start>=(e=>null!==(e=e.getResponseHeader("Content-Range"))?parseInt(e.substring(e.lastIndexOf("/")+1)):-1)(r),this.parseChunk(r.responseText)))},this._chunkError=function(e){e=r.statusText||e;this._sendError(new Error(e))}}function l(e){(e=e||{}).chunkSize||(e.chunkSize=v.LocalChunkSize),u.call(this,e);var i,r,n="undefined"!=typeof FileReader;this.stream=function(e){this._input=e,r=e.slice||e.webkitSlice||e.mozSlice,n?((i=new FileReader).onload=y(this._chunkLoaded,this),i.onerror=y(this._chunkError,this)):i=new FileReaderSync,this._nextChunk()},this._nextChunk=function(){this._finished||this._config.preview&&!(this._rowCount<this._config.preview)||this._readChunk()},this._readChunk=function(){var e=this._input,t=(this._config.chunkSize&&(t=Math.min(this._start+this._config.chunkSize,this._input.size),e=r.call(e,this._start,t)),i.readAsText(e,this._config.encoding));n||this._chunkLoaded({target:{result:t}})},this._chunkLoaded=function(e){this._start+=this._config.chunkSize,this._finished=!this._config.chunkSize||this._start>=this._input.size,this.parseChunk(e.target.result)},this._chunkError=function(){this._sendError(i.error)}}function c(e){var i;u.call(this,e=e||{}),this.stream=function(e){return i=e,this._nextChunk()},this._nextChunk=function(){var e,t;if(!this._finished)return e=this._config.chunkSize,i=e?(t=i.substring(0,e),i.substring(e)):(t=i,""),this._finished=!i,this.parseChunk(t)}}function p(e){u.call(this,e=e||{});var t=[],i=!0,r=!1;this.pause=function(){u.prototype.pause.apply(this,arguments),this._input.pause()},this.resume=function(){u.prototype.resume.apply(this,arguments),this._input.resume()},this.stream=function(e){this._input=e,this._input.on("data",this._streamData),this._input.on("end",this._streamEnd),this._input.on("error",this._streamError)},this._checkIsFinished=function(){r&&1===t.length&&(this._finished=!0)},this._nextChunk=function(){this._checkIsFinished(),t.length?this.parseChunk(t.shift()):i=!0},this._streamData=y(function(e){try{t.push("string"==typeof e?e:e.toString(this._config.encoding)),i&&(i=!1,this._checkIsFinished(),this.parseChunk(t.shift()))}catch(e){this._streamError(e)}},this),this._streamError=y(function(e){this._streamCleanUp(),this._sendError(e)},this),this._streamEnd=y(function(){this._streamCleanUp(),r=!0,this._streamData("")},this),this._streamCleanUp=y(function(){this._input.removeListener("data",this._streamData),this._input.removeListener("end",this._streamEnd),this._input.removeListener("error",this._streamError)},this)}function i(m){var n,s,a,t,o=Math.pow(2,53),h=-o,u=/^\s*-?(\d+\.?|\.\d+|\d+\.\d+)([eE][-+]?\d+)?\s*$/,d=/^((\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)))$/,i=this,r=0,f=0,l=!1,e=!1,c=[],p={data:[],errors:[],meta:{}};function y(e){return"greedy"===m.skipEmptyLines?""===e.join("").trim():1===e.length&&0===e[0].length}function g(){if(p&&a&&(k("Delimiter","UndetectableDelimiter","Unable to auto-detect delimiting character; defaulted to '"+v.DefaultDelimiter+"'"),a=!1),m.skipEmptyLines&&(p.data=p.data.filter(function(e){return!y(e)})),_()){if(p)if(Array.isArray(p.data[0])){for(var e=0;_()&&e<p.data.length;e++)p.data[e].forEach(t);p.data.splice(0,1)}else p.data.forEach(t);function t(e,t){U(m.transformHeader)&&(e=m.transformHeader(e,t)),c.push(e)}}function i(e,t){for(var i=m.header?{}:[],r=0;r<e.length;r++){var n=r,s=e[r],s=((e,t)=>(e=>(m.dynamicTypingFunction&&void 0===m.dynamicTyping[e]&&(m.dynamicTyping[e]=m.dynamicTypingFunction(e)),!0===(m.dynamicTyping[e]||m.dynamicTyping)))(e)?"true"===t||"TRUE"===t||"false"!==t&&"FALSE"!==t&&((e=>{if(u.test(e)){e=parseFloat(e);if(h<e&&e<o)return 1}})(t)?parseFloat(t):d.test(t)?new Date(t):""===t?null:t):t)(n=m.header?r>=c.length?"__parsed_extra":c[r]:n,s=m.transform?m.transform(s,n):s);"__parsed_extra"===n?(i[n]=i[n]||[],i[n].push(s)):i[n]=s}return m.header&&(r>c.length?k("FieldMismatch","TooManyFields","Too many fields: expected "+c.length+" fields but parsed "+r,f+t):r<c.length&&k("FieldMismatch","TooFewFields","Too few fields: expected "+c.length+" fields but parsed "+r,f+t)),i}var r;p&&(m.header||m.dynamicTyping||m.transform)&&(r=1,!p.data.length||Array.isArray(p.data[0])?(p.data=p.data.map(i),r=p.data.length):p.data=i(p.data,0),m.header&&p.meta&&(p.meta.fields=c),f+=r)}function _(){return m.header&&0===c.length}function k(e,t,i,r){e={type:e,code:t,message:i};void 0!==r&&(e.row=r),p.errors.push(e)}U(m.step)&&(t=m.step,m.step=function(e){p=e,_()?g():(g(),0!==p.data.length&&(r+=e.data.length,m.preview&&r>m.preview?s.abort():(p.data=p.data[0],t(p,i))))}),this.parse=function(e,t,i){var r=m.quoteChar||'"',r=(m.newline||(m.newline=this.guessLineEndings(e,r)),a=!1,m.delimiter?U(m.delimiter)&&(m.delimiter=m.delimiter(e),p.meta.delimiter=m.delimiter):((r=((e,t,i,r,n)=>{var s,a,o,h;n=n||[",","\t","|",";",v.RECORD_SEP,v.UNIT_SEP];for(var u=0;u<n.length;u++){for(var d,f=n[u],l=0,c=0,p=0,g=(o=void 0,new E({comments:r,delimiter:f,newline:t,preview:10}).parse(e)),_=0;_<g.data.length;_++)i&&y(g.data[_])?p++:(d=g.data[_].length,c+=d,void 0===o?o=d:0<d&&(l+=Math.abs(d-o),o=d));0<g.data.length&&(c/=g.data.length-p),(void 0===a||l<=a)&&(void 0===h||h<c)&&1.99<c&&(a=l,s=f,h=c)}return{successful:!!(m.delimiter=s),bestDelimiter:s}})(e,m.newline,m.skipEmptyLines,m.comments,m.delimitersToGuess)).successful?m.delimiter=r.bestDelimiter:(a=!0,m.delimiter=v.DefaultDelimiter),p.meta.delimiter=m.delimiter),b(m));return m.preview&&m.header&&r.preview++,n=e,s=new E(r),p=s.parse(n,t,i),g(),l?{meta:{paused:!0}}:p||{meta:{paused:!1}}},this.paused=function(){return l},this.pause=function(){l=!0,s.abort(),n=U(m.chunk)?"":n.substring(s.getCharIndex())},this.resume=function(){i.streamer._halted?(l=!1,i.streamer.parseChunk(n,!0)):setTimeout(i.resume,3)},this.aborted=function(){return e},this.abort=function(){e=!0,s.abort(),p.meta.aborted=!0,U(m.complete)&&m.complete(p),n=""},this.guessLineEndings=function(e,t){e=e.substring(0,1048576);var t=new RegExp(P(t)+"([^]*?)"+P(t),"gm"),i=(e=e.replace(t,"")).split("\r"),t=e.split("\n"),e=1<t.length&&t[0].length<i[0].length;if(1===i.length||e)return"\n";for(var r=0,n=0;n<i.length;n++)"\n"===i[n][0]&&r++;return r>=i.length/2?"\r\n":"\r"}}function P(e){return e.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}function E(C){var S=(C=C||{}).delimiter,O=C.newline,x=C.comments,I=C.step,A=C.preview,T=C.fastMode,D=null,L=!1,F=null==C.quoteChar?'"':C.quoteChar,j=F;if(void 0!==C.escapeChar&&(j=C.escapeChar),("string"!=typeof S||-1<v.BAD_DELIMITERS.indexOf(S))&&(S=","),x===S)throw new Error("Comment character same as delimiter");!0===x?x="#":("string"!=typeof x||-1<v.BAD_DELIMITERS.indexOf(x))&&(x=!1),"\n"!==O&&"\r"!==O&&"\r\n"!==O&&(O="\n");var z=0,M=!1;this.parse=function(i,t,r){if("string"!=typeof i)throw new Error("Input must be a string");var n=i.length,e=S.length,s=O.length,a=x.length,o=U(I),h=[],u=[],d=[],f=z=0;if(!i)return w();if(T||!1!==T&&-1===i.indexOf(F)){for(var l=i.split(O),c=0;c<l.length;c++){if(d=l[c],z+=d.length,c!==l.length-1)z+=O.length;else if(r)return w();if(!x||d.substring(0,a)!==x){if(o){if(h=[],k(d.split(S)),R(),M)return w()}else k(d.split(S));if(A&&A<=c)return h=h.slice(0,A),w(!0)}}return w()}for(var p=i.indexOf(S,z),g=i.indexOf(O,z),_=new RegExp(P(j)+P(F),"g"),m=i.indexOf(F,z);;)if(i[z]===F)for(m=z,z++;;){if(-1===(m=i.indexOf(F,m+1)))return r||u.push({type:"Quotes",code:"MissingQuotes",message:"Quoted field unterminated",row:h.length,index:z}),E();if(m===n-1)return E(i.substring(z,m).replace(_,F));if(F===j&&i[m+1]===j)m++;else if(F===j||0===m||i[m-1]!==j){-1!==p&&p<m+1&&(p=i.indexOf(S,m+1));var y=v(-1===(g=-1!==g&&g<m+1?i.indexOf(O,m+1):g)?p:Math.min(p,g));if(i.substr(m+1+y,e)===S){d.push(i.substring(z,m).replace(_,F)),i[z=m+1+y+e]!==F&&(m=i.indexOf(F,z)),p=i.indexOf(S,z),g=i.indexOf(O,z);break}y=v(g);if(i.substring(m+1+y,m+1+y+s)===O){if(d.push(i.substring(z,m).replace(_,F)),b(m+1+y+s),p=i.indexOf(S,z),m=i.indexOf(F,z),o&&(R(),M))return w();if(A&&h.length>=A)return w(!0);break}u.push({type:"Quotes",code:"InvalidQuotes",message:"Trailing quote on quoted field is malformed",row:h.length,index:z}),m++}}else if(x&&0===d.length&&i.substring(z,z+a)===x){if(-1===g)return w();z=g+s,g=i.indexOf(O,z),p=i.indexOf(S,z)}else if(-1!==p&&(p<g||-1===g))d.push(i.substring(z,p)),z=p+e,p=i.indexOf(S,z);else{if(-1===g)break;if(d.push(i.substring(z,g)),b(g+s),o&&(R(),M))return w();if(A&&h.length>=A)return w(!0)}return E();function k(e){h.push(e),f=z}function v(e){var t=0;return t=-1!==e&&(e=i.substring(m+1,e))&&""===e.trim()?e.length:t}function E(e){return r||(void 0===e&&(e=i.substring(z)),d.push(e),z=n,k(d),o&&R()),w()}function b(e){z=e,k(d),d=[],g=i.indexOf(O,z)}function w(e){if(C.header&&!t&&h.length&&!L){var s=h[0],a=Object.create(null),o=new Set(s);let n=!1;for(let r=0;r<s.length;r++){let i=s[r];if(a[i=U(C.transformHeader)?C.transformHeader(i,r):i]){let e,t=a[i];for(;e=i+"_"+t,t++,o.has(e););o.add(e),s[r]=e,a[i]++,n=!0,(D=null===D?{}:D)[e]=i}else a[i]=1,s[r]=i;o.add(i)}n&&console.warn("Duplicate headers found and renamed."),L=!0}return{data:h,errors:u,meta:{delimiter:S,linebreak:O,aborted:M,truncated:!!e,cursor:f+(t||0),renamedHeaders:D}}}function R(){I(w()),h=[],u=[]}},this.abort=function(){M=!0},this.getCharIndex=function(){return z}}function g(e){var t=e.data,i=o[t.workerId],r=!1;if(t.error)i.userError(t.error,t.file);else if(t.results&&t.results.data){var n={abort:function(){r=!0,_(t.workerId,{data:[],errors:[],meta:{aborted:!0}})},pause:m,resume:m};if(U(i.userStep)){for(var s=0;s<t.results.data.length&&(i.userStep({data:t.results.data[s],errors:t.results.errors,meta:t.results.meta},n),!r);s++);delete t.results}else U(i.userChunk)&&(i.userChunk(t.results,n,t.file),delete t.results)}t.finished&&!r&&_(t.workerId,t.results)}function _(e,t){var i=o[e];U(i.userComplete)&&i.userComplete(t),i.terminate(),delete o[e]}function m(){throw new Error("Not implemented.")}function b(e){if("object"!=typeof e||null===e)return e;var t,i=Array.isArray(e)?[]:{};for(t in e)i[t]=b(e[t]);return i}function y(e,t){return function(){e.apply(t,arguments)}}function U(e){return"function"==typeof e}return v.parse=function(e,t){var i=(t=t||{}).dynamicTyping||!1;U(i)&&(t.dynamicTypingFunction=i,i={});if(t.dynamicTyping=i,t.transform=!!U(t.transform)&&t.transform,!t.worker||!v.WORKERS_SUPPORTED)return i=null,v.NODE_STREAM_INPUT,"string"==typeof e?(e=(e=>65279!==e.charCodeAt(0)?e:e.slice(1))(e),i=new(t.download?f:c)(t)):!0===e.readable&&U(e.read)&&U(e.on)?i=new p(t):(n.File&&e instanceof File||e instanceof Object)&&(i=new l(t)),i.stream(e);(i=(()=>{var e;return!!v.WORKERS_SUPPORTED&&(e=(()=>{var e=n.URL||n.webkitURL||null,t=r.toString();return v.BLOB_URL||(v.BLOB_URL=e.createObjectURL(new Blob(["var global = (function() { if (typeof self !== 'undefined') { return self; } if (typeof window !== 'undefined') { return window; } if (typeof global !== 'undefined') { return global; } return {}; })(); global.IS_PAPA_WORKER=true; ","(",t,")();"],{type:"text/javascript"})))})(),(e=new n.Worker(e)).onmessage=g,e.id=h++,o[e.id]=e)})()).userStep=t.step,i.userChunk=t.chunk,i.userComplete=t.complete,i.userError=t.error,t.step=U(t.step),t.chunk=U(t.chunk),t.complete=U(t.complete),t.error=U(t.error),delete t.worker,i.postMessage({input:e,config:t,workerId:i.id})},v.unparse=function(e,t){var n=!1,_=!0,m=",",y="\r\n",s='"',a=s+s,i=!1,r=null,o=!1,h=((()=>{if("object"==typeof t){if("string"!=typeof t.delimiter||v.BAD_DELIMITERS.filter(function(e){return-1!==t.delimiter.indexOf(e)}).length||(m=t.delimiter),"boolean"!=typeof t.quotes&&"function"!=typeof t.quotes&&!Array.isArray(t.quotes)||(n=t.quotes),"boolean"!=typeof t.skipEmptyLines&&"string"!=typeof t.skipEmptyLines||(i=t.skipEmptyLines),"string"==typeof t.newline&&(y=t.newline),"string"==typeof t.quoteChar&&(s=t.quoteChar),"boolean"==typeof t.header&&(_=t.header),Array.isArray(t.columns)){if(0===t.columns.length)throw new Error("Option columns is empty");r=t.columns}void 0!==t.escapeChar&&(a=t.escapeChar+s),t.escapeFormulae instanceof RegExp?o=t.escapeFormulae:"boolean"==typeof t.escapeFormulae&&t.escapeFormulae&&(o=/^[=+\-@\t\r].*$/)}})(),new RegExp(P(s),"g"));"string"==typeof e&&(e=JSON.parse(e));if(Array.isArray(e)){if(!e.length||Array.isArray(e[0]))return u(null,e,i);if("object"==typeof e[0])return u(r||Object.keys(e[0]),e,i)}else if("object"==typeof e)return"string"==typeof e.data&&(e.data=JSON.parse(e.data)),Array.isArray(e.data)&&(e.fields||(e.fields=e.meta&&e.meta.fields||r),e.fields||(e.fields=Array.isArray(e.data[0])?e.fields:"object"==typeof e.data[0]?Object.keys(e.data[0]):[]),Array.isArray(e.data[0])||"object"==typeof e.data[0]||(e.data=[e.data])),u(e.fields||[],e.data||[],i);throw new Error("Unable to serialize unrecognized input");function u(e,t,i){var r="",n=("string"==typeof e&&(e=JSON.parse(e)),"string"==typeof t&&(t=JSON.parse(t)),Array.isArray(e)&&0<e.length),s=!Array.isArray(t[0]);if(n&&_){for(var a=0;a<e.length;a++)0<a&&(r+=m),r+=k(e[a],a);0<t.length&&(r+=y)}for(var o=0;o<t.length;o++){var h=(n?e:t[o]).length,u=!1,d=n?0===Object.keys(t[o]).length:0===t[o].length;if(i&&!n&&(u="greedy"===i?""===t[o].join("").trim():1===t[o].length&&0===t[o][0].length),"greedy"===i&&n){for(var f=[],l=0;l<h;l++){var c=s?e[l]:l;f.push(t[o][c])}u=""===f.join("").trim()}if(!u){for(var p=0;p<h;p++){0<p&&!d&&(r+=m);var g=n&&s?e[p]:p;r+=k(t[o][g],p)}o<t.length-1&&(!i||0<h&&!d)&&(r+=y)}}return r}function k(e,t){var i,r;return null==e?"":e.constructor===Date?JSON.stringify(e).slice(1,25):(r=!1,o&&"string"==typeof e&&o.test(e)&&(e="'"+e,r=!0),i=e.toString().replace(h,a),(r=r||!0===n||"function"==typeof n&&n(e,t)||Array.isArray(n)&&n[t]||((e,t)=>{for(var i=0;i<t.length;i++)if(-1<e.indexOf(t[i]))return!0;return!1})(i,v.BAD_DELIMITERS)||-1<i.indexOf(m)||" "===i.charAt(0)||" "===i.charAt(i.length-1))?s+i+s:i)}},v.RECORD_SEP=String.fromCharCode(30),v.UNIT_SEP=String.fromCharCode(31),v.BYTE_ORDER_MARK="\ufeff",v.BAD_DELIMITERS=["\r","\n",'"',v.BYTE_ORDER_MARK],v.WORKERS_SUPPORTED=!s&&!!n.Worker,v.NODE_STREAM_INPUT=1,v.LocalChunkSize=10485760,v.RemoteChunkSize=5242880,v.DefaultDelimiter=",",v.Parser=E,v.ParserHandle=i,v.NetworkStreamer=f,v.FileStreamer=l,v.StringStreamer=c,v.ReadableStreamStreamer=p,n.jQuery&&((d=n.jQuery).fn.parse=function(o){var i=o.config||{},h=[];return this.each(function(e){if(!("INPUT"===d(this).prop("tagName").toUpperCase()&&"file"===d(this).attr("type").toLowerCase()&&n.FileReader)||!this.files||0===this.files.length)return!0;for(var t=0;t<this.files.length;t++)h.push({file:this.files[t],inputElem:this,instanceConfig:d.extend({},i)})}),e(),this;function e(){if(0===h.length)U(o.complete)&&o.complete();else{var e,t,i,r,n=h[0];if(U(o.before)){var s=o.before(n.file,n.inputElem);if("object"==typeof s){if("abort"===s.action)return e="AbortError",t=n.file,i=n.inputElem,r=s.reason,void(U(o.error)&&o.error({name:e},t,i,r));if("skip"===s.action)return void u();"object"==typeof s.config&&(n.instanceConfig=d.extend(n.instanceConfig,s.config))}else if("skip"===s)return void u()}var a=n.instanceConfig.complete;n.instanceConfig.complete=function(e){U(a)&&a(e,n.file,n.inputElem),u()},v.parse(n.file,n.instanceConfig)}}function u(){h.splice(0,1),e()}}),a&&(n.onmessage=function(e){e=e.data;void 0===v.WORKER_ID&&e&&(v.WORKER_ID=e.workerId);"string"==typeof e.input?n.postMessage({workerId:v.WORKER_ID,results:v.parse(e.input,e.config),finished:!0}):(n.File&&e.input instanceof File||e.input instanceof Object)&&(e=v.parse(e.input,e.config))&&n.postMessage({workerId:v.WORKER_ID,results:e,finished:!0})}),(f.prototype=Object.create(u.prototype)).constructor=f,(l.prototype=Object.create(u.prototype)).constructor=l,(c.prototype=Object.create(c.prototype)).constructor=c,(p.prototype=Object.create(u.prototype)).constructor=p,v});</script>
-<style>
-:root{--bg:#0d1524;--surface:#111e30;--surface2:#162236;--border:#1e3048;--border2:#172038;--text:#e2e8f0;--text2:#94a3b8;--text3:#4e6a8a;--accent:#38bdf8;--good:#10b981;--poor:#f97316;--critical:#ef4444;--fair:#eab308;--adj-color:#a78bfa;--mono:'JetBrains Mono',monospace;--ff:'DM Sans',sans-serif}
-*{box-sizing:border-box;margin:0;padding:0}html{font-size:13px}
-body{background:var(--bg);color:var(--text);font-family:var(--ff);min-height:100vh}
-.topbar{display:flex;align-items:center;height:50px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
-.brand{display:flex;align-items:center;gap:8px;padding:0 16px;font-weight:700;font-size:13px;color:var(--accent);white-space:nowrap;border-right:1px solid var(--border);height:100%}
-.main-tab{padding:0 18px;height:100%;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
-.main-tab:hover{color:var(--text);background:rgba(255,255,255,.03)}
-.main-tab.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(56,189,248,.05)}
-.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;padding:0 14px}
-.csv-status{font-size:10px;font-family:var(--mono);color:var(--text3)}
-.csv-status.ok{color:var(--good)}
-.csv-path{font-size:10px;font-family:var(--mono);color:var(--text3);background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:3px 8px}
-.st-bar{display:flex;align-items:center;gap:10px;padding:8px 20px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:50px;z-index:90}
-.st-lbl{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.5px;text-transform:uppercase}
-.st-btn{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:11px;font-weight:600;color:var(--text2);transition:all .15s;user-select:none}
-.st-btn:hover{border-color:var(--accent);color:var(--text)}
-.st-btn.adj-on{background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.4);color:var(--adj-color)}
-.st-dot{width:7px;height:7px;border-radius:50%;background:var(--text3)}
-.st-btn.adj-on .st-dot{background:var(--adj-color)}
-.st-btn.krit-on{background:rgba(244,114,182,.1);border-color:rgba(244,114,182,.4);color:#f472b6}
-.st-btn.krit-on .st-dot{background:#f472b6}
-.st-sep{width:1px;height:20px;background:var(--border)}
-.banner{display:none;padding:4px 12px;border-radius:14px;font-size:10px;font-weight:600}
-.banner.active{display:flex;align-items:center;gap:6px}
-.adj-banner.active{background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);color:var(--adj-color)}
-.krit-banner.active{background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.3);color:#f472b6}
-.main-panel{display:none}.main-panel.active{display:block}
-.wrap{max-width:1600px;margin:0 auto;padding:20px 24px}
-.loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:16px}
-.loading-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-text{font-family:var(--mono);color:var(--text3);font-size:12px}
-.error-box{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:20px 24px;margin:20px}
-.error-title{color:var(--critical);font-weight:700;margin-bottom:8px}
-.error-msg{color:var(--text2);font-size:12px;font-family:var(--mono);white-space:pre-wrap}
-.kpi-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
-.kpi{flex:1;min-width:120px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;border-top:3px solid transparent}
-.kpi-val{font-size:28px;font-weight:700;font-family:var(--mono);line-height:1;margin-bottom:6px}
-.kpi-lbl{font-size:11px;color:var(--text2);font-weight:600}
-.kpi-sub{font-size:10px;color:var(--text3);margin-top:3px;font-family:var(--mono)}
-.kpi-crit{border-top-color:var(--critical)}.kpi-crit .kpi-val{color:var(--critical)}
-.kpi-poor{border-top-color:var(--poor)}.kpi-poor .kpi-val{color:var(--poor)}
-.kpi-fair{border-top-color:var(--fair)}.kpi-fair .kpi-val{color:var(--fair)}
-.kpi-good{border-top-color:var(--good)}.kpi-good .kpi-val{color:var(--good)}
-.kpi-info{border-top-color:var(--accent)}.kpi-info .kpi-val{color:var(--accent)}
-.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text2);margin-bottom:12px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-.upt-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
-.upt-btn{padding:5px 14px;border-radius:16px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:11px;font-weight:600;color:var(--text2);transition:all .15s}
-.upt-btn:hover{border-color:var(--accent);color:var(--text)}
-.upt-btn.active{background:rgba(56,189,248,.12);border-color:var(--accent);color:var(--accent)}
-.klaster-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:14px}
-.klaster-card{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px}
-.kl-name{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px}
-.kl-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:1px;margin-bottom:8px}
-.kl-bar span{display:block;min-width:1px}
-.kl-stats{display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:10px;font-family:var(--mono)}
-.kl-stat{display:flex;justify-content:space-between;padding:2px 0}
-.kl-eq-rows{margin-top:8px;border-top:1px solid var(--border2);padding-top:6px}
-.kl-eq-row{display:flex;align-items:center;gap:6px;padding:2px 0}
-.kl-eq-name{font-family:var(--mono);font-weight:700;color:var(--text2);width:36px;flex-shrink:0;font-size:10px}
-.kl-eq-bar{flex:1;height:5px;border-radius:3px;overflow:hidden;display:flex;gap:1px}
-.kl-eq-bar span{display:block;min-width:1px}
-.kl-eq-cnt{font-family:var(--mono);font-size:10px;min-width:20px;text-align:right}
-.kl-eq-tot{font-family:var(--mono);font-size:10px;color:var(--text3);min-width:28px;text-align:right}
-.equip-bar-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border2)}
-.equip-bar-row:last-child{border-bottom:none}
-.equip-name{font-family:var(--mono);font-weight:700;width:38px;flex-shrink:0;font-size:11px}
-.equip-bar-wrap{flex:1;height:10px;border-radius:5px;overflow:hidden;display:flex;gap:1px}
-.equip-bar-wrap span{display:block;min-width:1px}
-.equip-cnt{font-family:var(--mono);font-size:10px;color:var(--text3);min-width:30px;text-align:right}
-.gi-table{width:100%;border-collapse:collapse;font-size:12px}
-.gi-table th{padding:6px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;border-bottom:2px solid var(--border);cursor:pointer}
-.gi-table th.r{text-align:right}
-.gi-table td{padding:7px 10px;border-bottom:1px solid var(--border2);vertical-align:middle}
-.gi-table tbody tr:hover td{background:rgba(255,255,255,.025)}
-.rank-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;font-family:var(--mono);font-size:11px;font-weight:700;background:var(--surface2)}
-.rank-num.danger{background:rgba(239,68,68,.15);color:var(--critical)}
-.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;font-family:var(--mono)}
-.badge-critical{background:rgba(239,68,68,.15);color:var(--critical)}
-.badge-poor{background:rgba(249,115,22,.15);color:var(--poor)}
-.badge-fair{background:rgba(234,179,8,.15);color:var(--fair)}
-.badge-good{background:rgba(59,130,246,.15);color:#3b82f6}
-.badge-vg{background:rgba(16,185,129,.15);color:var(--good)}
-.crit-btn{padding:2px 8px;border-radius:4px;border:1px solid rgba(239,68,68,.4);background:rgba(239,68,68,.1);color:var(--critical);font-size:10px;font-weight:700;cursor:pointer;margin:1px}
-.crit-btn:hover{background:rgba(239,68,68,.2)}
-.gi-bar{display:flex;height:5px;border-radius:3px;overflow:hidden;gap:1px;width:80px}
-.gi-bar span{display:block;min-width:1px}
-.r-kpi-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
-.r-kpi{flex:1;min-width:130px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;border-top:3px solid transparent}
-.r-kpi-val{font-size:28px;font-weight:700;font-family:var(--mono);line-height:1;margin-bottom:6px}
-.r-kpi-lbl{font-size:11px;color:var(--text2);font-weight:600}
-.r-upt-btn{padding:4px 12px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;font-size:11px;font-weight:600;color:var(--text2);transition:all .15s}
-.r-upt-btn:hover{border-color:var(--accent);color:var(--text)}
-.r-upt-btn.active{background:rgba(56,189,248,.12);border-color:var(--accent);color:var(--accent)}
-.r-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;padding:8px 0}
-.r-search{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);font-size:12px;width:200px;outline:none}
-.r-search:focus{border-color:var(--accent)}
-.r-count{font-size:11px;color:var(--text3);font-family:var(--mono)}
-.r-gi-table{width:100%;border-collapse:collapse;font-size:12px}
-.r-gi-table th{padding:8px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);border-bottom:2px solid var(--border);cursor:pointer;white-space:nowrap}
-.r-gi-table th.rn{text-align:right}
-.r-gi-table td{padding:6px 10px;border-bottom:1px solid var(--border2)}
-.r-gi-table tbody tr:hover td{background:rgba(255,255,255,.025)}
-.r-num{font-family:var(--mono);text-align:right}
-.r-num-0{color:var(--text3)}
-.r-hi-bar{display:flex;height:6px;border-radius:3px;overflow:hidden;gap:1px;width:80px}
-.r-hi-bar span{display:block;min-width:1px}
-.r-clickable{cursor:pointer}.r-clickable:hover{opacity:.8;text-decoration:underline}
-.t3-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;padding:8px 0;border-bottom:1px solid var(--border2);position:sticky;top:86px;background:var(--bg);z-index:50}
-.t3-sel{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--text);font-size:12px;outline:none;cursor:pointer}
-.t3-sel:focus{border-color:var(--accent)}
-.t3-search{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--text);font-size:12px;width:160px;outline:none}
-.t3-search:focus{border-color:var(--accent)}
-.t3-label{font-size:11px;color:var(--text3);font-family:var(--mono);flex-shrink:0}
-.t3-count{font-size:11px;color:var(--text3);font-family:var(--mono);margin-left:auto}
-.t3-gi-list{display:flex;flex-direction:column;gap:6px}
-.t3-gi-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.t3-gi-hdr{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;user-select:none}
-.t3-gi-hdr:hover{background:rgba(255,255,255,.03)}
-.t3-gi-name{font-weight:700;font-size:13px;color:var(--text);flex:1}
-.t3-gi-sub{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px}
-.t3-gi-arrow{color:var(--text3);font-size:10px;transition:.2s;flex-shrink:0}
-.t3-gi-card.open .t3-gi-arrow{transform:rotate(180deg)}
-.t3-chip{font-size:10px;font-weight:700;font-family:var(--mono);padding:2px 7px;border-radius:4px}
-.chip-C{background:rgba(239,68,68,.15);color:#ef4444}.chip-P{background:rgba(249,115,22,.15);color:#f97316}
-.chip-F{background:rgba(234,179,8,.15);color:#eab308}.chip-G{background:rgba(59,130,246,.15);color:#3b82f6}
-.chip-V{background:rgba(16,185,129,.15);color:#10b981}
-.t3-gi-body{display:none;border-top:1px solid var(--border2)}
-.t3-gi-card.open .t3-gi-body{display:block}
-.t3-bay-list{padding:10px 14px;display:flex;flex-direction:column;gap:8px}
-.t3-bay{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:10px 12px}
-.t3-bay-name{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px}
-.t3-bay-total{font-size:10px;color:var(--text3);font-family:var(--mono);margin-left:auto;flex-shrink:0}
-.t3-eq-table{width:100%;border-collapse:collapse;font-size:11px}
-.t3-eq-table th{padding:4px 8px;text-align:left;font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border2)}
-.t3-eq-table td{padding:4px 8px;border-bottom:1px solid rgba(255,255,255,.04)}
-.t3-eq-table tr:last-child td{border-bottom:none}
-.t3-eq-hi{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;font-family:var(--mono)}
-.hi-C{background:rgba(239,68,68,.15);color:#ef4444}.hi-P{background:rgba(249,115,22,.15);color:#f97316}
-.hi-F{background:rgba(234,179,8,.15);color:#eab308}.hi-G{background:rgba(59,130,246,.15);color:#3b82f6}
-.hi-V{background:rgba(16,185,129,.15);color:#10b981}
-.bay-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;align-items:center;justify-content:center}
-.bay-modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;max-width:780px;width:95%;max-height:80vh;overflow:hidden;display:flex;flex-direction:column}
-.bay-modal-hdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
-.bay-modal-title{font-size:16px;font-weight:700}
-.bay-modal-sub{font-size:11px;color:var(--text3);margin-top:3px;font-family:var(--mono)}
-.bay-modal-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px;border-radius:4px}
-.bay-modal-close:hover{background:rgba(255,255,255,.08);color:var(--text)}
-.bay-modal-body{overflow-y:auto;padding:16px 20px;flex:1}
-.bay-equip-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.bay-eq-btn{padding:3px 10px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-size:10px;font-weight:600;transition:all .15s}
-.bay-eq-btn.active{background:rgba(56,189,248,.12);border-color:var(--accent);color:var(--accent)}
-.bay-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
-.bay-card{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:10px 12px}
-.bay-card-bay{font-size:10px;font-weight:700;color:var(--accent);margin-bottom:4px}
-.bay-card-eq{font-size:12px;font-weight:700}
-.bay-card-hi{margin-top:6px;font-family:var(--mono);font-size:11px}
-.bay-card-meta{font-size:10px;color:var(--text3);margin-top:3px}
-.bay-card-justif{font-size:10px;color:var(--text2);margin-top:4px;border-top:1px solid var(--border2);padding-top:4px}
-.bay-card-rencana{font-size:10px;color:var(--adj-color);margin-top:3px}
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dashboard AHI MTU — PLN Transmisi Jawa Bali</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>:root{--bg:#0a0e1a;--bg3:#141c2f;--border:#1e2d4a;--border2:#253a5e;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--critical:#ef4444;--poor:#f97316;--fair:#eab308;--good:#3b82f6;--verygood:#10b981;--accent:#38bdf8;--accent2:#6366f1;--adj-color:#a78bfa;--krit-color:#f472b6;--card:#111827;--card2:#1a2640}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(56,189,248,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.03) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:0}
+.container{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:24px}
+header{display:flex;align-items:center;justify-content:space-between;padding:20px 28px;background:linear-gradient(135deg,var(--card),var(--card2));border:1px solid var(--border2);border-radius:16px;margin-bottom:20px;position:relative;overflow:hidden}
+header::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2),var(--verygood))}
+.header-left{display:flex;align-items:center;gap:16px}.pln-badge{width:48px;height:48px;background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:white}
+.header-title h1{font-size:19px;font-weight:700}.header-title p{font-size:12px;color:var(--text2);margin-top:2px}
+.header-right{text-align:right}.update-date{font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace}.update-date span{color:var(--accent);font-weight:600}
+.banner{display:flex;align-items:center;gap:16px;padding:14px 22px;border-radius:12px;margin-bottom:14px;transition:all .3s}
+.adj-banner{background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.25)}.adj-banner.active{background:rgba(167,139,250,.13);border-color:rgba(167,139,250,.5);box-shadow:0 0 20px rgba(167,139,250,.1)}
+.krit-banner{background:rgba(244,114,182,.06);border:1px solid rgba(244,114,182,.25)}.krit-banner.active{background:rgba(244,114,182,.13);border-color:rgba(244,114,182,.5);box-shadow:0 0 20px rgba(244,114,182,.1)}
+.banner-icon{font-size:20px;flex-shrink:0}.banner-text{flex:1}.banner-text h3{font-size:13px;font-weight:700;margin-bottom:4px}
+.adj-banner .banner-text h3{color:var(--adj-color)}.krit-banner .banner-text h3{color:var(--krit-color)}
+.banner-rules{display:flex;gap:8px;flex-wrap:wrap}
+.adj-rule-tag{background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--adj-color);font-weight:600}
+.krit-rule-tag{background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.25);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--krit-color);font-weight:600}
+.banner-meta{text-align:right;flex-shrink:0}.banner-count{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700}.banner-count-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.adj-banner .banner-count{color:var(--adj-color)}.krit-banner .banner-count{color:var(--krit-color)}
+.toggle{position:relative;width:52px;height:28px;background:var(--bg3);border:1px solid var(--border2);border-radius:14px;cursor:pointer;transition:all .3s;flex-shrink:0}
+.toggle-knob{position:absolute;top:3px;left:3px;width:20px;height:20px;background:white;border-radius:50%;transition:left .3s}.toggle.on .toggle-knob{left:27px}
+.adj-toggle.on{background:var(--adj-color);border-color:var(--adj-color);box-shadow:0 0 12px rgba(167,139,250,.4)}
+.krit-toggle.on{background:var(--krit-color);border-color:var(--krit-color);box-shadow:0 0 12px rgba(244,114,182,.4)}
+.filter-bar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.filter-btn{padding:8px 18px;border-radius:8px;border:1px solid var(--border2);background:var(--card);color:var(--text2);font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}
+.filter-btn:hover{border-color:var(--accent);color:var(--accent)}.filter-btn.active{background:linear-gradient(135deg,var(--accent2),var(--accent));border-color:transparent;color:white;box-shadow:0 4px 15px rgba(99,102,241,.3)}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;transition:transform .2s}.kpi-card:hover{transform:translateY(-2px)}
+.kpi-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.kpi-value{font-size:36px;font-weight:700;font-family:'JetBrains Mono',monospace;line-height:1}
+.kpi-sub{font-size:12px;color:var(--text3);margin-top:6px}.kpi-pct{font-size:12px;font-weight:600;margin-top:4px}.kpi-delta{font-size:11px;margin-top:4px;font-family:'JetBrains Mono',monospace;font-weight:600;min-height:16px}
+.delta-down{color:var(--verygood)}.delta-up{color:var(--critical)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px}
+.section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:16px;display:flex;align-items:center;gap:8px}.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.stacked-bar{border-radius:6px;display:flex;overflow:hidden;background:var(--bg3)}
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
+.data-table td{padding:9px 12px;font-size:12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.gi-row{cursor:pointer}.gi-row:hover td{background:rgba(56,189,248,.04)!important}
+.equip-expand-row td{padding:0!important;border-bottom:2px solid var(--accent2)!important}
+.equip-expand{background:linear-gradient(135deg,rgba(99,102,241,.06),rgba(56,189,248,.04));padding:16px 20px}
+.equip-expand-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.equip-expand-card{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px}
+.badge{display:inline-block;padding:3px 8px;border-radius:5px;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.badge-critical{background:rgba(239,68,68,.15);color:var(--critical);border:1px solid rgba(239,68,68,.3)}
+.badge-poor{background:rgba(249,115,22,.15);color:var(--poor);border:1px solid rgba(249,115,22,.3)}
+.badge-fair{background:rgba(234,179,8,.15);color:var(--fair);border:1px solid rgba(234,179,8,.3)}
+.badge-good{background:rgba(59,130,246,.15);color:var(--good);border:1px solid rgba(59,130,246,.3)}
+.badge-verygood{background:rgba(16,185,129,.15);color:var(--verygood);border:1px solid rgba(16,185,129,.3)}
+.krit-tag{display:inline-block;background:rgba(244,114,182,.15);color:var(--krit-color);border:1px solid rgba(244,114,182,.3);border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700;letter-spacing:.5px;vertical-align:middle;margin-left:3px}
+.crit-btn{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;background:var(--critical);color:white;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;cursor:pointer;border:none;transition:all .2s;vertical-align:middle;margin-left:4px}
+.crit-btn:hover{background:#b91c1c;transform:scale(1.08)}
+.rank-num{width:24px;height:24px;background:var(--bg3);border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text3);font-family:'JetBrains Mono',monospace}.rank-num.danger{background:rgba(239,68,68,.1);color:var(--critical)}
+.donut-wrap{display:flex;align-items:center;gap:24px}.donut-chart-container{position:relative;width:140px;height:140px;flex-shrink:0}.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}.donut-center-val{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace}.donut-center-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
+.equip-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}.equip-row:last-child{border-bottom:none}.equip-name{width:60px;font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent)}.equip-bar-wrap{flex:1}.equip-total{font-size:12px;color:var(--text3);width:50px;text-align:right;font-family:'JetBrains Mono',monospace}
+.alert-box{background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:12px 16px;display:flex;align-items:flex-start;gap:12px;margin-bottom:7px}
+.alert-krit{background:rgba(244,114,182,.06);border-color:rgba(244,114,182,.3)}
+.alert-icon{font-size:15px;flex-shrink:0;margin-top:1px}.alert-content{flex:1}.alert-gi{font-size:12px;font-weight:700;color:var(--text)}.alert-upt{font-size:11px;color:var(--text3);margin-top:2px}.score-bar{height:4px;border-radius:2px;overflow:hidden;background:var(--bg3);margin-top:5px}.alert-score{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--critical);flex-shrink:0}
+.usia-row{margin-bottom:14px}.usia-row:last-child{margin-bottom:0}
+.klaster-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.klaster-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;transition:border-color .2s}.klaster-card:hover{border-color:var(--border2)}
+.klaster-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.klaster-badge{font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;padding:4px 10px;border-radius:6px}.klaster-total{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.klaster-stats{display:grid;grid-template-columns:1fr 1fr;gap:5px}.klaster-stat{display:flex;align-items:center;gap:5px;font-size:10px}.klaster-stat-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0}.klaster-stat-val{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11px}.klaster-stat-pct{color:var(--text3);font-size:10px}
+.gi-table-wrap{max-height:420px;overflow-y:auto}.gi-table-wrap::-webkit-scrollbar{width:4px}.gi-table-wrap::-webkit-scrollbar-track{background:var(--bg)}.gi-table-wrap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.mini-bar-inline{display:inline-flex;height:10px;width:80px;border-radius:3px;overflow:hidden;background:var(--bg3);vertical-align:middle}
+.compare-panel{background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.2);border-radius:12px;padding:18px 22px;margin-bottom:20px;display:none}.compare-panel.visible{display:block}.compare-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--adj-color);margin-bottom:14px}.compare-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}.compare-col{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px}.compare-col-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;text-align:center}.compare-row{display:flex;justify-content:space-between;align-items:center;gap:4px;margin-bottom:5px}.compare-row:last-child{margin-bottom:0}.compare-row-label{font-size:10px;color:var(--text2)}.compare-row-val{font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:700}.compare-row-delta{font-size:10px;font-weight:700;min-width:32px;text-align:right}
+.bay-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px}
+.bay-modal{background:var(--card2);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:1150px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.5)}
+.bay-mhdr{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border);flex-shrink:0;background:linear-gradient(135deg,rgba(239,68,68,.08),rgba(249,115,22,.04))}
+.bay-mtitle{font-size:15px;font-weight:700}.bay-msub{font-size:12px;color:var(--text3);margin-top:3px}
+.bay-mclose{width:32px;height:32px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .2s;flex-shrink:0}
+.bay-mclose:hover{background:var(--critical);border-color:var(--critical);color:white}
+.bay-mbody{overflow-y:auto;padding:18px 24px;flex:1}.bay-mbody::-webkit-scrollbar{width:4px}.bay-mbody::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.bay-sumgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+.bay-sumcard{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px}
+.bay-sumlabel{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.bay-sumval{font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.bay-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.bay-chip{padding:5px 12px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Space Grotesk',sans-serif}
+.bay-chip:hover,.bay-chip.active{background:rgba(239,68,68,.15);border-color:var(--critical);color:var(--critical)}
+.bay-chip.all.active{background:rgba(56,189,248,.12);border-color:var(--accent);color:var(--accent)}
+.bay-tbl{width:100%;border-collapse:collapse}
+.bay-tbl th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);background:var(--bg3);position:sticky;top:0;z-index:2;white-space:nowrap}
+.bay-tbl td{padding:9px 12px;font-size:12px;border-bottom:1px solid var(--border);vertical-align:top}
+.bay-tbl tr:last-child td{border-bottom:none}.bay-tbl tr:hover td{background:rgba(239,68,68,.04)}
+.hi-bar{display:flex;align-items:center;gap:6px}.hi-num{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;width:36px;text-align:right;flex-shrink:0}.hi-track{flex:1;height:6px;border-radius:3px;background:var(--bg3);overflow:hidden;min-width:60px}.hi-fill{height:100%;border-radius:3px}
+.jus-text{font-size:11px;color:var(--text2);line-height:1.5;max-width:280px}.jus-crit{font-weight:700;color:var(--critical)}.jus-poor{font-weight:700;color:var(--poor)}.jus-fair{font-weight:700;color:var(--fair)}
+.usia-pill{display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace;white-space:nowrap}
+.up-muda{background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3)}.up-tua{background:rgba(234,179,8,.15);color:#eab308;border:1px solid rgba(234,179,8,.3)}.up-sangat{background:rgba(239,68,68,.15);color:var(--critical);border:1px solid rgba(239,68,68,.3)}
+.renc-tag{display:inline-block;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(16,185,129,.12);color:#10b981;border:1px solid rgba(16,185,129,.3);white-space:nowrap}
+footer{text-align:center;padding:20px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);margin-top:8px}
+@media(max-width:1200px){.klaster-grid{grid-template-columns:repeat(2,1fr)}.grid-4{grid-template-columns:repeat(2,1fr)}.compare-grid{grid-template-columns:repeat(3,1fr)}.equip-expand-grid{grid-template-columns:repeat(3,1fr)}.bay-sumgrid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.grid-2{grid-template-columns:1fr}.klaster-grid{grid-template-columns:1fr 1fr}.equip-expand-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
-<div class="topbar">
-  <div class="brand">&#x26A1; PLN UIT JBM</div>
-  <div class="main-tab active" onclick="switchTab('tab-dashboard',this)">&#x1F4CA; Dashboard AHI MTU</div>
-  <div class="main-tab" onclick="switchTab('tab-resume',this)">&#x270E; Resume AHI</div>
-  <div class="main-tab" onclick="switchTab('tab-rincian',this)">&#x2630; Rincian MTU per Bay</div>
-  <div class="topbar-right">
-    <span class="csv-path" id="csvPath">ahi_data.json</span>
-    <span class="csv-status" id="csvStatus">memuat&hellip;</span>
-    <span id="lastUpdate" style="font-size:10px;color:var(--text3);font-family:var(--mono)"></span>
-  </div>
-</div>
-<div class="st-bar">
-  <span class="st-lbl">Filter</span>
-  <div class="st-btn adj-on" id="stAdj" onclick="toggleAdj()"><span class="st-dot"></span>&#x2699;&#xFE0F; Adjustment</div>
-  <div class="banner adj-banner active" id="adjBanner">TRAFO &lt;20yr + PMT &lt;15yr &rarr; GOOD &middot; <span id="adjCount">-</span> unit</div>
-  <div class="st-sep"></div>
-  <div class="st-btn" id="stKrit" onclick="toggleKrit()"><span class="st-dot"></span>&#x1F3AF; GI Kritikal</div>
-  <div class="banner krit-banner" id="kritBanner">GI Kritikal &middot; <span id="kritCount">-</span> GI</div>
-</div>
-<div id="loadingScreen" class="loading-screen">
-  <div class="loading-spinner"></div>
-  <div class="loading-text" id="loadingText">Memuat data&hellip;</div>
-</div>
-<div id="errorBox" class="error-box" style="display:none">
-  <div class="error-title">&#x274C; Gagal memuat data</div>
-  <div class="error-msg" id="errorMsg"></div>
-</div>
-<div id="mainContent" style="display:none">
-<div class="main-panel active" id="tab-dashboard"><div class="wrap">
-  <div class="kpi-row" id="kpiRow"></div>
-  <div class="upt-row" id="uptRow"></div>
-  <div class="card" id="comparePanelWrap" style="margin-bottom:14px;display:none">
-    <div class="section-title" style="margin-bottom:10px">&#x2195; Perbandingan Sebelum vs Sesudah Adjustment per UPT
-      <span style="color:var(--adj-color);font-size:10px;font-weight:400;margin-left:8px">TRAFO &lt;20yr + PMT &lt;15yr &rarr; GOOD</span>
-    </div>
-    <div id="comparePanel"></div>
-  </div>
-  <div class="section-title">Cluster Level Tegangan</div>
-  <div class="klaster-grid" id="klasterCards"></div>
-  <div class="grid-2">
-    <div class="card"><div class="section-title">Status per Jenis Peralatan</div><div id="equipBars"></div></div>
-    <div class="card"><div class="section-title">GI Paling Kritis (Top 10)</div>
-      <table class="gi-table"><thead><tr><th>#</th><th>Gardu Induk</th><th class="r">Crit</th><th class="r">Poor</th><th class="r">Total</th><th>Tindakan</th></tr></thead>
-      <tbody id="worstGIBody"></tbody></table>
+<div class="container">
+<header>
+  <div class="header-left">
+    <div class="pln-badge">&#x26A1;</div>
+    <div class="header-title">
+      <h1>Dashboard AHI MTU &#x2014; Transmisi Jawa Bali</h1>
+      <p>Asset Health Index &middot; Monitoring Unit Transmisi &middot; Konvensional</p>
     </div>
   </div>
-  <div class="card"><div class="section-title">Detail Gardu Induk &mdash; <span id="detailUPTLabel">Semua UPT</span></div>
-    <div style="overflow-x:auto"><table class="gi-table" style="min-width:700px">
-      <thead><tr><th>#</th><th onclick="giSort('name')">Gardu Induk</th><th>UPT</th>
-        <th class="r" onclick="giSort('total')">Total</th><th class="r" onclick="giSort('CRITICAL')">Critical</th>
-        <th class="r" onclick="giSort('POOR')">Poor</th><th class="r" onclick="giSort('FAIR')">Fair</th>
-        <th class="r" onclick="giSort('GOOD')">Good</th><th>Tindakan</th>
-      </tr></thead><tbody id="giDetailBody"></tbody>
-    </table></div>
+  <div class="header-right">
+    <div class="update-date">Update: <span>4 May 2026</span></div>
+    <div class="update-date" style="margin-top:4px">Total: <span id="totalEquip">&#x2014;</span> peralatan <span id="kritLabel" style="color:var(--krit-color);font-size:11px"></span></div>
   </div>
-</div></div>
-<div class="main-panel" id="tab-resume"><div class="wrap">
-  <div class="r-kpi-row" id="rKpiRow"></div>
-  <div id="rUPTRow" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"></div>
-  <div class="r-toolbar">
-    <input class="r-search" id="rSearch" placeholder="&#x1F50D; Cari GI / UPT..." oninput="rFilter()">
-    <span class="r-count" id="rCount"></span>
+</header>
+
+<div class="banner adj-banner" id="adjBanner">
+  <div class="banner-icon">&#x2699;&#xFE0F;</div>
+  <div class="banner-text">
+    <h3>Mode Penyesuaian AHI (Adjustment)</h3>
+    <div class="banner-rules">
+      <span class="adj-rule-tag">TRAFO &middot; FAIR + Usia &lt; 20 thn &#x2192; GOOD</span>
+      <span class="adj-rule-tag">PMT &middot; FAIR + Usia &lt; 15 thn &#x2192; GOOD</span>
+    </div>
   </div>
-  <div style="overflow-x:auto"><table class="r-gi-table">
-    <thead><tr>
-      <th onclick="rSort('gi')" style="min-width:220px">Gardu Induk</th>
-      <th onclick="rSort('upt')">UPT</th>
-      <th onclick="rSort('worst_hi')" style="color:var(--accent)" class="rn">Worst HI</th>
-      <th onclick="rSort('CRITICAL')" class="rn">Critical</th>
-      <th onclick="rSort('POOR')" class="rn">Poor</th>
-      <th onclick="rSort('FAIR')" class="rn">Fair</th>
-      <th onclick="rSort('GOOD')" class="rn">Good</th>
-      <th onclick="rSort('VERY GOOD')" class="rn">Very Good</th>
-      <th onclick="rSort('total')" class="rn">Total</th>
-      <th style="min-width:80px">Sebaran</th>
-    </tr></thead>
-    <tbody id="rGIBody"></tbody>
-  </table></div>
-</div></div>
-<div class="main-panel" id="tab-rincian"><div class="wrap">
-  <div class="t3-filters">
-    <span class="t3-label">UPT</span>
-    <select class="t3-sel" id="t3UPT" onchange="t3Filter()"><option value="ALL">Semua UPT</option></select>
-    <span class="t3-label">Filter HI</span>
-    <select class="t3-sel" id="t3HI" onchange="t3Filter()">
-      <option value="ALL">Semua</option><option value="CRITICAL">Critical</option>
-      <option value="POOR">Poor</option><option value="FAIR">Fair</option>
-      <option value="GOOD">Good</option><option value="VERY GOOD">Very Good</option>
-    </select>
-    <input class="t3-search" id="t3Search" placeholder="&#x1F50D; Cari GI / Bay..." oninput="t3Filter()">
-    <span class="t3-count" id="t3Count"></span>
-  </div>
-  <div id="t3GIList" class="t3-gi-list"><div style="padding:40px;text-align:center;color:var(--text3);font-family:var(--mono)">Klik tab untuk memuat&hellip;</div></div>
-</div></div>
+  <div class="banner-meta"><div class="banner-count">1.279</div><div class="banner-count-label">unit di-adjust</div></div>
+  <div class="toggle adj-toggle" id="adjToggle" onclick="toggleAdjustment()"><div class="toggle-knob"></div></div>
 </div>
-<div class="bay-overlay" id="bayOverlay" onclick="if(event.target===this)closeBay()">
+
+<div class="banner krit-banner" id="kritBanner">
+  <div class="banner-icon">&#x1F3AF;</div>
+  <div class="banner-text">
+    <h3>Filter GI Kritikal Sistem</h3>
+    <div class="banner-rules">
+      <span class="krit-rule-tag">62 GI/GITET masuk kriteria kritikal UIT JBM</span>
+      <span class="krit-rule-tag">8.208 titik peralatan terpantau</span>
+    </div>
+  </div>
+  <div class="banner-meta"><div class="banner-count">62</div><div class="banner-count-label">GI/GITET kritikal</div></div>
+  <div class="toggle krit-toggle" id="kritToggle" onclick="toggleKritikal()"><div class="toggle-knob"></div></div>
+</div>
+
+<div class="compare-panel" id="comparePanel">
+  <div class="compare-title">&#x1F4CA; Perbandingan Sebelum vs Sesudah Adjustment per UPT</div>
+  <div class="compare-grid" id="compareGrid"></div>
+</div>
+
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="setUpt(event,'ALL')">Semua UPT</button>
+  <button class="filter-btn" onclick="setUpt(event,'UPT BALI')">UPT Bali</button>
+  <button class="filter-btn" onclick="setUpt(event,'UPT GRESIK')">UPT Gresik</button>
+  <button class="filter-btn" onclick="setUpt(event,'UPT MADIUN')">UPT Madiun</button>
+  <button class="filter-btn" onclick="setUpt(event,'UPT MALANG')">UPT Malang</button>
+  <button class="filter-btn" onclick="setUpt(event,'UPT PROBOLINGGO')">UPT Probolinggo</button>
+  <button class="filter-btn" onclick="setUpt(event,'UPT SURABAYA')">UPT Surabaya</button>
+</div>
+
+<div class="grid-4">
+  <div class="kpi-card" style="border-left:3px solid var(--critical)">
+    <div class="kpi-label">&#x1F534; Critical</div><div class="kpi-value" style="color:var(--critical)" id="kpi-critical">&#x2014;</div>
+    <div class="kpi-sub">Prioritas penanganan segera</div><div class="kpi-pct" style="color:var(--critical)" id="pct-critical"></div><div class="kpi-delta" id="delta-critical"></div>
+  </div>
+  <div class="kpi-card" style="border-left:3px solid var(--poor)">
+    <div class="kpi-label">&#x1F7E0; Poor</div><div class="kpi-value" style="color:var(--poor)" id="kpi-poor">&#x2014;</div>
+    <div class="kpi-sub">Kondisi kurang baik</div><div class="kpi-pct" style="color:var(--poor)" id="pct-poor"></div><div class="kpi-delta" id="delta-poor"></div>
+  </div>
+  <div class="kpi-card" style="border-left:3px solid var(--fair)">
+    <div class="kpi-label">&#x1F7E1; Fair</div><div class="kpi-value" style="color:var(--fair)" id="kpi-fair">&#x2014;</div>
+    <div class="kpi-sub">Perlu perhatian</div><div class="kpi-pct" style="color:var(--fair)" id="pct-fair"></div><div class="kpi-delta" id="delta-fair"></div>
+  </div>
+  <div class="kpi-card" style="border-left:3px solid var(--good)">
+    <div class="kpi-label">&#x1F7E2; Good + Very Good</div><div class="kpi-value" style="color:var(--good)" id="kpi-good">&#x2014;</div>
+    <div class="kpi-sub">Kondisi baik</div><div class="kpi-pct" style="color:var(--good)" id="pct-good"></div><div class="kpi-delta" id="delta-good"></div>
+  </div>
+</div>
+
+<div class="section-title" style="margin-bottom:12px">Cluster Level Tegangan</div>
+<div class="klaster-grid" id="klasterCards"></div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="section-title">Status per Jenis Peralatan</div>
+    <div id="equipBars"></div>
+  </div>
+  <div class="card">
+    <div class="section-title">&#x26A0;&#xFE0F; GI Paling Kritis (Top 10)</div>
+    <div id="worstGiList"></div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="section-title">Komposisi Status</div>
+    <div class="donut-wrap">
+      <div class="donut-chart-container">
+        <canvas id="donutChart" width="140" height="140"></canvas>
+        <div class="donut-center"><div class="donut-center-val" id="donutTotal">&#x2014;</div><div class="donut-center-label">Peralatan</div></div>
+      </div>
+      <div style="flex:1"><div id="donutLegend"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="section-title">Status Usia Peralatan</div>
+    <div id="usiaRows"></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:20px">
+  <div class="section-title" id="giDetailTitle">Detail Gardu Induk &#x2014; Semua UPT</div>
+  <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Klik baris GI untuk rincian peralatan &middot; <span class="krit-tag">K</span> = GI Kritikal &middot; Tombol <span style="background:var(--critical);color:white;border-radius:10px;padding:1px 8px;font-size:10px">N &#x1F50D;</span> = detail bay Critical</div>
+  <div class="gi-table-wrap">
+    <table class="data-table">
+      <thead><tr>
+        <th>#</th><th>Gardu Induk</th><th>UPT</th><th>Total</th>
+        <th>Critical</th><th>Poor</th><th>Fair</th><th>Good</th><th>Very Good</th><th>Distribusi</th>
+      </tr></thead>
+      <tbody id="giTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<footer>Dashboard AHI MTU &middot; PLN Transmisi Jawa Bali &middot; Data per 24 April 2026 &middot; 17.300 titik peralatan &middot; 62 GI Kritikal</footer>
+</div>
+
+<!-- BAY MODAL -->
+<div class="bay-overlay" id="bayOverlay" style="display:none" onclick="if(event.target===this)closeBayModal()">
   <div class="bay-modal">
-    <div class="bay-modal-hdr">
-      <div><div class="bay-modal-title" id="bayTitle">-</div><div class="bay-modal-sub" id="baySub">-</div></div>
-      <button class="bay-modal-close" onclick="closeBay()">&#x2715;</button>
+    <div class="bay-mhdr">
+      <div><div class="bay-mtitle" id="bayMTitle">&#x2014;</div><div class="bay-msub" id="bayMSub">&#x2014;</div></div>
+      <button class="bay-mclose" onclick="closeBayModal()">&#x2715;</button>
     </div>
-    <div class="bay-modal-body">
-      <div class="bay-equip-filter" id<script>
+    <div class="bay-mbody">
+      <div class="bay-sumgrid" id="baySumGrid"></div>
+      <div class="bay-chips" id="bayChips"></div>
+      <div style="overflow-x:auto">
+        <table class="bay-tbl">
+          <thead><tr>
+            <th>#</th><th>Jenis</th><th>Bay</th><th>Phasa</th>
+            <th>Merek / Tipe</th><th>Thn Buat / Ops</th>
+            <th>Nilai HI</th><th>Usia</th><th>Justifikasi</th><th>Rencana</th>
+          </tr></thead>
+          <tbody id="bayTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA_ORI = {"overall":{"CRITICAL":413,"POOR":1140,"FAIR":1209,"GOOD":12032,"VERY GOOD":2504},"total":17298,"adj_count":76,"status_usia":{"MUDA":8850,"TUA":2134,"SANGAT TUA":6314},"overall_kritikal":{"CRITICAL":0,"POOR":0,"FAIR":0,"GOOD":0,"VERY GOOD":0},"total_kritikal":0,"usia_kritikal":{"MUDA":0,"TUA":0,"SANGAT TUA":0},"klaster_data":{"150 kV":{"counts":{"CRITICAL":104,"POOR":641,"FAIR":408,"GOOD":5223,"VERY GOOD":391},"total":6767,"equip_data":{"LA":{"counts":{"CRITICAL":26,"POOR":42,"FAIR":0,"GOOD":2509,"VERY GOOD":1},"total":2578},"PMS":{"counts":{"CRITICAL":20,"POOR":107,"FAIR":29,"GOOD":1753,"VERY GOOD":340},"total":2249},"PMT":{"counts":{"CRITICAL":54,"POOR":488,"FAIR":377,"GOOD":930,"VERY GOOD":46},"total":1895},"TRAFO":{"counts":{"CRITICAL":4,"POOR":4,"FAIR":2,"GOOD":31,"VERY GOOD":4},"total":45}}},"20 kV ke bawah":{"counts":{"CRITICAL":272,"POOR":214,"FAIR":735,"GOOD":5137,"VERY GOOD":1829},"total":8187,"equip_data":{"CT":{"counts":{"CRITICAL":103,"POOR":113,"FAIR":95,"GOOD":3202,"VERY GOOD":1720},"total":5233},"CVT":{"counts":{"CRITICAL":157,"POOR":16,"FAIR":600,"GOOD":1570,"VERY GOOD":104},"total":2447},"LA":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":0,"GOOD":21,"VERY GOOD":0},"total":21},"PMS":{"counts":{"CRITICAL":0,"POOR":1,"FAIR":2,"GOOD":17,"VERY GOOD":2},"total":22},"PMT":{"counts":{"CRITICAL":0,"POOR":4,"FAIR":7,"GOOD":110,"VERY GOOD":1},"total":122},"TRAFO":{"counts":{"CRITICAL":12,"POOR":80,"FAIR":31,"GOOD":217,"VERY GOOD":2},"total":342}}},"500 kV":{"counts":{"CRITICAL":23,"POOR":155,"FAIR":24,"GOOD":430,"VERY GOOD":187},"total":819,"equip_data":{"LA":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":0,"GOOD":133,"VERY GOOD":3},"total":136},"PMS":{"counts":{"CRITICAL":3,"POOR":47,"FAIR":7,"GOOD":268,"VERY GOOD":182},"total":507},"PMT":{"counts":{"CRITICAL":20,"POOR":108,"FAIR":15,"GOOD":26,"VERY GOOD":2},"total":171},"TRAFO":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":2,"GOOD":3,"VERY GOOD":0},"total":5}}},"70 kV":{"counts":{"CRITICAL":14,"POOR":130,"FAIR":42,"GOOD":1242,"VERY GOOD":97},"total":1525,"equip_data":{"LA":{"counts":{"CRITICAL":3,"POOR":37,"FAIR":0,"GOOD":575,"VERY GOOD":0},"total":615},"PMS":{"counts":{"CRITICAL":7,"POOR":25,"FAIR":5,"GOOD":386,"VERY GOOD":96},"total":519},"PMT":{"counts":{"CRITICAL":4,"POOR":68,"FAIR":37,"GOOD":281,"VERY GOOD":1},"total":391}}}},"equip_data":{"CT":{"counts":{"CRITICAL":103,"POOR":113,"FAIR":95,"GOOD":3202,"VERY GOOD":1720},"total":5233},"CVT":{"counts":{"CRITICAL":157,"POOR":16,"FAIR":600,"GOOD":1570,"VERY GOOD":104},"total":2447},"LA":{"counts":{"CRITICAL":29,"POOR":79,"FAIR":0,"GOOD":3238,"VERY GOOD":4},"total":3350},"PMS":{"counts":{"CRITICAL":30,"POOR":180,"FAIR":43,"GOOD":2424,"VERY GOOD":620},"total":3297},"PMT":{"counts":{"CRITICAL":78,"POOR":668,"FAIR":436,"GOOD":1347,"VERY GOOD":50},"total":2579},"TRAFO":{"counts":{"CRITICAL":16,"POOR":84,"FAIR":35,"GOOD":251,"VERY GOOD":6},"total":392}},"upt_data":{"UPT BALI":{"counts":{"CRITICAL":39,"POOR":97,"FAIR":128,"GOOD":1264,"VERY GOOD":320},"total":1848,"klaster_data":{"150 kV":{"counts":{"CRITICAL":18,"POOR":81,"FAIR":40,"GOOD":735,"VERY GOOD":79},"total":953},"20 kV ke bawah":{"counts":{"CRITICAL":21,"POOR":16,"FAIR":88,"GOOD":529,"VERY GOOD":241},"total":895}},"equip_data":{"CT":{"counts":{"CRITICAL":4,"POOR":6,"FAIR":14,"GOOD":347,"VERY GOOD":198},"total":569},"CVT":{"counts":{"CRITICAL":15,"POOR":0,"FAIR":70,"GOOD":153,"VERY GOOD":43},"total":281},"LA":{"counts":{"CRITICAL":6,"POOR":9,"FAIR":0,"GOOD":384,"VERY GOOD":0},"total":399},"PMS":{"counts":{"CRITICAL":8,"POOR":39,"FAIR":5,"GOOD":196,"VERY GOOD":55},"total":303},"PMT":{"counts":{"CRITICAL":4,"POOR":33,"FAIR":35,"GOOD":155,"VERY GOOD":24},"total":251},"TRAFO":{"counts":{"CRITICAL":2,"POOR":10,"FAIR":4,"GOOD":29,"VERY GOOD":0},"total":45}}},"UPT GRESIK":{"counts":{"CRITICAL":52,"POOR":142,"FAIR":175,"GOOD":1505,"VERY GOOD":364},"total":2238,"klaster_data":{"150 kV":{"counts":{"CRITICAL":25,"POOR":112,"FAIR":64,"GOOD":768,"VERY GOOD":84},"total":1053},"20 kV ke bawah":{"counts":{"CRITICAL":27,"POOR":25,"FAIR":110,"GOOD":630,"VERY GOOD":277},"total":1069},"500 kV":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":1,"GOOD":1,"VERY GOOD":0},"total":2},"70 kV":{"counts":{"CRITICAL":0,"POOR":5,"FAIR":0,"GOOD":106,"VERY GOOD":3},"total":114}},"equip_data":{"CT":{"counts":{"CRITICAL":0,"POOR":13,"FAIR":0,"GOOD":430,"VERY GOOD":277},"total":720},"CVT":{"counts":{"CRITICAL":27,"POOR":0,"FAIR":105,"GOOD":177,"VERY GOOD":0},"total":309},"LA":{"counts":{"CRITICAL":0,"POOR":14,"FAIR":0,"GOOD":400,"VERY GOOD":0},"total":414},"PMS":{"counts":{"CRITICAL":0,"POOR":24,"FAIR":1,"GOOD":302,"VERY GOOD":75},"total":402},"PMT":{"counts":{"CRITICAL":25,"POOR":79,"FAIR":63,"GOOD":173,"VERY GOOD":12},"total":352},"TRAFO":{"counts":{"CRITICAL":0,"POOR":12,"FAIR":6,"GOOD":23,"VERY GOOD":0},"total":41}}},"UPT MADIUN":{"counts":{"CRITICAL":38,"POOR":327,"FAIR":327,"GOOD":3159,"VERY GOOD":600},"total":4451,"klaster_data":{"150 kV":{"counts":{"CRITICAL":4,"POOR":154,"FAIR":95,"GOOD":1141,"VERY GOOD":101},"total":1495},"20 kV ke bawah":{"counts":{"CRITICAL":30,"POOR":50,"FAIR":206,"GOOD":1388,"VERY GOOD":366},"total":2040},"500 kV":{"counts":{"CRITICAL":2,"POOR":73,"FAIR":6,"GOOD":126,"VERY GOOD":81},"total":288},"70 kV":{"counts":{"CRITICAL":2,"POOR":50,"FAIR":20,"GOOD":504,"VERY GOOD":52},"total":628}},"equip_data":{"CT":{"counts":{"CRITICAL":12,"POOR":29,"FAIR":22,"GOOD":839,"VERY GOOD":338},"total":1240},"CVT":{"counts":{"CRITICAL":15,"POOR":0,"FAIR":168,"GOOD":463,"VERY GOOD":25},"total":671},"LA":{"counts":{"CRITICAL":0,"POOR":10,"FAIR":0,"GOOD":811,"VERY GOOD":0},"total":821},"PMS":{"counts":{"CRITICAL":0,"POOR":63,"FAIR":24,"GOOD":643,"VERY GOOD":236},"total":966},"PMT":{"counts":{"CRITICAL":4,"POOR":207,"FAIR":106,"GOOD":343,"VERY GOOD":1},"total":661},"TRAFO":{"counts":{"CRITICAL":7,"POOR":18,"FAIR":7,"GOOD":60,"VERY GOOD":0},"total":92}}},"UPT MALANG":{"counts":{"CRITICAL":123,"POOR":221,"FAIR":216,"GOOD":2459,"VERY GOOD":528},"total":3547,"klaster_data":{"150 kV":{"counts":{"CRITICAL":12,"POOR":70,"FAIR":90,"GOOD":763,"VERY GOOD":64},"total":999},"20 kV ke bawah":{"counts":{"CRITICAL":96,"POOR":33,"FAIR":91,"GOOD":1007,"VERY GOOD":371},"total":1598},"500 kV":{"counts":{"CRITICAL":3,"POOR":43,"FAIR":14,"GOOD":98,"VERY GOOD":53},"total":211},"70 kV":{"counts":{"CRITICAL":12,"POOR":75,"FAIR":21,"GOOD":591,"VERY GOOD":40},"total":739}},"equip_data":{"CT":{"counts":{"CRITICAL":19,"POOR":25,"FAIR":3,"GOOD":712,"VERY GOOD":348},"total":1107},"CVT":{"counts":{"CRITICAL":74,"POOR":0,"FAIR":79,"GOOD":240,"VERY GOOD":21},"total":414},"LA":{"counts":{"CRITICAL":13,"POOR":31,"FAIR":0,"GOOD":660,"VERY GOOD":0},"total":704},"PMS":{"counts":{"CRITICAL":9,"POOR":22,"FAIR":3,"GOOD":530,"VERY GOOD":143},"total":707},"PMT":{"counts":{"CRITICAL":5,"POOR":134,"FAIR":122,"GOOD":251,"VERY GOOD":10},"total":522},"TRAFO":{"counts":{"CRITICAL":3,"POOR":9,"FAIR":9,"GOOD":66,"VERY GOOD":6},"total":93}}},"UPT PROBOLINGGO":{"counts":{"CRITICAL":152,"POOR":249,"FAIR":266,"GOOD":2355,"VERY GOOD":420},"total":3442,"klaster_data":{"150 kV":{"counts":{"CRITICAL":43,"POOR":151,"FAIR":96,"GOOD":1221,"VERY GOOD":49},"total":1560},"20 kV ke bawah":{"counts":{"CRITICAL":91,"POOR":59,"FAIR":167,"GOOD":929,"VERY GOOD":318},"total":1564},"500 kV":{"counts":{"CRITICAL":18,"POOR":39,"FAIR":3,"GOOD":205,"VERY GOOD":53},"total":318}},"equip_data":{"CT":{"counts":{"CRITICAL":65,"POOR":28,"FAIR":25,"GOOD":548,"VERY GOOD":303},"total":969},"CVT":{"counts":{"CRITICAL":22,"POOR":16,"FAIR":140,"GOOD":306,"VERY GOOD":15},"total":499},"LA":{"counts":{"CRITICAL":9,"POOR":6,"FAIR":0,"GOOD":638,"VERY GOOD":4},"total":657},"PMS":{"counts":{"CRITICAL":12,"POOR":18,"FAIR":7,"GOOD":572,"VERY GOOD":95},"total":704},"PMT":{"counts":{"CRITICAL":40,"POOR":165,"FAIR":89,"GOOD":256,"VERY GOOD":3},"total":553},"TRAFO":{"counts":{"CRITICAL":4,"POOR":16,"FAIR":5,"GOOD":35,"VERY GOOD":0},"total":60}}},"UPT SURABAYA":{"counts":{"CRITICAL":9,"POOR":104,"FAIR":97,"GOOD":1290,"VERY GOOD":272},"total":1772,"klaster_data":{"150 kV":{"counts":{"CRITICAL":2,"POOR":73,"FAIR":23,"GOOD":595,"VERY GOOD":14},"total":707},"20 kV ke bawah":{"counts":{"CRITICAL":7,"POOR":31,"FAIR":73,"GOOD":654,"VERY GOOD":256},"total":1021},"70 kV":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":1,"GOOD":41,"VERY GOOD":2},"total":44}},"equip_data":{"CT":{"counts":{"CRITICAL":3,"POOR":12,"FAIR":31,"GOOD":326,"VERY GOOD":256},"total":628},"CVT":{"counts":{"CRITICAL":4,"POOR":0,"FAIR":38,"GOOD":231,"VERY GOOD":0},"total":273},"LA":{"counts":{"CRITICAL":1,"POOR":9,"FAIR":0,"GOOD":345,"VERY GOOD":0},"total":355},"PMS":{"counts":{"CRITICAL":1,"POOR":14,"FAIR":3,"GOOD":181,"VERY GOOD":16},"total":215},"PMT":{"counts":{"CRITICAL":0,"POOR":50,"FAIR":21,"GOOD":169,"VERY GOOD":0},"total":240},"TRAFO":{"counts":{"CRITICAL":0,"POOR":19,"FAIR":4,"GOOD":38,"VERY GOOD":0},"total":61}}}},"worst_gi":[{"Gi":"GITET 500KV GRATI","Upt":"UPT PROBOLINGGO","bad_score":107,"counts":{"CRITICAL":26,"POOR":55,"FAIR":15,"GOOD":226,"VERY GOOD":73},"total":395},{"Gi":"GI 150KV PLTU GRESIK","Upt":"UPT GRESIK","bad_score":77,"counts":{"CRITICAL":31,"POOR":15,"FAIR":26,"GOOD":171,"VERY GOOD":98},"total":341},{"Gi":"GI 150KV PAITON","Upt":"UPT PROBOLINGGO","bad_score":71,"counts":{"CRITICAL":24,"POOR":23,"FAIR":12,"GOOD":163,"VERY GOOD":9},"total":231},{"Gi":"GITET 500KV KRIAN","Upt":"UPT MALANG","bad_score":61,"counts":{"CRITICAL":4,"POOR":53,"FAIR":14,"GOOD":201,"VERY GOOD":89},"total":361},{"Gi":"GITET 500KV KEDIRI","Upt":"UPT MADIUN","bad_score":53,"counts":{"CRITICAL":5,"POOR":43,"FAIR":4,"GOOD":131,"VERY GOOD":119},"total":302},{"Gi":"GI 150KV GRATI","Upt":"UPT PROBOLINGGO","bad_score":44,"counts":{"CRITICAL":19,"POOR":6,"FAIR":32,"GOOD":209,"VERY GOOD":40},"total":306},{"Gi":"GITET 500KV NGIMBANG","Upt":"UPT MADIUN","bad_score":35,"counts":{"CRITICAL":1,"POOR":33,"FAIR":5,"GOOD":99,"VERY GOOD":8},"total":146},{"Gi":"GI 70KV POLEHAN","Upt":"UPT MALANG","bad_score":33,"counts":{"CRITICAL":11,"POOR":11,"FAIR":4,"GOOD":63,"VERY GOOD":12},"total":101},{"Gi":"GI 150KV GONDANGWETAN","Upt":"UPT PROBOLINGGO","bad_score":33,"counts":{"CRITICAL":14,"POOR":5,"FAIR":29,"GOOD":140,"VERY GOOD":18},"total":206},{"Gi":"GI 150KV TANGGUL","Upt":"UPT PROBOLINGGO","bad_score":33,"counts":{"CRITICAL":7,"POOR":19,"FAIR":5,"GOOD":108,"VERY GOOD":18},"total":157},{"Gi":"GI 70KV SEKARPUTIH","Upt":"UPT MALANG","bad_score":31,"counts":{"CRITICAL":11,"POOR":9,"FAIR":4,"GOOD":106,"VERY GOOD":23},"total":153},{"Gi":"GI 150KV JEMBER","Upt":"UPT PROBOLINGGO","bad_score":31,"counts":{"CRITICAL":7,"POOR":17,"FAIR":11,"GOOD":113,"VERY GOOD":27},"total":175},{"Gi":"GI 150KV SURABAYA BARAT","Upt":"UPT MALANG","bad_score":30,"counts":{"CRITICAL":11,"POOR":8,"FAIR":50,"GOOD":253,"VERY GOOD":50},"total":372},{"Gi":"GI 150KV PIER","Upt":"UPT PROBOLINGGO","bad_score":30,"counts":{"CRITICAL":5,"POOR":20,"FAIR":17,"GOOD":107,"VERY GOOD":11},"total":160},{"Gi":"GI 150KV PUGER","Upt":"UPT PROBOLINGGO","bad_score":28,"counts":{"CRITICAL":9,"POOR":10,"FAIR":2,"GOOD":66,"VERY GOOD":14},"total":101}],"worst_gi_kritikal":[]};
+const DATA_ADJ = {"overall":{"CRITICAL":413,"POOR":1140,"FAIR":1133,"GOOD":12108,"VERY GOOD":2504},"total":17298,"adj_count":76,"status_usia":{"MUDA":8850,"TUA":2134,"SANGAT TUA":6314},"overall_kritikal":{"CRITICAL":0,"POOR":0,"FAIR":0,"GOOD":0,"VERY GOOD":0},"total_kritikal":0,"usia_kritikal":{"MUDA":0,"TUA":0,"SANGAT TUA":0},"klaster_data":{"150 kV":{"counts":{"CRITICAL":104,"POOR":641,"FAIR":348,"GOOD":5283,"VERY GOOD":391},"total":6767,"equip_data":{"LA":{"counts":{"CRITICAL":26,"POOR":42,"FAIR":0,"GOOD":2509,"VERY GOOD":1},"total":2578},"PMS":{"counts":{"CRITICAL":20,"POOR":107,"FAIR":29,"GOOD":1753,"VERY GOOD":340},"total":2249},"PMT":{"counts":{"CRITICAL":54,"POOR":488,"FAIR":318,"GOOD":989,"VERY GOOD":46},"total":1895},"TRAFO":{"counts":{"CRITICAL":4,"POOR":4,"FAIR":1,"GOOD":32,"VERY GOOD":4},"total":45}}},"20 kV ke bawah":{"counts":{"CRITICAL":272,"POOR":214,"FAIR":722,"GOOD":5150,"VERY GOOD":1829},"total":8187,"equip_data":{"CT":{"counts":{"CRITICAL":103,"POOR":113,"FAIR":95,"GOOD":3202,"VERY GOOD":1720},"total":5233},"CVT":{"counts":{"CRITICAL":157,"POOR":16,"FAIR":600,"GOOD":1570,"VERY GOOD":104},"total":2447},"LA":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":0,"GOOD":21,"VERY GOOD":0},"total":21},"PMS":{"counts":{"CRITICAL":0,"POOR":1,"FAIR":2,"GOOD":17,"VERY GOOD":2},"total":22},"PMT":{"counts":{"CRITICAL":0,"POOR":4,"FAIR":4,"GOOD":113,"VERY GOOD":1},"total":122},"TRAFO":{"counts":{"CRITICAL":12,"POOR":80,"FAIR":21,"GOOD":227,"VERY GOOD":2},"total":342}}},"500 kV":{"counts":{"CRITICAL":23,"POOR":155,"FAIR":24,"GOOD":430,"VERY GOOD":187},"total":819,"equip_data":{"LA":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":0,"GOOD":133,"VERY GOOD":3},"total":136},"PMS":{"counts":{"CRITICAL":3,"POOR":47,"FAIR":7,"GOOD":268,"VERY GOOD":182},"total":507},"PMT":{"counts":{"CRITICAL":20,"POOR":108,"FAIR":15,"GOOD":26,"VERY GOOD":2},"total":171},"TRAFO":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":2,"GOOD":3,"VERY GOOD":0},"total":5}}},"70 kV":{"counts":{"CRITICAL":14,"POOR":130,"FAIR":39,"GOOD":1245,"VERY GOOD":97},"total":1525,"equip_data":{"LA":{"counts":{"CRITICAL":3,"POOR":37,"FAIR":0,"GOOD":575,"VERY GOOD":0},"total":615},"PMS":{"counts":{"CRITICAL":7,"POOR":25,"FAIR":5,"GOOD":386,"VERY GOOD":96},"total":519},"PMT":{"counts":{"CRITICAL":4,"POOR":68,"FAIR":34,"GOOD":284,"VERY GOOD":1},"total":391}}}},"equip_data":{"CT":{"counts":{"CRITICAL":103,"POOR":113,"FAIR":95,"GOOD":3202,"VERY GOOD":1720},"total":5233},"CVT":{"counts":{"CRITICAL":157,"POOR":16,"FAIR":600,"GOOD":1570,"VERY GOOD":104},"total":2447},"LA":{"counts":{"CRITICAL":29,"POOR":79,"FAIR":0,"GOOD":3238,"VERY GOOD":4},"total":3350},"PMS":{"counts":{"CRITICAL":30,"POOR":180,"FAIR":43,"GOOD":2424,"VERY GOOD":620},"total":3297},"PMT":{"counts":{"CRITICAL":78,"POOR":668,"FAIR":371,"GOOD":1412,"VERY GOOD":50},"total":2579},"TRAFO":{"counts":{"CRITICAL":16,"POOR":84,"FAIR":24,"GOOD":262,"VERY GOOD":6},"total":392}},"upt_data":{"UPT BALI":{"counts":{"CRITICAL":39,"POOR":97,"FAIR":120,"GOOD":1272,"VERY GOOD":320},"total":1848,"klaster_data":{"150 kV":{"counts":{"CRITICAL":18,"POOR":81,"FAIR":34,"GOOD":741,"VERY GOOD":79},"total":953},"20 kV ke bawah":{"counts":{"CRITICAL":21,"POOR":16,"FAIR":86,"GOOD":531,"VERY GOOD":241},"total":895}},"equip_data":{"CT":{"counts":{"CRITICAL":4,"POOR":6,"FAIR":14,"GOOD":347,"VERY GOOD":198},"total":569},"CVT":{"counts":{"CRITICAL":15,"POOR":0,"FAIR":70,"GOOD":153,"VERY GOOD":43},"total":281},"LA":{"counts":{"CRITICAL":6,"POOR":9,"FAIR":0,"GOOD":384,"VERY GOOD":0},"total":399},"PMS":{"counts":{"CRITICAL":8,"POOR":39,"FAIR":5,"GOOD":196,"VERY GOOD":55},"total":303},"PMT":{"counts":{"CRITICAL":4,"POOR":33,"FAIR":29,"GOOD":161,"VERY GOOD":24},"total":251},"TRAFO":{"counts":{"CRITICAL":2,"POOR":10,"FAIR":2,"GOOD":31,"VERY GOOD":0},"total":45}}},"UPT GRESIK":{"counts":{"CRITICAL":52,"POOR":142,"FAIR":150,"GOOD":1530,"VERY GOOD":364},"total":2238,"klaster_data":{"150 kV":{"counts":{"CRITICAL":25,"POOR":112,"FAIR":42,"GOOD":790,"VERY GOOD":84},"total":1053},"20 kV ke bawah":{"counts":{"CRITICAL":27,"POOR":25,"FAIR":107,"GOOD":633,"VERY GOOD":277},"total":1069},"500 kV":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":1,"GOOD":1,"VERY GOOD":0},"total":2},"70 kV":{"counts":{"CRITICAL":0,"POOR":5,"FAIR":0,"GOOD":106,"VERY GOOD":3},"total":114}},"equip_data":{"CT":{"counts":{"CRITICAL":0,"POOR":13,"FAIR":0,"GOOD":430,"VERY GOOD":277},"total":720},"CVT":{"counts":{"CRITICAL":27,"POOR":0,"FAIR":105,"GOOD":177,"VERY GOOD":0},"total":309},"LA":{"counts":{"CRITICAL":0,"POOR":14,"FAIR":0,"GOOD":400,"VERY GOOD":0},"total":414},"PMS":{"counts":{"CRITICAL":0,"POOR":24,"FAIR":1,"GOOD":302,"VERY GOOD":75},"total":402},"PMT":{"counts":{"CRITICAL":25,"POOR":79,"FAIR":41,"GOOD":195,"VERY GOOD":12},"total":352},"TRAFO":{"counts":{"CRITICAL":0,"POOR":12,"FAIR":3,"GOOD":26,"VERY GOOD":0},"total":41}}},"UPT MADIUN":{"counts":{"CRITICAL":38,"POOR":327,"FAIR":295,"GOOD":3191,"VERY GOOD":600},"total":4451,"klaster_data":{"150 kV":{"counts":{"CRITICAL":4,"POOR":154,"FAIR":70,"GOOD":1166,"VERY GOOD":101},"total":1495},"20 kV ke bawah":{"counts":{"CRITICAL":30,"POOR":50,"FAIR":201,"GOOD":1393,"VERY GOOD":366},"total":2040},"500 kV":{"counts":{"CRITICAL":2,"POOR":73,"FAIR":6,"GOOD":126,"VERY GOOD":81},"total":288},"70 kV":{"counts":{"CRITICAL":2,"POOR":50,"FAIR":18,"GOOD":506,"VERY GOOD":52},"total":628}},"equip_data":{"CT":{"counts":{"CRITICAL":12,"POOR":29,"FAIR":22,"GOOD":839,"VERY GOOD":338},"total":1240},"CVT":{"counts":{"CRITICAL":15,"POOR":0,"FAIR":168,"GOOD":463,"VERY GOOD":25},"total":671},"LA":{"counts":{"CRITICAL":0,"POOR":10,"FAIR":0,"GOOD":811,"VERY GOOD":0},"total":821},"PMS":{"counts":{"CRITICAL":0,"POOR":63,"FAIR":24,"GOOD":643,"VERY GOOD":236},"total":966},"PMT":{"counts":{"CRITICAL":4,"POOR":207,"FAIR":76,"GOOD":373,"VERY GOOD":1},"total":661},"TRAFO":{"counts":{"CRITICAL":7,"POOR":18,"FAIR":5,"GOOD":62,"VERY GOOD":0},"total":92}}},"UPT MALANG":{"counts":{"CRITICAL":123,"POOR":221,"FAIR":208,"GOOD":2467,"VERY GOOD":528},"total":3547,"klaster_data":{"150 kV":{"counts":{"CRITICAL":12,"POOR":70,"FAIR":85,"GOOD":768,"VERY GOOD":64},"total":999},"20 kV ke bawah":{"counts":{"CRITICAL":96,"POOR":33,"FAIR":89,"GOOD":1009,"VERY GOOD":371},"total":1598},"500 kV":{"counts":{"CRITICAL":3,"POOR":43,"FAIR":14,"GOOD":98,"VERY GOOD":53},"total":211},"70 kV":{"counts":{"CRITICAL":12,"POOR":75,"FAIR":20,"GOOD":592,"VERY GOOD":40},"total":739}},"equip_data":{"CT":{"counts":{"CRITICAL":19,"POOR":25,"FAIR":3,"GOOD":712,"VERY GOOD":348},"total":1107},"CVT":{"counts":{"CRITICAL":74,"POOR":0,"FAIR":79,"GOOD":240,"VERY GOOD":21},"total":414},"LA":{"counts":{"CRITICAL":13,"POOR":31,"FAIR":0,"GOOD":660,"VERY GOOD":0},"total":704},"PMS":{"counts":{"CRITICAL":9,"POOR":22,"FAIR":3,"GOOD":530,"VERY GOOD":143},"total":707},"PMT":{"counts":{"CRITICAL":5,"POOR":134,"FAIR":116,"GOOD":257,"VERY GOOD":10},"total":522},"TRAFO":{"counts":{"CRITICAL":3,"POOR":9,"FAIR":7,"GOOD":68,"VERY GOOD":6},"total":93}}},"UPT PROBOLINGGO":{"counts":{"CRITICAL":152,"POOR":249,"FAIR":265,"GOOD":2356,"VERY GOOD":420},"total":3442,"klaster_data":{"150 kV":{"counts":{"CRITICAL":43,"POOR":151,"FAIR":95,"GOOD":1222,"VERY GOOD":49},"total":1560},"20 kV ke bawah":{"counts":{"CRITICAL":91,"POOR":59,"FAIR":167,"GOOD":929,"VERY GOOD":318},"total":1564},"500 kV":{"counts":{"CRITICAL":18,"POOR":39,"FAIR":3,"GOOD":205,"VERY GOOD":53},"total":318}},"equip_data":{"CT":{"counts":{"CRITICAL":65,"POOR":28,"FAIR":25,"GOOD":548,"VERY GOOD":303},"total":969},"CVT":{"counts":{"CRITICAL":22,"POOR":16,"FAIR":140,"GOOD":306,"VERY GOOD":15},"total":499},"LA":{"counts":{"CRITICAL":9,"POOR":6,"FAIR":0,"GOOD":638,"VERY GOOD":4},"total":657},"PMS":{"counts":{"CRITICAL":12,"POOR":18,"FAIR":7,"GOOD":572,"VERY GOOD":95},"total":704},"PMT":{"counts":{"CRITICAL":40,"POOR":165,"FAIR":89,"GOOD":256,"VERY GOOD":3},"total":553},"TRAFO":{"counts":{"CRITICAL":4,"POOR":16,"FAIR":4,"GOOD":36,"VERY GOOD":0},"total":60}}},"UPT SURABAYA":{"counts":{"CRITICAL":9,"POOR":104,"FAIR":95,"GOOD":1292,"VERY GOOD":272},"total":1772,"klaster_data":{"150 kV":{"counts":{"CRITICAL":2,"POOR":73,"FAIR":22,"GOOD":596,"VERY GOOD":14},"total":707},"20 kV ke bawah":{"counts":{"CRITICAL":7,"POOR":31,"FAIR":72,"GOOD":655,"VERY GOOD":256},"total":1021},"70 kV":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":1,"GOOD":41,"VERY GOOD":2},"total":44}},"equip_data":{"CT":{"counts":{"CRITICAL":3,"POOR":12,"FAIR":31,"GOOD":326,"VERY GOOD":256},"total":628},"CVT":{"counts":{"CRITICAL":4,"POOR":0,"FAIR":38,"GOOD":231,"VERY GOOD":0},"total":273},"LA":{"counts":{"CRITICAL":1,"POOR":9,"FAIR":0,"GOOD":345,"VERY GOOD":0},"total":355},"PMS":{"counts":{"CRITICAL":1,"POOR":14,"FAIR":3,"GOOD":181,"VERY GOOD":16},"total":215},"PMT":{"counts":{"CRITICAL":0,"POOR":50,"FAIR":20,"GOOD":170,"VERY GOOD":0},"total":240},"TRAFO":{"counts":{"CRITICAL":0,"POOR":19,"FAIR":3,"GOOD":39,"VERY GOOD":0},"total":61}}}},"worst_gi":[{"Gi":"GITET 500KV GRATI","Upt":"UPT PROBOLINGGO","bad_score":107,"counts":{"CRITICAL":26,"POOR":55,"FAIR":14,"GOOD":227,"VERY GOOD":73},"total":395},{"Gi":"GI 150KV PLTU GRESIK","Upt":"UPT GRESIK","bad_score":77,"counts":{"CRITICAL":31,"POOR":15,"FAIR":26,"GOOD":171,"VERY GOOD":98},"total":341},{"Gi":"GI 150KV PAITON","Upt":"UPT PROBOLINGGO","bad_score":71,"counts":{"CRITICAL":24,"POOR":23,"FAIR":12,"GOOD":163,"VERY GOOD":9},"total":231},{"Gi":"GITET 500KV KRIAN","Upt":"UPT MALANG","bad_score":61,"counts":{"CRITICAL":4,"POOR":53,"FAIR":14,"GOOD":201,"VERY GOOD":89},"total":361},{"Gi":"GITET 500KV KEDIRI","Upt":"UPT MADIUN","bad_score":53,"counts":{"CRITICAL":5,"POOR":43,"FAIR":4,"GOOD":131,"VERY GOOD":119},"total":302},{"Gi":"GI 150KV GRATI","Upt":"UPT PROBOLINGGO","bad_score":44,"counts":{"CRITICAL":19,"POOR":6,"FAIR":32,"GOOD":209,"VERY GOOD":40},"total":306},{"Gi":"GITET 500KV NGIMBANG","Upt":"UPT MADIUN","bad_score":35,"counts":{"CRITICAL":1,"POOR":33,"FAIR":5,"GOOD":99,"VERY GOOD":8},"total":146},{"Gi":"GI 70KV POLEHAN","Upt":"UPT MALANG","bad_score":33,"counts":{"CRITICAL":11,"POOR":11,"FAIR":4,"GOOD":63,"VERY GOOD":12},"total":101},{"Gi":"GI 150KV GONDANGWETAN","Upt":"UPT PROBOLINGGO","bad_score":33,"counts":{"CRITICAL":14,"POOR":5,"FAIR":29,"GOOD":140,"VERY GOOD":18},"total":206},{"Gi":"GI 150KV TANGGUL","Upt":"UPT PROBOLINGGO","bad_score":33,"counts":{"CRITICAL":7,"POOR":19,"FAIR":5,"GOOD":108,"VERY GOOD":18},"total":157},{"Gi":"GI 70KV SEKARPUTIH","Upt":"UPT MALANG","bad_score":31,"counts":{"CRITICAL":11,"POOR":9,"FAIR":4,"GOOD":106,"VERY GOOD":23},"total":153},{"Gi":"GI 150KV JEMBER","Upt":"UPT PROBOLINGGO","bad_score":31,"counts":{"CRITICAL":7,"POOR":17,"FAIR":11,"GOOD":113,"VERY GOOD":27},"total":175},{"Gi":"GI 150KV SURABAYA BARAT","Upt":"UPT MALANG","bad_score":30,"counts":{"CRITICAL":11,"POOR":8,"FAIR":50,"GOOD":253,"VERY GOOD":50},"total":372},{"Gi":"GI 150KV PIER","Upt":"UPT PROBOLINGGO","bad_score":30,"counts":{"CRITICAL":5,"POOR":20,"FAIR":17,"GOOD":107,"VERY GOOD":11},"total":160},{"Gi":"GI 150KV PUGER","Upt":"UPT PROBOLINGGO","bad_score":28,"counts":{"CRITICAL":9,"POOR":10,"FAIR":2,"GOOD":66,"VERY GOOD":14},"total":101}],"worst_gi_kritikal":[]};
+const GI_KRITIKAL = ["GITET 500kV Kediri", "GISTET 500kV Paiton", "GITET 500kV Grati", "GITET 500kV Krian", "GISTET 500kV Gresik", "GITET 500kV Ngimbang", "GIS 150kV Gresik", "GIS 150kV Waru", "GI 150kV Buduran", "GIS 150kV Tandes", "GI 150kV Perak", "GIS 150kV Ujung", "GI 150kV Bangkalan", "GI 150kV Kraksaan", "GI 150kV Sampang", "GI 150kV Pamekasan", "GIS 150kV Karangpilang", "GIS 150kV Sawahan", "GIS 150kV Gunungsari", "GI 150kV Darmogrande", "GI 150kV Rungkut", "GI 150kV Sambikerep", "GI 150kV Sukolilo", "GI 150kV Gilitimur", "GI 150kV Paiton", "GI 150kV Situbondo", "GI 150kV Bondowoso", "GI 150kV Banyuwangi", "GI 150kV Lumajang", "GI 150kV Tanggul", "GI 150kV Surabaya Barat", "GI 150kV Kasihatan", "GI 150kV Cerme", "GIs 150kV Driyorejo", "GI 150kV Babadan", "GI 150kV Balongbendo", "GI 150kV Sekarputih", "GI 150kV Ngoro", "GI 150kV GIlimanuk", "GI 150kV Kediri", "GI 150kV Banaran", "GI 150kV Surya Zigzag", "GI 150kV New Nganjuk", "GI 150kV Manisrejo", "GI 150kV Babat", "GI 150kV Lamongan", "GI 150kV Jayakertas", "GI 150kV Kertosono", "GI 150kV Bojonegoro", "GI 150kV Tuban", "GI 150kV Kerek", "GI 150kV Nganjuk", "GI 150kV Grati", "GI 150kV Gondang Wetan", "GIS 150kV Bangil", "GI 150kV Pier", "GI 150kV KIS", "GI 150kV Lawang", "GI 150kV Bulukandang", "GI 150kV Newporong", "GI 150kV Sutami", "GI 150kV Wlingi"];
 
 
+// ── State ─────────────────────────────────────────────────
+var adjOn = false, kritOn = false, currentUpt = 'ALL', expandedGi = null;
+var bayActiveEquip = 'ALL', bayCurrentGi = null;
 
+// ── Helpers ───────────────────────────────────────────────
+function D() { return adjOn ? DATA_ADJ : DATA_ORI; }
+function pct(v,t){ return t ? ((v/t)*100).toFixed(1) : '0.0'; }
+function fmt(n){ return Number(n).toLocaleString('id-ID'); }
 
-/* CONFIG */
-var DATA_FILE    = 'ahi_data.json';
-var DET_FILE     = 'ahi_det.json';
-var KRITIKAL_FILE= 'gi_kritikal.csv';
-var YEAR = new Date().getFullYear();
-var ADJ_RULES = [{equip:'TRAFO',maxUsia:20,from:'FAIR',to:'GOOD'},{equip:'PMT',maxUsia:15,from:'FAIR',to:'GOOD'}];
-
-/* STATE */
-var D = null;
-var adjOn = true, kritOn = false, currentUpt = 'ALL';
-var GI_KRITIKAL = [];
-var giSortCol = 'CRITICAL', giSortDir = 1;
-var rSortCol = 'worst_hi', rSortDir = 1, rQ = '', rUPT = 'ALL';
-var t3UPT = 'ALL', t3HI = 'ALL', t3Q = '';
-var bayGI = null, bayFilter = 'CRITICAL', bayEqActive = 'ALL';
-var _tabInited = {};
-var HI  = ['CRITICAL','POOR','FAIR','GOOD','VERY GOOD'];
-var HC  = {CRITICAL:'#ef4444',POOR:'#f97316',FAIR:'#eab308',GOOD:'#3b82f6','VERY GOOD':'#10b981'};
-
-/* LOAD */
-function loadData() {
-  var loaded = {data:false, kritikal:false};
-  function tryInit(){ if(loaded.data && loaded.kritikal) initDashboard(); }
-
-  var _ts = '?v=' + Date.now();
-  fetch(DATA_FILE + _ts)
-    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
-    .then(function(data){
-      console.log('data loaded, keys:', Object.keys(data).join(','));
-      D = data;
-      document.getElementById('csvStatus').className = 'csv-status ok';
-      loaded.data = true; tryInit();
-    })
-    .catch(function(e){ showError('Gagal memuat '+DATA_FILE+':\n'+e.message+'\n\nHarus diakses via GitHub Pages / localhost.'); });
-
-  Papa.parse(KRITIKAL_FILE,{
-    download:true, header:true, skipEmptyLines:true,
-    complete:function(r){
-      GI_KRITIKAL=(r.data||[]).map(function(x){return x['Gi']||x['GI']||x['gi']||'';}).filter(Boolean);
-      loaded.kritikal=true; tryInit();
-    },
-    error:function(){ GI_KRITIKAL=[]; loaded.kritikal=true; tryInit(); }
-  });
+function mkBar(counts, total) {
+  return S_ORDER.map(function(s){
+    var w = total ? (counts[s]||0)/total*100 : 0;
+    return '<div style="width:'+w.toFixed(2)+'%;background:'+S_COLOR[s]+';height:100%;transition:width .5s ease"></div>';
+  }).join('');
 }
 
-function showError(msg){
-  document.getElementById('loadingScreen').style.display='none';
-  document.getElementById('errorBox').style.display='block';
-  document.getElementById('errorMsg').textContent=msg;
-}
-
-/* INIT */
-function initDashboard(){
-  console.log('initDashboard start');
-  try {
-  var upts = Object.keys(D.upt).sort();
-  var totalRows = Object.keys(D.gi).reduce(function(s,gi){return s+(D.gi[gi].t||0);},0);
-  document.getElementById('csvStatus').textContent = Object.keys(D.gi).length+' GI \u00b7 '+totalRows.toLocaleString('id-ID')+' MTU';
-  if (D.updated) document.getElementById('lastUpdate').textContent = 'Data: ' + D.updated;
-  /* UPT buttons dashboard */
-  var h='<button class="upt-btn active" onclick="setUPT(\'ALL\',this)">Semua</button>';
-  upts.forEach(function(u){h+='<button class="upt-btn" onclick="setUPT(\''+u+'\',this)">'+u.replace('UPT ','')+'</button>';});
-  document.getElementById('uptRow').innerHTML=h;
-  /* UPT buttons resume */
-  var rh='<button class="r-upt-btn active" onclick="rSetUPT(\'ALL\',this)">Semua</button>';
-  upts.forEach(function(u){rh+='<button class="r-upt-btn" onclick="rSetUPT(\''+u+'\',this)">'+u.replace('UPT ','')+'</button>';});
-  document.getElementById('rUPTRow').innerHTML=rh;
-  /* T3 UPT */
-  var sel=document.getElementById('t3UPT');
-  sel.innerHTML='<option value="ALL">Semua UPT</option>';
-  upts.forEach(function(u){sel.innerHTML+='<option value="'+u+'">'+u+'</option>';});
-  document.getElementById('loadingScreen').style.display='none';
-  document.getElementById('mainContent').style.display='block';
-  console.log('calling renderAll');
+// ── Toggle handlers ───────────────────────────────────────
+function toggleAdjustment() {
+  adjOn = !adjOn;
+  document.getElementById('adjToggle').classList.toggle('on', adjOn);
+  document.getElementById('adjBanner').classList.toggle('active', adjOn);
+  document.getElementById('comparePanel').classList.toggle('visible', adjOn);
+  if (adjOn) renderCompare();
   renderAll();
-  console.log('renderAll done');
-  } catch(e) { console.error('initDashboard error:', e); showError('Error: '+e.message); }
 }
 
-/* HELPERS */
-function fmt(n){return (n||0).toLocaleString('id-ID');}
-function hiBar(c,t){
-  if(!t) return '';
-  return HI.map(function(h){var w=c[h]?c[h]/t*100:0;return w>0?'<span style="width:'+w.toFixed(1)+'%;background:'+HC[h]+'"></span>':''}).join('');
+function toggleKritikal() {
+  kritOn = !kritOn;
+  expandedGi = null;
+  document.getElementById('kritToggle').classList.toggle('on', kritOn);
+  document.getElementById('kritBanner').classList.toggle('active', kritOn);
+  renderAll();
 }
-function badgeHi(h){
-  var m={CRITICAL:'badge-critical',POOR:'badge-poor',FAIR:'badge-fair',GOOD:'badge-good','VERY GOOD':'badge-vg'};
-  return '<span class="badge '+(m[h]||'')+'">'+h+'</span>';
-}
-function kTag(gi){
-  return GI_KRITIKAL.indexOf(gi)>=0?' <span style="display:inline-block;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(244,114,182,.15);color:#f472b6;border:1px solid rgba(244,114,182,.3)">KRITIKAL</span>':'';
-}
-function validGI(gi){return !gi.startsWith('UPT ');}
 
-function getGI(){
-  /* Use adj_gi if adjOn, else D.gi */
-  var base = (adjOn && D.adj_gi) ? D.adj_gi : D.gi;
-  if(!kritOn && currentUpt==='ALL') return base;
-  var out={};
-  Object.keys(base).forEach(function(gi){
-    if(!validGI(gi)) return;
-    var d=base[gi];
-    if(kritOn && GI_KRITIKAL.indexOf(gi)<0) return;
-    if(currentUpt!=='ALL' && d.upt!==currentUpt) return;
-    out[gi]=d;
+// ── Active data resolver ─────────────────────────────────
+function activeData() {
+  var d = D(), u = currentUpt;
+  if (kritOn) {
+    return {
+      counts:  u==='ALL' ? d.overall_kritikal             : d.upt_data[u].counts_kritikal,
+      total:   u==='ALL' ? d.total_kritikal                : d.upt_data[u].total_kritikal,
+      usia:    u==='ALL' ? d.usia_kritikal                  : d.upt_data[u].usia_kritikal,
+      klaster: u==='ALL' ? buildKlasterKrit(d)              : (d.upt_data[u].klaster_kritikal || {}),
+      equip:   u==='ALL' ? buildEquipKrit(d)                : (d.upt_data[u].equip_kritikal || {})
+    };
+  }
+  return {
+    counts:  u==='ALL' ? d.overall      : d.upt_data[u].counts,
+    total:   u==='ALL' ? d.total        : d.upt_data[u].total,
+    usia:    u==='ALL' ? d.status_usia  : d.upt_data[u].status_usia,
+    klaster: u==='ALL' ? d.klaster_data : d.upt_data[u].klaster_data,
+    equip:   u==='ALL' ? d.equip_data   : d.upt_data[u].equip_data
+  };
+}
+
+function buildKlasterKrit(d) {
+  var out = {};
+  KL_ORDER.forEach(function(kl){
+    var c = {}, t = 0;
+    S_ORDER.forEach(function(s){ c[s]=0; });
+    Object.keys(d.upt_data).forEach(function(u){
+      var k = d.upt_data[u].klaster_kritikal && d.upt_data[u].klaster_kritikal[kl];
+      if (k) { t += k.total; S_ORDER.forEach(function(s){ c[s]+=(k.counts[s]||0); }); }
+    });
+    if (t > 0) out[kl] = {counts:c, total:t};
   });
   return out;
 }
 
-/* RENDER ALL */
-function renderAll(){
-  if(!D) return;
-  var _t=Date.now(), _tlog=function(n){console.log(n+': '+(Date.now()-_t)+'ms');_t=Date.now();};
-  var giIdx=getGI(); _tlog('getGI');
-  document.getElementById('adjCount').textContent = D.adj_count||0;
-  document.getElementById('kritCount').textContent = GI_KRITIKAL.length;
-  renderKPI(giIdx);     _tlog('renderKPI');
-  renderKlaster();      _tlog('renderKlaster');
-  renderEquipBars();    _tlog('renderEquipBars');
-  renderWorstGI(giIdx); _tlog('renderWorstGI');
-  renderGIDetail(giIdx);_tlog('renderGIDetail');
-  renderCompare();      _tlog('renderCompare');
-}
-
-/* KPI */
-function renderKPI(giIdx){
-  var tot=0,c={CRITICAL:0,POOR:0,FAIR:0,GOOD:0,'VERY GOOD':0};
-  Object.keys(giIdx).forEach(function(gi){var d=giIdx[gi];HI.forEach(function(h){c[h]+=(d.c[h]||0);tot+=d.c[h]||0;});});
-  var giCnt=Object.keys(giIdx).length;
-  document.getElementById('kpiRow').innerHTML=[
-    ['kpi-info',fmt(giCnt),'Gardu Induk',giCnt+' GI aktif'],
-    ['kpi-info',fmt(tot),'Total MTU','peralatan'],
-    ['kpi-crit',fmt(c.CRITICAL),'CRITICAL',(tot?c.CRITICAL/tot*100:0).toFixed(1)+'%'],
-    ['kpi-poor',fmt(c.POOR),'POOR',(tot?c.POOR/tot*100:0).toFixed(1)+'%'],
-    ['kpi-fair',fmt(c.FAIR),'FAIR',(tot?c.FAIR/tot*100:0).toFixed(1)+'%'],
-    ['kpi-good',fmt(c.GOOD+(c['VERY GOOD']||0)),'GOOD+','Good & Very Good'],
-  ].map(function(k){return '<div class="kpi '+k[0]+'"><div class="kpi-val">'+k[1]+'</div><div class="kpi-lbl">'+k[2]+'</div><div class="kpi-sub">'+k[3]+'</div></div>';}).join('');
-}
-
-/* KLASTER */
-function renderKlaster(){
-  var KL=['500 kV','150 kV','70 kV','20 kV ke bawah'];
-  var EQ=['CT','CVT','LA','PMS','PMT','TRAFO'];
-  var html=KL.map(function(kl){
-    var d=D.kl[kl]; if(!d||!d.t) return '';
-    var stats=HI.map(function(h){return d.c[h]?'<div class="kl-stat"><span style="color:'+HC[h]+'">'+h.slice(0,4)+'</span><span style="font-family:var(--mono)">'+d.c[h]+'</span></div>':'';}).join('');
-    var eqRows=EQ.map(function(eq){
-      var ed=d.eq&&d.eq[eq]; if(!ed||!ed.t) return '';
-      var crit=ed.c.CRITICAL||0,poor=ed.c.POOR||0;
-      return '<div class="kl-eq-row"><span class="kl-eq-name">'+eq+'</span><div class="kl-eq-bar">'+hiBar(ed.c,ed.t)+'</div>'+(crit?'<span class="kl-eq-cnt" style="color:#ef4444">'+crit+'</span>':'')+(poor?'<span class="kl-eq-cnt" style="color:#f97316">'+poor+'</span>':'')+'<span class="kl-eq-tot">'+ed.t+'</span></div>';
-    }).join('');
-    return '<div class="klaster-card"><div class="kl-name">'+kl+'</div><div class="kl-bar">'+hiBar(d.c,d.t)+'</div><div class="kl-stats">'+stats+'</div>'+(eqRows?'<div class="kl-eq-rows">'+eqRows+'</div>':'')+'</div>';
-  }).join('');
-  document.getElementById('klasterCards').innerHTML=html;
-}
-
-/* EQUIP BARS */
-function renderEquipBars(){
-  var EQ=['CT','CVT','LA','PMS','PMT','TRAFO'];
-  var src = (currentUpt!=='ALL' && D.upt[currentUpt] && D.upt[currentUpt].eq) ? D.upt[currentUpt].eq : D.eq;
-  var html=EQ.map(function(eq){
-    var d=src[eq]; if(!d||!d.t) return '';
-    return '<div class="equip-bar-row"><span class="equip-name">'+eq+'</span><div class="equip-bar-wrap">'+hiBar(d.c,d.t)+'</div><span class="equip-cnt">'+fmt(d.t)+'</span></div>';
-  }).join('');
-  document.getElementById('equipBars').innerHTML=html;
-}
-
-/* WORST GI */
-function renderWorstGI(giIdx){
-  var list=Object.keys(giIdx).map(function(gi){var d=giIdx[gi];return{gi:gi,upt:d.upt,crit:d.c.CRITICAL||0,poor:d.c.POOR||0,t:d.t,c:d.c};});
-  list.sort(function(a,b){return(b.crit*2+b.poor)-(a.crit*2+a.poor);});
-  list=list.slice(0,10);
-  var html=list.map(function(g,i){
-    var bs=g.crit+g.poor,safe=g.gi.replace(/'/g,"\\'");
-    var cBtn=g.crit?'<button class="crit-btn" onclick="openBay(\''+safe+'\',\'CRITICAL\')">'+g.crit+' &#x274C;</button>':'';
-    var pBtn=g.poor?'<button class="crit-btn" style="border-color:rgba(249,115,22,.4);background:rgba(249,115,22,.1);color:#f97316" onclick="openBay(\''+safe+'\',\'POOR\')">'+g.poor+' &#x26A0;</button>':'';
-    return '<tr><td><span class="rank-num'+(bs>30?' danger':'')+'">'+( i+1)+'</span></td>'
-      +'<td style="font-weight:600">'+g.gi+kTag(g.gi)+'</td>'
-      +'<td style="text-align:right;font-family:var(--mono);color:#ef4444">'+fmt(g.crit)+'</td>'
-      +'<td style="text-align:right;font-family:var(--mono);color:#f97316">'+fmt(g.poor)+'</td>'
-      +'<td style="text-align:right;font-family:var(--mono)">'+fmt(g.t)+'</td>'
-      +'<td>'+cBtn+pBtn+'</td></tr>';
-  }).join('');
-  document.getElementById('worstGIBody').innerHTML=html||'<tr><td colspan="6" style="text-align:center;color:var(--text3)">-</td></tr>';
-}
-
-/* GI DETAIL */
-function renderGIDetail(giIdx){
-  document.getElementById('detailUPTLabel').textContent=currentUpt==='ALL'?'Semua UPT':currentUpt;
-  var list=Object.keys(giIdx).map(function(gi){var d=giIdx[gi];return{name:gi,upt:d.upt,c:d.c,t:d.t};});
-  list.sort(function(a,b){
-    if(giSortCol==='name') return giSortDir*a.name.localeCompare(b.name);
-    if(giSortCol==='total') return giSortDir*(b.t-a.t);
-    return giSortDir*((b.c[giSortCol]||0)-(a.c[giSortCol]||0));
+function buildEquipKrit(d) {
+  var out = {};
+  EQ_ORDER.forEach(function(eq){
+    var c = {}, t = 0;
+    S_ORDER.forEach(function(s){ c[s]=0; });
+    Object.keys(d.upt_data).forEach(function(u){
+      var e = d.upt_data[u].equip_kritikal && d.upt_data[u].equip_kritikal[eq];
+      if (e) { t += e.total; S_ORDER.forEach(function(s){ c[s]+=(e.counts[s]||0); }); }
+    });
+    if (t > 0) out[eq] = {counts:c, total:t};
   });
-  var html=list.map(function(g,i){
-    var crit=g.c.CRITICAL||0,poor=g.c.POOR||0,safe=g.name.replace(/'/g,"\\'");
-    var cCell=crit
-      ?'<button class="crit-btn" onclick="event.stopPropagation();openBay(\''+safe+'\')">'+crit+' &#x274C;</button>'
-        +(poor?'<button class="crit-btn" style="border-color:rgba(249,115,22,.4);background:rgba(249,115,22,.1);color:#f97316" onclick="event.stopPropagation();openBay(\''+safe+'\',\'POOR\')">'+poor+' &#x26A0;</button>':'')
-      :(crit?'<span class="badge badge-critical">'+crit+'</span>':'-');
-    return '<tr><td style="color:var(--text3);font-family:var(--mono)">'+(i+1)+'</td>'
-      +'<td style="font-weight:600">'+g.name+kTag(g.name)+'</td>'
-      +'<td style="color:var(--text3);font-size:10px">'+g.upt.replace('UPT ','')+'</td>'
-      +'<td class="r" style="font-family:var(--mono)">'+fmt(g.t)+'</td>'
-      +'<td class="r"><span class="badge badge-critical" style="'+(crit?'':'opacity:.3')+'">'+crit+'</span></td>'
-      +'<td class="r"><span class="badge badge-poor" style="'+(poor?'':'opacity:.3')+'">'+poor+'</span></td>'
-      +'<td class="r"><span class="badge badge-fair" style="'+((g.c.FAIR||0)?'':'opacity:.3')+'">'+(g.c.FAIR||0)+'</span></td>'
-      +'<td class="r"><span class="badge badge-good" style="'+((g.c.GOOD||0)?'':'opacity:.3')+'">'+(g.c.GOOD||0)+'</span></td>'
-      +'<td>'+cCell+'</td></tr>';
-  }).join('');
-  document.getElementById('giDetailBody').innerHTML=html;
+  return out;
 }
 
-/* COMPARE */
-function renderCompare(){
-  var wrap=document.getElementById('comparePanelWrap');
-  if(!adjOn){wrap.style.display='none';return;}
-  wrap.style.display='block';
-  var el=document.getElementById('comparePanel');
-  var upts=Object.keys(D.upt).sort();
-  function getC(src,upt){
-    var c={CRITICAL:0,POOR:0,FAIR:0,GOOD:0,'VERY GOOD':0},t=0;
-    Object.keys(src).forEach(function(gi){var d=src[gi];if(upt!=='ALL'&&d.upt!==upt)return;HI.forEach(function(h){c[h]+=(d.c[h]||0);t+=d.c[h]||0;});});
-    return{c:c,t:t};
-  }
-  function db(n,gn){if(!n)return '<span style="color:var(--text3);font-family:var(--mono)">-</span>';var col=(gn?n<0:n>0)?'#10b981':'#ef4444';return'<span style="color:'+col+';font-family:var(--mono);font-weight:700">'+(n>0?'+':'')+n+'</span>';}
-  var cards=['ALL'].concat(upts).map(function(upt){
-    var ori=getC(D.gi,upt),adj=getC(D.adj_gi||D.gi,upt);
-    var dC=adj.c.CRITICAL-ori.c.CRITICAL,dP=adj.c.POOR-ori.c.POOR;
-    var dG=(adj.c.GOOD+(adj.c['VERY GOOD']||0))-(ori.c.GOOD+(ori.c['VERY GOOD']||0));
-    var isAll=upt==='ALL',label=isAll?'Semua UPT':upt.replace('UPT ','');
-    var bord=isAll?'border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.04)':'';
-    return '<div style="background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;'+bord+'">'
-      +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">'
-      +'<span style="font-size:'+(isAll?'13':'11')+'px;font-weight:700;color:'+(isAll?'var(--adj-color)':'var(--text2)')+'">'+label+'</span>'
-      +'<span style="font-size:9px;font-family:var(--mono);color:var(--text3)">'+ori.t+'</span></div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px">'
-      +'<div style="background:rgba(239,68,68,.08);border-radius:6px;padding:7px;text-align:center"><div style="font-size:9px;color:var(--text3);margin-bottom:3px">&#x274C; ORI</div><div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#ef4444">'+ori.c.CRITICAL+'</div></div>'
-      +'<div style="background:rgba(249,115,22,.08);border-radius:6px;padding:7px;text-align:center"><div style="font-size:9px;color:var(--text3);margin-bottom:3px">&#x26A0; ORI</div><div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#f97316">'+ori.c.POOR+'</div></div>'
-      +'<div style="background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.15);border-radius:6px;padding:7px;text-align:center"><div style="font-size:9px;color:var(--text3);margin-bottom:3px">&#x274C; ADJ</div><div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#ef4444">'+adj.c.CRITICAL+'</div></div>'
-      +'<div style="background:rgba(249,115,22,.04);border:1px solid rgba(249,115,22,.15);border-radius:6px;padding:7px;text-align:center"><div style="font-size:9px;color:var(--text3);margin-bottom:3px">&#x26A0; ADJ</div><div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#f97316">'+adj.c.POOR+'</div></div>'
-      +'</div><div style="display:flex;gap:4px">'
-      +'<span style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:3px 6px;text-align:center"><div style="font-size:9px;color:var(--text3)">&Delta;Crit</div>'+db(dC,true)+'</span>'
-      +'<span style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:3px 6px;text-align:center"><div style="font-size:9px;color:var(--text3)">&Delta;Poor</div>'+db(dP,true)+'</span>'
-      +'<span style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:3px 6px;text-align:center"><div style="font-size:9px;color:var(--text3)">&Delta;Good+</div>'+db(dG,false)+'</span>'
-      +'</div></div>';
-  }).join('');
-  el.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:8px">'+cards+'</div>';
-}
-
-/* RESUME */
-function renderResume(){
-  var giIdx=getGI();
-  if(rUPT!=='ALL'){var tmp={};Object.keys(giIdx).forEach(function(gi){if(giIdx[gi].upt===rUPT)tmp[gi]=giIdx[gi];});giIdx=tmp;}
-  var tot=0,c={CRITICAL:0,POOR:0,FAIR:0,GOOD:0,'VERY GOOD':0};
-  Object.keys(giIdx).forEach(function(gi){var d=giIdx[gi];HI.forEach(function(h){c[h]+=(d.c[h]||0);tot+=d.c[h]||0;});});
-  document.getElementById('rKpiRow').innerHTML=[
-    ['var(--accent)',Object.keys(giIdx).length,'Jumlah GI'],
-    ['var(--text)',tot,'Total MTU'],
-    ['#ef4444',c.CRITICAL,'CRITICAL'],
-    ['#f97316',c.POOR,'POOR'],
-    ['#eab308',c.FAIR,'FAIR'],
-    ['#10b981',c.GOOD+(c['VERY GOOD']||0),'GOOD+'],
-  ].map(function(k){return '<div class="r-kpi"><div class="r-kpi-val" style="color:'+k[0]+'">'+fmt(k[1])+'</div><div class="r-kpi-lbl">'+k[2]+'</div></div>';}).join('');
-  rRender(giIdx);
-}
-
-function rRender(giIdx){
-  if(!giIdx){
-    giIdx=getGI();
-    if(rUPT!=='ALL'){var tmp={};Object.keys(giIdx).forEach(function(gi){if(giIdx[gi].upt===rUPT)tmp[gi]=giIdx[gi];});giIdx=tmp;}
-  }
-  var list=Object.keys(giIdx).map(function(gi){
-    var d=giIdx[gi],w=999;
-    HI.forEach(function(h,i){if(d.c[h])w=Math.min(w,i);});
-    return{gi:gi,upt:d.upt,c:d.c,t:d.t,w:w};
+// ── Compare panel ─────────────────────────────────────────
+function renderCompare() {
+  var upts = ['ALL'].concat(Object.keys(DATA_ORI.upt_data));
+  function gv(c,s){ return s==='GOOD+VG' ? (c.GOOD||0)+(c['VERY GOOD']||0) : (c[s]||0); }
+  var html = '';
+  upts.forEach(function(u){
+    var oc = u==='ALL' ? DATA_ORI.overall : DATA_ORI.upt_data[u].counts;
+    var ac = u==='ALL' ? DATA_ADJ.overall : DATA_ADJ.upt_data[u].counts;
+    var lbl = u==='ALL' ? 'Semua' : u.replace('UPT ','');
+    html += '<div class="compare-col"><div class="compare-col-title">'+lbl+'</div>';
+    [['CRITICAL','#ef4444'],['FAIR','#eab308'],['GOOD+VG','#3b82f6']].forEach(function(p){
+      var stat=p[0], col=p[1];
+      var ov=gv(oc,stat), av=gv(ac,stat), diff=av-ov;
+      var good=(stat==='GOOD+VG'&&diff>0)||(stat!=='GOOD+VG'&&diff<0);
+      var dcolor = diff===0?'#64748b':good?'#10b981':'#ef4444';
+      var dlabel = diff===0?'&#x2014;':(diff>0?'+':'')+diff;
+      var slabel = stat==='GOOD+VG'?'Good+VG':stat;
+      html += '<div class="compare-row">'
+        +'<span class="compare-row-label" style="color:'+col+'">'+slabel+'</span>'
+        +'<span class="compare-row-val" style="color:'+col+'">'+fmt(ov)+'</span>'
+        +'<span class="compare-row-delta" style="color:'+dcolor+'">'+dlabel+'</span>'
+        +'</div>';
+    });
+    html += '</div>';
   });
-  if(rQ) list=list.filter(function(g){return g.gi.toLowerCase().indexOf(rQ)>=0||g.upt.toLowerCase().indexOf(rQ)>=0;});
-  list.sort(function(a,b){
-    if(rSortCol==='gi') return rSortDir*a.gi.localeCompare(b.gi);
-    if(rSortCol==='upt') return rSortDir*a.upt.localeCompare(b.upt);
-    if(rSortCol==='worst_hi') return rSortDir*(a.w-b.w);
-    if(rSortCol==='total') return rSortDir*(b.t-a.t);
-    return rSortDir*((b.c[rSortCol]||0)-(a.c[rSortCol]||0));
-  });
-  document.getElementById('rCount').textContent=list.length+' GI';
-  var html=list.map(function(g){
-    var safe=g.gi.replace(/'/g,"\\'");
-    function nb(v,col,hi){
-      if(!v) return '<td class="r-num r-num-0">-</td>';
-      return '<td class="r-num r-clickable" onclick="openBay(\''+safe+'\',\''+hi+'\')" style="color:'+col+'">'+v+' '+(hi==='CRITICAL'?'&#x274C;':'&#x26A0;')+'</td>';
+  document.getElementById('compareGrid').innerHTML = html;
+}
+
+// ── KPIs ──────────────────────────────────────────────────
+function renderKPIs() {
+  var ad = activeData(), counts = ad.counts, total = ad.total;
+  // Baseline always from DATA_ORI (not adjusted) for delta comparison
+  var oriCounts = kritOn
+    ? (currentUpt==='ALL' ? DATA_ORI.overall_kritikal : DATA_ORI.upt_data[currentUpt].counts_kritikal)
+    : (currentUpt==='ALL' ? DATA_ORI.overall           : DATA_ORI.upt_data[currentUpt].counts);
+  document.getElementById('totalEquip').textContent = fmt(total);
+  document.getElementById('kritLabel').textContent = kritOn ? '&#x2014; GI Kritikal' : '';
+  var specs = [
+    {id:'critical', s:'CRITICAL'},
+    {id:'poor',     s:'POOR'},
+    {id:'fair',     s:'FAIR'},
+    {id:'good',     s:null}
+  ];
+  specs.forEach(function(sp){
+    var v   = sp.s ? (counts[sp.s]||0) : (counts.GOOD||0)+(counts['VERY GOOD']||0);
+    var ov  = sp.s ? (oriCounts[sp.s]||0) : (oriCounts.GOOD||0)+(oriCounts['VERY GOOD']||0);
+    var diff = v - ov;
+    document.getElementById('kpi-'+sp.id).textContent = fmt(v);
+    document.getElementById('pct-'+sp.id).textContent = pct(v,total)+'%';
+    var el = document.getElementById('delta-'+sp.id);
+    if (adjOn && diff !== 0) {
+      var isGood = (sp.id==='good'&&diff>0)||(sp.id!=='good'&&diff<0);
+      el.innerHTML = '<span class="'+(isGood?'delta-down':'delta-up')+'">'+(diff>0?'+':'')+fmt(diff)+' vs sebelum adj</span>';
+    } else {
+      el.innerHTML = '';
     }
-    return '<tr>'
-      +'<td><div style="font-weight:600">'+g.gi+kTag(g.gi)+'</div><div style="font-size:10px;color:var(--text3);font-family:var(--mono)">'+g.upt+'</div></td>'
-      +'<td>'+badgeHi(HI[g.w]||'-')+'</td>'
-      +nb(g.c.CRITICAL,'#ef4444','CRITICAL')
-      +nb(g.c.POOR,'#f97316','POOR')
-      +'<td class="r-num" style="color:#eab308">'+(g.c.FAIR||'-')+'</td>'
-      +'<td class="r-num" style="color:#3b82f6">'+(g.c.GOOD||'-')+'</td>'
-      +'<td class="r-num" style="color:#10b981">'+(g.c['VERY GOOD']||'-')+'</td>'
-      +'<td class="r-num" style="font-weight:700">'+g.t+'</td>'
-      +'<td><div class="r-hi-bar">'+hiBar(g.c,g.t)+'</div></td>'
-      +'</tr>';
-  }).join('');
-  document.getElementById('rGIBody').innerHTML=html||'<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:20px">Tidak ada data</td></tr>';
+  });
 }
 
-function rSort(col){if(rSortCol===col)rSortDir=-rSortDir;else{rSortCol=col;rSortDir=1;}rRender();}
-function rFilter(){rQ=(document.getElementById('rSearch').value||'').toLowerCase();rRender();}
-function rSetUPT(upt,btn){rUPT=upt;document.querySelectorAll('.r-upt-btn').forEach(function(b){b.classList.remove('active');});if(btn)btn.classList.add('active');renderResume();}
-
-/* RINCIAN */
-function loadDet(cb){
-  if(D.det){cb();return;}
-  document.getElementById('t3GIList').innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);font-family:var(--mono)">Memuat data rincian&hellip;</div>';
-  fetch(DET_FILE + '?v=' + Date.now())
-    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
-    .then(function(det){D.det=det;cb();})
-    .catch(function(e){document.getElementById('t3GIList').innerHTML='<div style="padding:40px;text-align:center;color:var(--err)">Gagal memuat '+DET_FILE+': '+e.message+'</div>';});
+// ── Klaster cards ─────────────────────────────────────────
+function renderKlaster() {
+  var ad = activeData(), klaster = ad.klaster;
+  var oriKl = kritOn
+    ? (currentUpt==='ALL' ? buildKlasterKrit(DATA_ORI) : (DATA_ORI.upt_data[currentUpt].klaster_kritikal||{}))
+    : (currentUpt==='ALL' ? DATA_ORI.klaster_data       :  DATA_ORI.upt_data[currentUpt].klaster_data);
+  var html = '';
+  KL_ORDER.forEach(function(kl){
+    var kd = klaster && klaster[kl]; if (!kd || kd.total===0) return;
+    var st = KL_STYLE[kl] || {bg:'rgba(99,102,241,.1)',color:'#818cf8',icon:'&#x1F539;'};
+    var fair = kd.counts.FAIR||0, good = (kd.counts.GOOD||0)+(kd.counts['VERY GOOD']||0);
+    var ok = oriKl && oriKl[kl];
+    var adjFair = (adjOn&&ok) ? (ok.counts.FAIR||0)-fair : 0;
+    var adjGood = (adjOn&&ok) ? good-((ok.counts.GOOD||0)+(ok.counts['VERY GOOD']||0)) : 0;
+    function ks(color, val, p, note) {
+      return '<div class="klaster-stat">'
+        +'<div class="klaster-stat-dot" style="background:'+color+'"></div>'
+        +'<span class="klaster-stat-val" style="color:'+color+'">'+fmt(val)+'</span>'
+        +'<span class="klaster-stat-pct">('+p+'%)'+note+'</span></div>';
+    }
+    html += '<div class="klaster-card" style="border-top:3px solid '+st.color+'">'
+      +'<div class="klaster-header">'
+      +'<span class="klaster-badge" style="background:'+st.bg+';color:'+st.color+'">'+st.icon+' '+kl+'</span>'
+      +'<span class="klaster-total">'+fmt(kd.total)+' unit</span></div>'
+      +'<div style="margin:8px 0"><div class="stacked-bar" style="height:10px">'+mkBar(kd.counts,kd.total)+'</div></div>'
+      +'<div class="klaster-stats">'
+      +ks('var(--critical)', kd.counts.CRITICAL||0, pct(kd.counts.CRITICAL||0, kd.total), '')
+      +ks('var(--poor)',     kd.counts.POOR||0,     pct(kd.counts.POOR||0, kd.total), '')
+      +ks('var(--fair)',     fair,                  pct(fair, kd.total), adjOn&&adjFair>0?' <span style="color:var(--adj-color);font-size:9px">&#x2193;'+adjFair+'</span>':'')
+      +ks('var(--good)',     good,                  pct(good, kd.total), adjOn&&adjGood>0?' <span style="color:var(--adj-color);font-size:9px">&#x2191;'+adjGood+'</span>':'')
+      +'</div></div>';
+  });
+  document.getElementById('klasterCards').innerHTML = html;
 }
 
-function renderRincian(){
-  loadDet(function(){
-    var giIdx=getGI();
-    function hcls(h){return{CRITICAL:'hi-C',POOR:'hi-P',FAIR:'hi-F',GOOD:'hi-G','VERY GOOD':'hi-V'}[h]||'';}
-    function ccls(h){return{CRITICAL:'chip-C',POOR:'chip-P',FAIR:'chip-F',GOOD:'chip-G','VERY GOOD':'chip-V'}[h]||'';}
-    var items=[];
-    Object.keys(D.det).forEach(function(upt){
-      if(t3UPT!=='ALL'&&upt!==t3UPT) return;
-      Object.keys(D.det[upt]).forEach(function(gi){
-        if(!giIdx[gi]) return;
-        if(!validGI(gi)) return;
-        if(t3Q&&gi.toLowerCase().indexOf(t3Q)<0) return;
-        var gid=giIdx[gi];
-        if(t3HI!=='ALL'&&!(gid.c[t3HI]>0)) return;
-        items.push({upt:upt,gi:gi,c:gid.c,t:gid.t,bays:D.det[upt][gi]});
+// ── Equip bars ────────────────────────────────────────────
+function renderEquipBars() {
+  var ad = activeData(), edMap = ad.equip;
+  var oriEq = kritOn
+    ? (currentUpt==='ALL' ? buildEquipKrit(DATA_ORI) : (DATA_ORI.upt_data[currentUpt].equip_kritikal||{}))
+    : (currentUpt==='ALL' ? DATA_ORI.equip_data       :  DATA_ORI.upt_data[currentUpt].equip_data);
+  var html = '';
+  EQ_ORDER.forEach(function(eq){
+    var ed = edMap && edMap[eq]; if (!ed || ed.total===0) return;
+    var oriFair = (oriEq && oriEq[eq]) ? (oriEq[eq].counts.FAIR||0) : 0;
+    var adjNote = (adjOn && ed.counts.FAIR < oriFair)
+      ? ' <span style="color:var(--adj-color)">&#x2193;'+fmt(oriFair-ed.counts.FAIR)+'</span>' : '';
+    html += '<div class="equip-row">'
+      +'<div class="equip-name">'+eq+'</div>'
+      +'<div class="equip-bar-wrap">'
+      +'<div class="stacked-bar" style="height:10px">'+mkBar(ed.counts,ed.total)+'</div>'
+      +'<div style="display:flex;justify-content:space-between;margin-top:3px">'
+      +'<span style="font-size:10px;color:var(--critical);font-family:monospace">&#x2717; '+fmt((ed.counts.CRITICAL||0)+(ed.counts.POOR||0))+'</span>'
+      +'<span style="font-size:10px;color:var(--fair);font-family:monospace">&#x223C; '+fmt(ed.counts.FAIR||0)+adjNote+'</span>'
+      +'<span style="font-size:10px;color:var(--verygood);font-family:monospace">&#x2713; '+fmt((ed.counts.GOOD||0)+(ed.counts['VERY GOOD']||0))+'</span>'
+      +'</div></div>'
+      +'<div class="equip-total">'+fmt(ed.total)+'</div>'
+      +'</div>';
+  });
+  document.getElementById('equipBars').innerHTML = html;
+}
+
+// ── Worst GI ──────────────────────────────────────────────
+function renderWorstGI() {
+  var d = D();
+  var worst;
+  if (currentUpt === 'ALL') {
+    worst = kritOn ? d.worst_gi_kritikal : d.worst_gi;
+  } else {
+    worst = d.upt_data[currentUpt].gi_list
+      .filter(function(g){ return !kritOn || g.kritikal; })
+      .map(function(g){ return {Gi:g.name, Upt:currentUpt, bad_score:g.counts.CRITICAL*2+g.counts.POOR}; })
+      .sort(function(a,b){ return b.bad_score - a.bad_score; })
+      .slice(0,10);
+  }
+  var maxS = (worst && worst.length) ? worst[0].bad_score : 1;
+  var html = '';
+  worst.slice(0,10).forEach(function(g,i){
+    var bw = (g.bad_score/maxS*100).toFixed(0);
+    var isK = GI_KRITIKAL.indexOf(g.Gi) >= 0;
+    var bayBays = CRITICAL_BAYS[g.Gi];
+    var bayBtn = bayBays ? '<button class="crit-btn" onclick="openBayModal(\''+g.Gi.replace(/\\/g,'\\\\').replace(/'/g,'\\\'')+'\')" title="Detail bay Critical">'+bayBays.length+' &#x1F50D;</button>' : '';
+    html += '<div class="alert-box'+(isK?' alert-krit':'')+'">'
+      +'<div class="alert-icon">'+(i<3?'&#x1F534;':i<6?'&#x1F7E0;':'&#x1F7E1;')+'</div>'
+      +'<div class="alert-content">'
+      +'<div class="alert-gi">'+g.Gi+(isK?' <span class="krit-tag">K</span>':'')+' '+bayBtn+'</div>'
+      +'<div class="alert-upt">'+g.Upt+'</div>'
+      +'<div class="score-bar"><div style="width:'+bw+'%;background:linear-gradient(90deg,var(--critical),var(--poor));height:4px;border-radius:2px"></div></div>'
+      +'</div>'
+      +'<div class="alert-score">'+g.bad_score+'</div>'
+      +'</div>';
+  });
+  document.getElementById('worstGiList').innerHTML = html;
+}
+
+// ── Donut ─────────────────────────────────────────────────
+function renderDonut() {
+  var ad = activeData(), counts = ad.counts, total = ad.total;
+  document.getElementById('donutTotal').textContent = fmt(total);
+  var cv = document.getElementById('donutChart'), ctx = cv.getContext('2d');
+  ctx.clearRect(0,0,140,140);
+  var a = -Math.PI/2;
+  S_ORDER.forEach(function(s){
+    var sa = (counts[s]||0)/total*2*Math.PI;
+    ctx.beginPath(); ctx.moveTo(70,70); ctx.arc(70,70,55,a,a+sa); ctx.closePath();
+    ctx.fillStyle = S_COLOR[s]; ctx.fill(); a += sa;
+  });
+  ctx.beginPath(); ctx.arc(70,70,35,0,2*Math.PI); ctx.fillStyle='#111827'; ctx.fill();
+
+  var oriCounts = kritOn
+    ? (currentUpt==='ALL' ? DATA_ORI.overall_kritikal : DATA_ORI.upt_data[currentUpt].counts_kritikal)
+    : (currentUpt==='ALL' ? DATA_ORI.overall           : DATA_ORI.upt_data[currentUpt].counts);
+  var leg = '';
+  S_ORDER.forEach(function(s){
+    var v=counts[s]||0, ov=oriCounts[s]||0, diff=v-ov;
+    var dt = (adjOn&&diff!==0) ? ' <span style="color:'+(diff<0?'#10b981':'#f97316')+';font-size:10px">('+(diff>0?'+':'')+diff+')</span>' : '';
+    leg += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">'
+      +'<div style="width:10px;height:10px;border-radius:2px;background:'+S_COLOR[s]+';flex-shrink:0"></div>'
+      +'<div style="flex:1;font-size:11px;color:#94a3b8">'+s+'</div>'
+      +'<div style="font-family:monospace;font-size:11px">'+fmt(v)+dt+'</div>'
+      +'<div style="font-size:10px;color:#64748b;width:40px;text-align:right">'+pct(v,total)+'%</div>'
+      +'</div>';
+  });
+  document.getElementById('donutLegend').innerHTML = leg;
+}
+
+// ── Usia ──────────────────────────────────────────────────
+function renderUsia() {
+  var usia = activeData().usia || {};
+  var tot = (usia.MUDA||0)+(usia.TUA||0)+(usia['SANGAT TUA']||0);
+  var maxV = Math.max(usia.MUDA||0, usia.TUA||0, usia['SANGAT TUA']||0);
+  var items = [
+    {label:'Muda',       key:'MUDA',       color:'#10b981'},
+    {label:'Tua',        key:'TUA',         color:'#eab308'},
+    {label:'Sangat Tua', key:'SANGAT TUA',  color:'#ef4444'}
+  ];
+  var html = '';
+  items.forEach(function(item){
+    var v = usia[item.key]||0;
+    var p = tot ? (v/tot*100).toFixed(1) : '0.0';
+    var bw = maxV ? (v/maxV*100).toFixed(1) : 0;
+    html += '<div class="usia-row">'
+      +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">'
+      +'<span style="font-size:12px;font-weight:600;color:'+item.color+'">'+item.label+'</span>'
+      +'<div><span style="font-size:14px;font-weight:700;font-family:monospace;color:'+item.color+'">'+fmt(v)+'</span>'
+      +' <span style="font-size:11px;color:var(--text3)">('+p+'%)</span></div></div>'
+      +'<div style="height:14px;border-radius:7px;background:var(--bg3);overflow:hidden">'
+      +'<div style="width:'+bw+'%;height:100%;border-radius:7px;background:linear-gradient(90deg,'+item.color+','+item.color+'88);transition:width .6s ease"></div>'
+      +'</div></div>';
+  });
+  document.getElementById('usiaRows').innerHTML = html;
+}
+
+// ── GI Table ──────────────────────────────────────────────
+function renderGITable() {
+  var d = D();
+  var giList = [];
+  if (currentUpt === 'ALL') {
+    document.getElementById('giDetailTitle').innerHTML = kritOn
+      ? 'Detail GI Kritikal &#x2014; Semua UPT'
+      : 'Detail Gardu Induk &#x2014; Semua UPT';
+    Object.keys(d.upt_data).forEach(function(u){
+      d.upt_data[u].gi_list.forEach(function(gi){
+        if (!kritOn || gi.kritikal)
+          giList.push({name:gi.name, counts:gi.counts, total:gi.total, equip:gi.equip, kritikal:gi.kritikal, upt:u});
       });
     });
-    items.sort(function(a,b){return a.gi.localeCompare(b.gi);});
-    document.getElementById('t3Count').textContent=items.length+' GI';
-    var html=items.map(function(item,idx){
-      var chips=HI.map(function(h){if(!item.c[h])return '';return '<span class="t3-chip '+ccls(h)+'">'+(h==='VERY GOOD'?'VG':h.slice(0,4))+' '+item.c[h]+'</span>';}).join('');
-      var bayHtml=Object.keys(item.bays).sort().map(function(bay){
-        var rows=item.bays[bay];
-        var flt=t3HI==='ALL'?rows:rows.filter(function(e){return e[6]===t3HI;});
-        if(!flt.length) return '';
-        var bHI={CRITICAL:0,POOR:0,FAIR:0,GOOD:0,'VERY GOOD':0};
-        rows.forEach(function(e){if(bHI[e[6]]!==undefined)bHI[e[6]]++;});
-        var bar=HI.map(function(h){var w=rows.length?(bHI[h]||0)/rows.length*100:0;return w>0?'<span style="width:'+w.toFixed(1)+'%;background:'+HC[h]+'"></span>':'';}).join('');
-        var eqRows=flt.map(function(e){
-          var usia=e[4]?(YEAR-e[4])+'th':'-',ren=e[10]&&e[10]!=='-'?e[10]:'-';
-          return '<tr><td style="color:var(--accent);font-weight:600">'+e[0]+'</td><td style="color:var(--text3)">'+e[1]+'</td><td>'+e[2]+'</td><td style="color:var(--text3);font-size:10px">'+e[3]+'</td><td><span class="t3-eq-hi '+hcls(e[6])+'">'+e[6]+'</span></td><td style="font-family:var(--mono);text-align:right">'+e[7]+'</td><td style="color:var(--text3)">'+usia+'</td><td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text2)" title="'+e[9]+'">'+e[9]+'</td><td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;color:var(--text3)" title="'+ren+'">'+ren+'</td></tr>';
-        }).join('');
-        return '<div class="t3-bay"><div class="t3-bay-name">'+bay+'<div style="display:flex;height:5px;width:80px;border-radius:3px;overflow:hidden;gap:1px;margin-left:8px">'+bar+'</div><span class="t3-bay-total">'+flt.length+(t3HI!=='ALL'?' / '+rows.length:'')+' unit</span></div><table class="t3-eq-table"><thead><tr><th>Equip</th><th>Phasa</th><th>Merek</th><th>Tipe</th><th>Status HI</th><th style="text-align:right">Nilai HI</th><th>Usia</th><th>Justifikasi</th><th>Rencana</th></tr></thead><tbody>'+eqRows+'</tbody></table></div>';
-      }).join('');
-      if(!bayHtml.trim()) return '';
-      var cid='t3gi'+idx;
-      return '<div class="t3-gi-card" id="'+cid+'"><div class="t3-gi-hdr" onclick="t3Toggle(\''+cid+'\')"><div><div class="t3-gi-name">'+item.gi+kTag(item.gi)+'</div><div class="t3-gi-sub">'+item.upt+' &middot; '+Object.keys(item.bays).length+' bay &middot; '+item.t+' peralatan</div></div><div style="display:flex;gap:4px;flex-wrap:wrap">'+chips+'</div><span class="t3-gi-arrow">&#x25BC;</span></div><div class="t3-gi-body"><div class="t3-bay-list">'+bayHtml+'</div></div></div>';
-    }).join('');
-    document.getElementById('t3GIList').innerHTML=html||'<div style="padding:40px;text-align:center;color:var(--text3)">Tidak ada data sesuai filter</div>';
+  } else {
+    document.getElementById('giDetailTitle').innerHTML = kritOn
+      ? 'Detail GI Kritikal &#x2014; '+currentUpt
+      : 'Detail Gardu Induk &#x2014; '+currentUpt;
+    d.upt_data[currentUpt].gi_list.forEach(function(gi){
+      if (!kritOn || gi.kritikal)
+        giList.push({name:gi.name, counts:gi.counts, total:gi.total, equip:gi.equip, kritikal:gi.kritikal, upt:currentUpt});
+    });
+  }
+  giList.sort(function(a,b){
+    return (b.counts.CRITICAL*2+b.counts.POOR) - (a.counts.CRITICAL*2+a.counts.POOR);
   });
+
+  var html = '';
+  giList.forEach(function(gi, i){
+    var bs  = gi.counts.CRITICAL*2+gi.counts.POOR;
+    var bm  = S_ORDER.map(function(s){
+      return '<div style="width:'+(gi.total?(gi.counts[s]||0)/gi.total*100:0).toFixed(2)+'%;background:'+S_COLOR[s]+';height:100%"></div>';
+    }).join('');
+    var isExp    = (expandedGi === i);
+    var kritTag  = gi.kritikal ? ' <span class="krit-tag">K</span>' : '';
+    var arrow    = isExp ? '&#x25B2;' : '&#x25BC;';
+    var critCnt  = gi.counts.CRITICAL||0;
+    var critCell;
+    if (critCnt > 0 && CRITICAL_BAYS[gi.name]) {
+      var safeName = gi.name.replace(/\\/g,'\\\\').replace(/'/g,'\\\'');
+      critCell = '<button class="crit-btn" onclick="event.stopPropagation();openBayModal(\''+safeName+'\')" title="Detail bay Critical">'+critCnt+' &#x1F50D;</button>';
+    } else {
+      critCell = '<span class="badge badge-critical">'+critCnt+'</span>';
+    }
+
+    html += '<tr class="gi-row" onclick="toggleEquip('+i+')">'
+      +'<td><span class="rank-num'+(bs>30?' danger':'')+'">'+( i+1)+'</span></td>'
+      +'<td style="font-weight:600">'+gi.name+kritTag+' <span style="font-size:10px;color:var(--text3)">'+arrow+'</span></td>'
+      +'<td style="color:var(--text3);font-size:11px">'+gi.upt.replace('UPT ','')+'</td>'
+      +'<td style="font-family:monospace">'+fmt(gi.total)+'</td>'
+      +'<td>'+critCell+'</td>'
+      +'<td><span class="badge badge-poor">'+(gi.counts.POOR||0)+'</span></td>'
+      +'<td><span class="badge badge-fair">'+(gi.counts.FAIR||0)+'</span></td>'
+      +'<td><span class="badge badge-good">'+(gi.counts.GOOD||0)+'</span></td>'
+      +'<td><span class="badge badge-verygood">'+(gi.counts['VERY GOOD']||0)+'</span></td>'
+      +'<td><div class="mini-bar-inline">'+bm+'</div></td>'
+      +'</tr>';
+
+    if (isExp && gi.equip && Object.keys(gi.equip).length > 0) {
+      var ehtml = '';
+      EQ_ORDER.forEach(function(eq){
+        var ec = gi.equip[eq]; if (!ec) return;
+        var etot = S_ORDER.reduce(function(acc,s){ return acc+(ec[s]||0); }, 0);
+        if (etot === 0) return;
+        var ebm = S_ORDER.map(function(s){
+          return '<div style="width:'+(etot?(ec[s]||0)/etot*100:0).toFixed(2)+'%;background:'+S_COLOR[s]+';height:100%"></div>';
+        }).join('');
+        ehtml += '<div class="equip-expand-card">'
+          +'<div style="display:flex;justify-content:space-between;margin-bottom:5px">'
+          +'<span style="font-size:12px;font-weight:700;color:var(--accent)">'+eq+'</span>'
+          +'<span style="font-size:10px;color:var(--text3)">'+fmt(etot)+' unit</span></div>'
+          +'<div class="stacked-bar" style="height:8px;margin-bottom:5px">'+ebm+'</div>'
+          +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px">';
+        S_ORDER.forEach(function(s){
+          if ((ec[s]||0) === 0) return;
+          ehtml += '<div style="font-size:10px;font-family:monospace;color:'+S_COLOR[s]+'">'+s.substring(0,4)+': <b>'+(ec[s]||0)+'</b></div>';
+        });
+        ehtml += '</div></div>';
+      });
+      html += '<tr class="equip-expand-row"><td colspan="10"><div class="equip-expand">'
+        +'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Rincian per Jenis Peralatan</div>'
+        +'<div class="equip-expand-grid">'+ehtml+'</div>'
+        +'</div></td></tr>';
+    }
+  });
+  document.getElementById('giTableBody').innerHTML = html;
 }
 
-function t3Toggle(id){var c=document.getElementById(id);if(c)c.classList.toggle('open');}
-function t3Filter(){t3UPT=document.getElementById('t3UPT').value;t3HI=document.getElementById('t3HI').value;t3Q=(document.getElementById('t3Search').value||'').toLowerCase();renderRincian();}
-
-/* BAY MODAL */
-function openBay(gi,filter){
-  bayGI=gi;bayFilter=filter||'CRITICAL';bayEqActive='ALL';
-  var src=bayFilter==='POOR'?D.bay_poor:D.bay_crit;
-  var recs=(src[gi]||[]).slice();
-  if(!recs.length){
-    /* try adj - may have shifted from ori */
-    if(bayFilter==='CRITICAL'&&D.bay_poor[gi]) {recs=D.bay_poor[gi];bayFilter='POOR';}
-    else return;
-  }
-  document.getElementById('bayTitle').textContent=gi;
-  document.getElementById('baySub').textContent=(recs[0].upt||'-')+' \u00b7 '+recs.length+' peralatan '+bayFilter;
-  var equips=[];recs.forEach(function(r){if(equips.indexOf(r.eq)<0)equips.push(r.eq);});
-  var ef='<button class="bay-eq-btn active" onclick="baySetEq(\'ALL\',this)">Semua</button>';
-  equips.sort().forEach(function(e){ef+='<button class="bay-eq-btn" onclick="baySetEq(\''+e+'\',this)">'+e+'</button>';});
-  document.getElementById('bayEquipFilter').innerHTML=ef;
-  window._bayRecs=recs;
-  renderBayGrid(recs);
-  document.getElementById('bayOverlay').style.display='flex';
-  document.body.style.overflow='hidden';
+function toggleEquip(idx) {
+  expandedGi = (expandedGi === idx) ? null : idx;
+  renderGITable();
 }
 
-function renderBayGrid(recs){
-  function hcls(h){return{CRITICAL:'hi-C',POOR:'hi-P',FAIR:'hi-F',GOOD:'hi-G','VERY GOOD':'hi-V'}[h]||'';}
-  var toShow=bayEqActive==='ALL'?recs:recs.filter(function(r){return r.eq===bayEqActive;});
-  var html=toShow.map(function(r){
-    var ren=r.rencana&&r.rencana!=='-'?r.rencana:'';
-    return '<div class="bay-card"><div class="bay-card-bay">'+r.bay+'</div>'
-      +'<div class="bay-card-eq">'+r.eq+' &mdash; '+r.phasa+'</div>'
-      +'<div class="bay-card-hi"><span class="t3-eq-hi '+hcls(bayFilter)+'">'+bayFilter+'</span> &nbsp; <span style="font-family:var(--mono)">'+r.nilai_hi+'</span></div>'
-      +'<div class="bay-card-meta">'+r.merek+' / '+r.tipe+'</div>'
-      +(r.justif&&r.justif!=='-'?'<div class="bay-card-justif">'+r.justif+'</div>':'')
-      +(ren?'<div class="bay-card-rencana">&#x1F4CB; '+ren+'</div>':'')
-      +'</div>';
+function setUpt(e, upt) {
+  currentUpt = upt;
+  expandedGi = null;
+  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  e.target.classList.add('active');
+  renderAll();
+}
+
+function renderAll() {
+  renderKPIs();
+  renderKlaster();
+  renderEquipBars();
+  renderWorstGI();
+  renderDonut();
+  renderUsia();
+  renderGITable();
+}
+
+// ── BAY MODAL ─────────────────────────────────────────────
+function openBayModal(giName) {
+  var bays = CRITICAL_BAYS[giName];
+  if (!bays || bays.length === 0) return;
+  bayCurrentGi   = giName;
+  bayActiveEquip = 'ALL';
+  document.getElementById('bayMTitle').textContent = giName;
+  document.getElementById('bayMSub').textContent   = bays[0].upt + ' \u00B7 ' + bays.length + ' peralatan CRITICAL';
+  document.getElementById('bayOverlay').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  renderBayContent(bays);
+}
+
+function closeBayModal() {
+  document.getElementById('bayOverlay').style.display = 'none';
+  document.body.style.overflow = '';
+  bayCurrentGi = null;
+}
+
+function renderBayContent(bays) {
+  var total=bays.length, sumHi=0, maxHi=0, sangat=0, eqMap={};
+  var adaRencana = 0;
+  bays.forEach(function(b){
+    sumHi += b.nilai_hi;
+    if (b.nilai_hi > maxHi) maxHi = b.nilai_hi;
+    if (b.status_usia === 'SANGAT TUA') sangat++;
+    eqMap[b.equip] = (eqMap[b.equip]||0)+1;
+    if (b.rencana && b.rencana !== '-') adaRencana++;
+  });
+  var avgHi = total ? Math.round(sumHi/total) : 0;
+
+  document.getElementById('baySumGrid').innerHTML =
+    bayCard('Total Critical', total, 'var(--critical)') +
+    bayCard('Rata-rata Nilai HI', avgHi, 'var(--poor)') +
+    bayCard('Nilai HI Tertinggi', maxHi, 'var(--critical)') +
+    bayCard('Sangat Tua', sangat, 'var(--fair)') +
+    bayCard('Ada Rencana', adaRencana, 'var(--verygood)');
+
+  var types = ['ALL'].concat(Object.keys(eqMap).sort());
+  document.getElementById('bayChips').innerHTML = types.map(function(t){
+    var cnt = t==='ALL' ? total : eqMap[t];
+    var cls = 'bay-chip' + (t==='ALL'?' all':'') + (bayActiveEquip===t?' active':'');
+    return '<button class="'+cls+'" onclick="bayFilter(\''+t+'\')">'+t+' ('+cnt+')</button>';
   }).join('');
-  document.getElementById('bayGrid').innerHTML=html||'<div style="color:var(--text3);padding:20px">Tidak ada data</div>';
+
+  var rows = bayActiveEquip==='ALL' ? bays : bays.filter(function(b){ return b.equip===bayActiveEquip; });
+  var html = '';
+  rows.forEach(function(b, i){
+    var hiColor   = b.nilai_hi>=150?'var(--critical)':b.nilai_hi>=120?'var(--poor)':'var(--fair)';
+    var hiPct     = Math.min(100, b.nilai_hi/200*100).toFixed(0);
+    var usiaCls   = b.status_usia==='SANGAT TUA'?'up-sangat':b.status_usia==='TUA'?'up-tua':'up-muda';
+    var usiaShort = b.status_usia==='SANGAT TUA'?'S.TUA':b.status_usia;
+    var jus = (b.justifikasi||'-')
+      .replace(/CRITICAL/g,'<span class="jus-crit">CRITICAL</span>')
+      .replace(/POOR/g,'<span class="jus-poor">POOR</span>')
+      .replace(/FAIR/g,'<span class="jus-fair">FAIR</span>');
+    // Rencana cell
+    var renc = b.rencana && b.rencana !== '-' ? b.rencana : '-';
+    var rencCell = renc !== '-'
+      ? '<span class="renc-tag">'+renc+'</span>'
+      : '<span style="color:var(--text3);font-size:11px">&#x2014;</span>';
+    html += '<tr>'
+      +'<td style="color:var(--text3);font-size:11px">'+(i+1)+'</td>'
+      +'<td><span class="badge badge-critical">'+b.equip+'</span></td>'
+      +'<td style="font-weight:600;font-size:12px">'+b.bay+'</td>'
+      +'<td style="font-weight:700;color:var(--accent)">'+b.phasa+'</td>'
+      +'<td style="font-size:11px"><div style="font-weight:600">'+b.merek+'</div><div style="color:var(--text3)">'+b.tipe+'</div></td>'
+      +'<td style="font-size:11px;white-space:nowrap"><div>'+(b.thn_buat||'-')+'</div><div style="color:var(--text3)">'+b.thn_ops+'</div></td>'
+      +'<td style="min-width:120px"><div class="hi-bar">'
+      +'<div class="hi-track"><div class="hi-fill" style="width:'+hiPct+'%;background:'+hiColor+'"></div></div>'
+      +'<span class="hi-num" style="color:'+hiColor+'">'+b.nilai_hi+'</span></div></td>'
+      +'<td><span class="usia-pill '+usiaCls+'">'+usiaShort+'</span></td>'
+      +'<td class="jus-text">'+jus+'</td>'
+      +'<td style="min-width:140px">'+rencCell+'</td>'
+      +'</tr>';
+  });
+  document.getElementById('bayTbody').innerHTML = html;
 }
 
-function baySetEq(eq,btn){bayEqActive=eq;document.querySelectorAll('.bay-eq-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');renderBayGrid(window._bayRecs||[]);}
-function closeBay(){document.getElementById('bayOverlay').style.display='none';document.body.style.overflow='';}
-document.addEventListener('keydown',function(e){if(e.key==='Escape')closeBay();});
-
-/* CONTROLS */
-function switchTab(id,el){
-  document.querySelectorAll('.main-panel').forEach(function(p){p.classList.remove('active');});
-  document.querySelectorAll('.main-tab').forEach(function(t){t.classList.remove('active');});
-  document.getElementById(id).classList.add('active');el.classList.add('active');
-  if(!_tabInited[id]){_tabInited[id]=true;
-    if(id==='tab-resume')renderResume();
-    if(id==='tab-rincian')renderRincian();
-  }
+function bayCard(label, val, color) {
+  return '<div class="bay-sumcard">'
+    +'<div class="bay-sumlabel">'+label+'</div>'
+    +'<div class="bay-sumval" style="color:'+color+'">'+fmt(val)+'</div>'
+    +'</div>';
 }
-function setUPT(upt,btn){currentUpt=upt;document.querySelectorAll('.upt-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');renderAll();}
-function toggleAdj(){adjOn=!adjOn;document.getElementById('stAdj').classList.toggle('adj-on',adjOn);document.getElementById('adjBanner').classList.toggle('active',adjOn);renderAll();var ap=document.querySelector('.main-panel.active');if(ap&&ap.id==='tab-resume')renderResume();if(ap&&ap.id==='tab-rincian')renderRincian();}
-function toggleKrit(){kritOn=!kritOn;document.getElementById('stKrit').classList.toggle('krit-on',kritOn);document.getElementById('kritBanner').classList.toggle('active',kritOn);renderAll();var ap=document.querySelector('.main-panel.active');if(ap&&ap.id==='tab-resume')renderResume();if(ap&&ap.id==='tab-rincian')renderRincian();}
-function giSort(col){if(giSortCol===col)giSortDir=-giSortDir;else{giSortCol=col;giSortDir=1;}renderGIDetail(getGI());}
 
-/* START */
-loadData();
+function bayFilter(eq) {
+  bayActiveEquip = eq;
+  if (bayCurrentGi && CRITICAL_BAYS[bayCurrentGi]) renderBayContent(CRITICAL_BAYS[bayCurrentGi]);
+}
 
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape') closeBayModal();
+});
 
+// ── Init ──────────────────────────────────────────────────
+renderAll();
 
 
 </script>
