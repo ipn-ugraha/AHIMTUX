@@ -107,17 +107,18 @@ tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
 tbody tr:hover{background:rgba(255,255,255,0.02)}
 tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
 
-/* BAY rows */
-tr.bay-row{}
-tr.bay-row td:nth-child(3){color:var(--text);font-weight:500}
-.bay-tgl{cursor:pointer;display:inline-flex;align-items:center;gap:5px}
-.bay-tgl:hover .bname{color:var(--accent);text-decoration:underline}
-.exp-icon{color:var(--text3);font-size:10px;transition:transform .2s;display:inline-block;width:10px;text-align:center}
+/* GI / BAY / MTU rows */
+.row-gi td:nth-child(2){color:var(--text);font-weight:600}
+.row-bay td:nth-child(2){padding-left:28px;color:var(--text);font-weight:500}
+.row-mtu td{padding:5px 10px;font-size:11px;color:var(--text3)}
+.row-mtu td:nth-child(2){padding-left:52px}
+.row-bay td,.row-mtu td{background:rgba(255,255,255,0.01)}
+.row-bay:hover td,.row-mtu:hover td{background:rgba(59,130,246,0.04)}
+.row-gi:hover td{background:rgba(255,255,255,0.02)}
+.gi-tgl,.bay-tgl{cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.gi-tgl:hover .giname,.bay-tgl:hover .bname{color:var(--accent);text-decoration:underline}
+.exp-icon{color:var(--text3);font-size:10px;transition:transform .2s;display:inline-block;width:10px;text-align:center;flex-shrink:0}
 .exp-icon.open{transform:rotate(90deg)}
-
-/* MTU sub-rows */
-tr.mtu-row td{padding:5px 10px;font-size:11px;color:var(--text3);background:rgba(59,130,246,0.02)}
-tr.mtu-row:hover td{background:rgba(59,130,246,0.05)}
 
 /* BADGES */
 .badge{display:inline-block;padding:2px 7px;border-radius:4px;font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.03em;white-space:nowrap}
@@ -292,14 +293,26 @@ tr.mtu-row:hover td{background:rgba(59,130,246,0.05)}
     </div>
   </div>
 
+  <div class="cgrid2" style="margin-bottom:16px">
+    <div class="ccard">
+      <div class="ctitle">Distribusi MTU per Kelompok Usia Operasi</div>
+      <div class="cwrap2"><canvas id="usiaC" role="img" aria-label="Bar distribusi MTU per usia operasi"></canvas></div>
+    </div>
+    <div class="ccard">
+      <div class="ctitle">Status Hi per Kelompok Usia</div>
+      <div class="cwrap2"><canvas id="usiaStC" role="img" aria-label="Stacked bar status Hi per kelompok usia"></canvas></div>
+    </div>
+  </div>
+
   <div class="tsec">
     <div class="thead">
-      <div class="thead-l">Data Bay &amp; MTU <span class="thead-hint">▶ klik nama Bay untuk detail MTU</span></div>
+      <div class="thead-l">Data GI → Bay → MTU <span class="thead-hint">▶ klik GI untuk Bay, klik Bay untuk detail MTU</span></div>
       <div class="thead-r">
         <button class="tab on" onclick="setTab('all',this)">Semua</button>
         <button class="tab" onclick="setTab('critical',this)">Critical Only</button>
         <button class="tab" onclick="setTab('gi-krit',this)">GI Kritikal</button>
-        <button class="tab" onclick="expandAll()">Buka Semua</button>
+        <button class="tab" onclick="expandAll(2)">Buka GI</button>
+        <button class="tab" onclick="expandAll(3)">Buka Semua</button>
         <button class="tab" onclick="collapseAll()">Tutup Semua</button>
       </div>
     </div>
@@ -309,15 +322,15 @@ tr.mtu-row:hover td{background:rgba(59,130,246,0.05)}
           <tr>
             <th style="width:22px"></th>
             <th onclick="sb('gi')" data-col="gi">GI</th>
-            <th onclick="sb('bay')" data-col="bay">Bay</th>
             <th onclick="sb('kv')" data-col="kv">kV</th>
             <th onclick="sb('crit')" data-col="crit">Criticality</th>
+            <th onclick="sb('upt')" data-col="upt">UPT</th>
             <th onclick="sb('worst')" data-col="worst">Worst Status</th>
             <th onclick="sb('ncr')" data-col="ncr">Critical</th>
             <th onclick="sb('npo')" data-col="npo">Poor</th>
             <th onclick="sb('maxhi')" data-col="maxhi">Max Hi</th>
+            <th onclick="sb('nbay')" data-col="nbay">Bay</th>
             <th onclick="sb('nmtu')" data-col="nmtu">MTU</th>
-            <th>UPT</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -339,10 +352,17 @@ const ST_ORD={'CRITICAL':0,'POOR':1,'FAIR':2,'GOOD':3,'VERY GOOD':4};
 const CRIT_ORD={'EXTREME':0,'SANGAT TINGGI':1,'TINGGI':2,'MODERAT':3,'MODERATE':3,'RENDAH':4};
 const ST_COL=['#ef4444','#f59e0b','#eab308','#22c55e','#14b8a6'];
 const ST_LST=['CRITICAL','POOR','FAIR','GOOD','VERY GOOD'];
+// Usia buckets (tahun operasi)
+const USIA_BUCKETS=[
+  {lbl:'≤5 th',min:0,max:5},{lbl:'6–10 th',min:6,max:10},
+  {lbl:'11–15 th',min:11,max:15},{lbl:'16–20 th',min:16,max:20},
+  {lbl:'21–25 th',min:21,max:25},{lbl:'26–30 th',min:26,max:30},
+  {lbl:'31–40 th',min:31,max:40},{lbl:'>40 th',min:41,max:999}
+];
 
-let raw=[], giKrit=new Set(), filtered=[], bays=[];
+let raw=[], giKrit=new Set(), filtered=[], giGroups=[];
 let page=1, scol='maxhi', sdir='desc', tab='all';
-let expanded=new Set(), charts={};
+let expGi=new Set(), expBay=new Set(), charts={};
 
 async function init(){
   ld('Memuat GI kritikal...');
@@ -376,7 +396,7 @@ async function init(){
   document.getElementById('last-update').textContent=
     'Data: '+new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
   const gk=document.getElementById('gkbadge');
-  if(gk){gk.style.display='flex';}
+  if(gk) gk.style.display='flex';
   document.querySelectorAll('#gkn').forEach(e=>e.textContent=giKrit.size);
 
   buildFilters();
@@ -475,7 +495,7 @@ function applyFilters(){
   if(tab==='gi-krit')  d=d.filter(r=>giKrit.has((r.Gi||'').trim()));
 
   filtered=d; page=1;
-  updStats(); updCharts(); buildBays(); renderTable();
+  updStats(); updCharts(); buildGiGroups(); renderTable();
   document.getElementById('fcnt').innerHTML=`Menampilkan <span>${d.length.toLocaleString('id-ID')}</span> item`;
 }
 
@@ -569,21 +589,100 @@ function updCharts(){
       datasets:ST_LST.map((s,i)=>({label:s,data:jenis.map(j=>filtered.filter(r=>r['#']===j&&r._se===s).length),backgroundColor:ST_COL[i],borderRadius:3,borderSkipped:false}))},
     options:copt(true,true)
   });
+
+  // Usia distribusi — grouped bar: jumlah MTU per bucket + warna per status
+  dc('us');
+  const uBkts=USIA_BUCKETS.map(b=>({
+    ...b,
+    rows:filtered.filter(r=>r._age!=null && r._age>=b.min && r._age<=b.max)
+  }));
+  charts.us=new Chart(document.getElementById('usiaC').getContext('2d'),{
+    type:'bar',
+    data:{
+      labels:uBkts.map(b=>b.lbl),
+      datasets:[{
+        label:'Jumlah MTU',
+        data:uBkts.map(b=>b.rows.length),
+        backgroundColor:uBkts.map(b=>{
+          // warna gradien biru muda → merah sesuai usia
+          const idx=USIA_BUCKETS.indexOf(b);
+          const grad=['#14b8a6','#22c55e','#84cc16','#eab308','#f59e0b','#f97316','#ef4444','#b91c1c'];
+          return grad[idx]||'#555c66';
+        }),
+        borderRadius:4,
+        borderSkipped:false
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        label:c=>`${c.raw.toLocaleString('id-ID')} MTU`,
+        afterLabel:c=>{
+          const bkt=uBkts[c.dataIndex];
+          const n=bkt.rows.length; if(!n) return '';
+          return ST_LST.map(s=>{
+            const cnt=bkt.rows.filter(r=>r._se===s).length;
+            return cnt?`  ${s}: ${cnt}`:'';
+          }).filter(Boolean).join('\n');
+        }
+      }}},
+      scales:{
+        x:{ticks:{color:'#8a9099',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{ticks:{color:'#8a9099',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}}
+      }
+    }
+  });
+
+  // Usia × Status — stacked bar
+  dc('ust');
+  charts.ust=new Chart(document.getElementById('usiaStC').getContext('2d'),{
+    type:'bar',
+    data:{
+      labels:USIA_BUCKETS.map(b=>b.lbl),
+      datasets:ST_LST.map((s,i)=>({
+        label:s,
+        data:USIA_BUCKETS.map(b=>
+          filtered.filter(r=>r._age!=null&&r._age>=b.min&&r._age<=b.max&&r._se===s).length
+        ),
+        backgroundColor:ST_COL[i],borderRadius:3,borderSkipped:false
+      }))
+    },
+    options:copt(true,true)
+  });
 }
 
-function buildBays(){
-  const map=new Map();
+// ── 3-LEVEL GROUPING: GI → Bay → MTU ──────────────────────────────────────
+function aggStats(rows){
+  const ss=rows.map(r=>r._se);
+  const his=rows.map(r=>+r['Nilai Hi']).filter(v=>!isNaN(v)&&v>0);
+  const wi=ss.reduce((b,s,i)=>(ST_ORD[s]??9)<(ST_ORD[ss[b]]??9)?i:b,0);
+  return{
+    worst:ss[wi]||'—',
+    ncr:ss.filter(s=>s==='CRITICAL').length,
+    npo:ss.filter(s=>s==='POOR').length,
+    maxhi:his.length?Math.max(...his):0
+  };
+}
+
+function buildGiGroups(){
+  // Level 1: GI
+  const giMap=new Map();
   filtered.forEach(r=>{
-    const k=(r.Gi||'')+'\x00'+(r.Bay||'');
-    if(!map.has(k)) map.set(k,{gi:r.Gi,bay:r.Bay,upt:r.Upt,crit:r['Criticality Gi'],kv:r._kv,mtus:[]});
-    map.get(k).mtus.push(r);
+    const gk=r.Gi||'';
+    if(!giMap.has(gk)) giMap.set(gk,{gi:r.Gi,upt:r.Upt,crit:r['Criticality Gi'],kv:r._kv,rows:[]});
+    giMap.get(gk).rows.push(r);
   });
-  bays=[...map.values()].map(g=>{
-    const ss=g.mtus.map(r=>r._se);
-    const his=g.mtus.map(r=>+r['Nilai Hi']).filter(v=>!isNaN(v)&&v>0);
-    const wi=ss.reduce((b,s,i)=>(ST_ORD[s]??9)<(ST_ORD[ss[b]]??9)?i:b,0);
-    return{...g,worst:ss[wi]||'—',ncr:ss.filter(s=>s==='CRITICAL').length,
-      npo:ss.filter(s=>s==='POOR').length,maxhi:his.length?Math.max(...his):0,nmtu:g.mtus.length};
+
+  giGroups=[...giMap.values()].map(g=>{
+    // Level 2: Bay within GI
+    const bayMap=new Map();
+    g.rows.forEach(r=>{
+      const bk=r.Bay||'';
+      if(!bayMap.has(bk)) bayMap.set(bk,{bay:r.Bay,mtus:[]});
+      bayMap.get(bk).mtus.push(r);
+    });
+    const bays=[...bayMap.values()].map(b=>({...b,...aggStats(b.mtus)}));
+    return{...g,...aggStats(g.rows),nbay:bays.length,nmtu:g.rows.length,bays};
   });
 }
 
@@ -597,69 +696,110 @@ function sb(col){
 }
 
 function renderTable(){
-  let g=[...bays];
-  const numC=['kv','ncr','npo','maxhi','nmtu'];
+  let g=[...giGroups];
+  const numC=['kv','ncr','npo','maxhi','nbay','nmtu'];
   g.sort((a,b)=>{
     if(numC.includes(scol)){const va=a[scol]??0,vb=b[scol]??0;return sdir==='asc'?va-vb:vb-va;}
     if(scol==='worst'){const oa=ST_ORD[a.worst]??9,ob=ST_ORD[b.worst]??9;return sdir==='asc'?oa-ob:ob-oa;}
-    if(scol==='crit'){const oa=CRIT_ORD[(a.crit||'').toUpperCase()]??9,ob=CRIT_ORD[(b.crit||'').toUpperCase()]??9;return sdir==='asc'?oa-ob:ob-oa;}
+    if(scol==='crit'){
+      const oa=CRIT_ORD[(a.crit||'').toUpperCase()]??9,ob=CRIT_ORD[(b.crit||'').toUpperCase()]??9;
+      return sdir==='asc'?oa-ob:ob-oa;
+    }
     const va=String(a[scol]||''),vb=String(b[scol]||'');
     return sdir==='asc'?va.localeCompare(vb):vb.localeCompare(va);
   });
-  const tot=g.length,pages=Math.max(1,Math.ceil(tot/PAGE));
+
+  const tot=g.length, pages=Math.max(1,Math.ceil(tot/PAGE));
   const st=(page-1)*PAGE, sl=g.slice(st,st+PAGE);
   const tbody=document.getElementById('tbody');
   if(!sl.length){tbody.innerHTML='<tr><td colspan="11" class="empty">Tidak ada data</td></tr>';}
-  else tbody.innerHTML=sl.map(x=>bayHtml(x)).join('');
+  else tbody.innerHTML=sl.map(x=>giHtml(x)).join('');
   document.getElementById('pi').textContent=
-    `${(st+1).toLocaleString('id-ID')}–${Math.min(st+PAGE,tot).toLocaleString('id-ID')} dari ${tot.toLocaleString('id-ID')} bay`;
+    `${(st+1).toLocaleString('id-ID')}–${Math.min(st+PAGE,tot).toLocaleString('id-ID')} dari ${tot.toLocaleString('id-ID')} GI`;
   renderPag(pages);
 }
 
-function bkey(g){return(g.gi||'')+'\x00'+(g.bay||'');}
-
-function bayHtml(g){
-  const k=bkey(g), open=expanded.has(k), krit=giKrit.has((g.gi||'').trim());
+// ── GI ROW (level 1) ─────────────────────────────────────────────────────────
+function giHtml(g){
+  const isOpen=expGi.has(g.gi), krit=giKrit.has((g.gi||'').trim());
   const bw=Math.min(55,g.maxhi/300*55);
   const bc=g.maxhi>=150?'#ef4444':g.maxhi>=100?'#f59e0b':g.maxhi>=50?'#eab308':'#22c55e';
-  let h=`<tr class="bay-row">
-    <td style="text-align:center;padding:7px 6px"><span class="exp-icon${open?' open':''}" id="ei-${e(k)}">▶</span></td>
-    <td><span style="font-size:11px;color:var(--text3)">${krit?'<span class="gkd"></span>':''}${e(g.gi||'—')}</span></td>
-    <td><span class="bay-tgl" onclick="tgBay('${e(k).replace(/'/g,"\\'")}')"><span class="bname">${e(g.bay||'—')}</span></span></td>
+  let h=`<tr class="row-gi">
+    <td style="text-align:center;padding:7px 6px">
+      <span class="exp-icon${isOpen?' open':''}" style="color:var(--accent)">▶</span>
+    </td>
+    <td><span class="gi-tgl" onclick="tgGi('${e(g.gi).replace(/'/g,"\\'")}')">
+      ${krit?'<span class="gkd"></span>':''}<span class="giname" style="font-weight:600">${e(g.gi||'—')}</span>
+    </span></td>
     <td><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">${g.kv||'—'}</span></td>
     <td>${critH(g.crit)}</td>
+    <td style="font-size:11px;color:var(--text3)">${e((g.upt||'').replace('UPT ',''))}</td>
     <td>${stH(g.worst)}</td>
-    <td>${g.ncr>0?`<span style="color:var(--red);font-family:var(--mono);font-weight:500">${g.ncr}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
+    <td>${g.ncr>0?`<span style="color:var(--red);font-family:var(--mono);font-weight:600">${g.ncr}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
     <td>${g.npo>0?`<span style="color:var(--amb);font-family:var(--mono)">${g.npo}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
     <td><div class="hiwrap"><div class="hibar" style="width:${bw}px;background:${bc}"></div><span class="hival">${g.maxhi||'—'}</span></div></td>
+    <td><span style="font-family:var(--mono);font-size:11px;color:var(--text2)">${g.nbay}</span></td>
     <td><span style="font-family:var(--mono);font-size:11px;color:var(--text2)">${g.nmtu}</span></td>
-    <td style="font-size:11px;color:var(--text3)">${e((g.upt||'').replace('UPT ',''))}</td>
   </tr>`;
-  if(open) h+=g.mtus.map(r=>mtuH(r)).join('');
+  if(isOpen) h+=g.bays.map(b=>bayHtml(g,b)).join('');
   return h;
 }
 
+// ── BAY ROW (level 2) ────────────────────────────────────────────────────────
+function bayHtml(g,b){
+  const bk=(g.gi||'')+'\x00'+(b.bay||''), isOpen=expBay.has(bk);
+  const bw=Math.min(50,b.maxhi/300*50);
+  const bc=b.maxhi>=150?'#ef4444':b.maxhi>=100?'#f59e0b':b.maxhi>=50?'#eab308':'#22c55e';
+  let h=`<tr class="row-bay">
+    <td style="text-align:center;padding:6px 6px">
+      <span class="exp-icon${isOpen?' open':''}">▶</span>
+    </td>
+    <td colspan="1" style="padding-left:28px">
+      <span class="bay-tgl" onclick="tgBay('${e(bk).replace(/'/g,"\\'")}')">
+        <span class="bname">${e(b.bay||'—')}</span>
+      </span>
+    </td>
+    <td></td><td></td>
+    <td style="font-size:11px;color:var(--text3)">${b.mtus.length} MTU</td>
+    <td>${stH(b.worst)}</td>
+    <td>${b.ncr>0?`<span style="color:var(--red);font-family:var(--mono)">${b.ncr}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
+    <td>${b.npo>0?`<span style="color:var(--amb);font-family:var(--mono)">${b.npo}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
+    <td><div class="hiwrap"><div class="hibar" style="width:${bw}px;background:${bc}"></div><span class="hival">${b.maxhi||'—'}</span></div></td>
+    <td colspan="2"></td>
+  </tr>`;
+  if(isOpen) h+=b.mtus.map(r=>mtuH(r)).join('');
+  return h;
+}
+
+// ── MTU ROW (level 3) ────────────────────────────────────────────────────────
 function mtuH(r){
-  const hi=+r['Nilai Hi']||0, bw=Math.min(45,hi/300*45);
+  const hi=+r['Nilai Hi']||0, bw=Math.min(40,hi/300*40);
   const bc=hi>=150?'#ef4444':hi>=100?'#f59e0b':hi>=50?'#eab308':'#22c55e';
-  return `<tr class="mtu-row">
+  return `<tr class="row-mtu">
     <td></td>
-    <td style="padding-left:28px"><span class="badge" style="background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.2);font-size:9px">${e(r['#']||'—')}</span></td>
+    <td style="padding-left:52px"><span class="badge" style="background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.2);font-size:9px">${e(r['#']||'—')}</span></td>
     <td style="color:var(--text2)">${e(r.Merek||'—')} <span style="color:var(--text3);font-size:10px">${e(r.Tipe||'')}</span></td>
-    <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${r._kv||'—'}</td>
-    <td></td>
-    <td>${stH(r._se)}${r._adj?'<span class="badge b-adj">adj</span>':''}</td>
     <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${r.Phasa||'—'}</td>
-    <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${r['Tahun Buat']||'—'}</td>
+    <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${r['Tahun Buat']||'—'} ${r._age!=null?`<span style="color:var(--text3)">(${r._age}th)</span>`:''}</td>
+    <td>${stH(r._se)}${r._adj?'<span class="badge b-adj">adj</span>':''}</td>
+    <td colspan="2" style="font-size:10px;color:var(--text3);max-width:220px;overflow:hidden;text-overflow:ellipsis" title="${e(r['Justifikasi Prioritas']||'')}">${e(r['Justifikasi Prioritas']||'—')}</td>
     <td><div class="hiwrap"><div class="hibar" style="width:${bw}px;background:${bc}"></div><span class="hival">${hi||'—'}</span></div></td>
-    <td style="font-size:10px;color:var(--text3);max-width:200px;overflow:hidden;text-overflow:ellipsis" title="${e(r['Justifikasi Prioritas']||'')}">${e(r['Justifikasi Prioritas']||'—')}</td>
-    <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${e(r['Serial Id']||'—')}</td>
+    <td colspan="2" style="font-family:var(--mono);font-size:10px;color:var(--text3)">${e(r['Serial Id']||'—')}</td>
   </tr>`;
 }
 
-function tgBay(k){expanded.has(k)?expanded.delete(k):expanded.add(k);renderTable();}
-function expandAll(){bays.forEach(g=>expanded.add(bkey(g)));renderTable();}
-function collapseAll(){expanded.clear();renderTable();}
+function tgGi(gi){ expGi.has(gi)?expGi.delete(gi):expGi.add(gi); renderTable(); }
+function tgBay(bk){ expBay.has(bk)?expBay.delete(bk):expBay.add(bk); renderTable(); }
+
+function expandAll(lvl){
+  // lvl=2: buka semua GI saja, lvl=3: buka GI + Bay
+  giGroups.forEach(g=>{
+    expGi.add(g.gi);
+    if(lvl>=3) g.bays.forEach(b=>expBay.add((g.gi||'')+'\x00'+(b.bay||'')));
+  });
+  renderTable();
+}
+function collapseAll(){ expGi.clear(); expBay.clear(); renderTable(); }
 
 const e=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
