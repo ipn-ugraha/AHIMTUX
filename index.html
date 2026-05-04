@@ -2,766 +2,926 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Dashboard AHI MTU — PLN Transmisi Jawa Bali</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<style>:root{--bg:#0a0e1a;--bg3:#141c2f;--border:#1e2d4a;--border2:#253a5e;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--critical:#ef4444;--poor:#f97316;--fair:#eab308;--good:#3b82f6;--verygood:#10b981;--accent:#38bdf8;--accent2:#6366f1;--adj-color:#a78bfa;--krit-color:#f472b6;--card:#111827;--card2:#1a2640}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(56,189,248,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.03) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:0}
-.container{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:24px}
-header{display:flex;align-items:center;justify-content:space-between;padding:20px 28px;background:linear-gradient(135deg,var(--card),var(--card2));border:1px solid var(--border2);border-radius:16px;margin-bottom:20px;position:relative;overflow:hidden}
-header::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2),var(--verygood))}
-.header-left{display:flex;align-items:center;gap:16px}.pln-badge{width:48px;height:48px;background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:white}
-.header-title h1{font-size:19px;font-weight:700}.header-title p{font-size:12px;color:var(--text2);margin-top:2px}
-.header-right{text-align:right}.update-date{font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace}.update-date span{color:var(--accent);font-weight:600}
-.banner{display:flex;align-items:center;gap:16px;padding:14px 22px;border-radius:12px;margin-bottom:14px;transition:all .3s}
-.adj-banner{background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.25)}.adj-banner.active{background:rgba(167,139,250,.13);border-color:rgba(167,139,250,.5);box-shadow:0 0 20px rgba(167,139,250,.1)}
-.krit-banner{background:rgba(244,114,182,.06);border:1px solid rgba(244,114,182,.25)}.krit-banner.active{background:rgba(244,114,182,.13);border-color:rgba(244,114,182,.5);box-shadow:0 0 20px rgba(244,114,182,.1)}
-.banner-icon{font-size:20px;flex-shrink:0}.banner-text{flex:1}.banner-text h3{font-size:13px;font-weight:700;margin-bottom:4px}
-.adj-banner .banner-text h3{color:var(--adj-color)}.krit-banner .banner-text h3{color:var(--krit-color)}
-.banner-rules{display:flex;gap:8px;flex-wrap:wrap}
-.adj-rule-tag{background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--adj-color);font-weight:600}
-.krit-rule-tag{background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.25);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--krit-color);font-weight:600}
-.banner-meta{text-align:right;flex-shrink:0}.banner-count{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700}.banner-count-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
-.adj-banner .banner-count{color:var(--adj-color)}.krit-banner .banner-count{color:var(--krit-color)}
-.toggle{position:relative;width:52px;height:28px;background:var(--bg3);border:1px solid var(--border2);border-radius:14px;cursor:pointer;transition:all .3s;flex-shrink:0}
-.toggle-knob{position:absolute;top:3px;left:3px;width:20px;height:20px;background:white;border-radius:50%;transition:left .3s}.toggle.on .toggle-knob{left:27px}
-.adj-toggle.on{background:var(--adj-color);border-color:var(--adj-color);box-shadow:0 0 12px rgba(167,139,250,.4)}
-.krit-toggle.on{background:var(--krit-color);border-color:var(--krit-color);box-shadow:0 0 12px rgba(244,114,182,.4)}
-.filter-bar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
-.filter-btn{padding:8px 18px;border-radius:8px;border:1px solid var(--border2);background:var(--card);color:var(--text2);font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}
-.filter-btn:hover{border-color:var(--accent);color:var(--accent)}.filter-btn.active{background:linear-gradient(135deg,var(--accent2),var(--accent));border-color:transparent;color:white;box-shadow:0 4px 15px rgba(99,102,241,.3)}
-.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
-.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;transition:transform .2s}.kpi-card:hover{transform:translateY(-2px)}
-.kpi-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
-.kpi-value{font-size:36px;font-weight:700;font-family:'JetBrains Mono',monospace;line-height:1}
-.kpi-sub{font-size:12px;color:var(--text3);margin-top:6px}.kpi-pct{font-size:12px;font-weight:600;margin-top:4px}.kpi-delta{font-size:11px;margin-top:4px;font-family:'JetBrains Mono',monospace;font-weight:600;min-height:16px}
-.delta-down{color:var(--verygood)}.delta-up{color:var(--critical)}
-.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px}
-.section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:16px;display:flex;align-items:center;gap:8px}.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
-.stacked-bar{border-radius:6px;display:flex;overflow:hidden;background:var(--bg3)}
-.data-table{width:100%;border-collapse:collapse}
-.data-table th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
-.data-table td{padding:9px 12px;font-size:12px;border-bottom:1px solid var(--border);vertical-align:middle}
-.data-table tr:last-child td{border-bottom:none}
-.gi-row{cursor:pointer}.gi-row:hover td{background:rgba(56,189,248,.04)!important}
-.equip-expand-row td{padding:0!important;border-bottom:2px solid var(--accent2)!important}
-.equip-expand{background:linear-gradient(135deg,rgba(99,102,241,.06),rgba(56,189,248,.04));padding:16px 20px}
-.equip-expand-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
-.equip-expand-card{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px}
-.badge{display:inline-block;padding:3px 8px;border-radius:5px;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace}
-.badge-critical{background:rgba(239,68,68,.15);color:var(--critical);border:1px solid rgba(239,68,68,.3)}
-.badge-poor{background:rgba(249,115,22,.15);color:var(--poor);border:1px solid rgba(249,115,22,.3)}
-.badge-fair{background:rgba(234,179,8,.15);color:var(--fair);border:1px solid rgba(234,179,8,.3)}
-.badge-good{background:rgba(59,130,246,.15);color:var(--good);border:1px solid rgba(59,130,246,.3)}
-.badge-verygood{background:rgba(16,185,129,.15);color:var(--verygood);border:1px solid rgba(16,185,129,.3)}
-.krit-tag{display:inline-block;background:rgba(244,114,182,.15);color:var(--krit-color);border:1px solid rgba(244,114,182,.3);border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700;letter-spacing:.5px;vertical-align:middle;margin-left:3px}
-.crit-btn{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;background:var(--critical);color:white;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;cursor:pointer;border:none;transition:all .2s;vertical-align:middle;margin-left:4px}
-.crit-btn:hover{background:#b91c1c;transform:scale(1.08)}
-.rank-num{width:24px;height:24px;background:var(--bg3);border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text3);font-family:'JetBrains Mono',monospace}.rank-num.danger{background:rgba(239,68,68,.1);color:var(--critical)}
-.donut-wrap{display:flex;align-items:center;gap:24px}.donut-chart-container{position:relative;width:140px;height:140px;flex-shrink:0}.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}.donut-center-val{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace}.donut-center-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
-.equip-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}.equip-row:last-child{border-bottom:none}.equip-name{width:60px;font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent)}.equip-bar-wrap{flex:1}.equip-total{font-size:12px;color:var(--text3);width:50px;text-align:right;font-family:'JetBrains Mono',monospace}
-.alert-box{background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:12px 16px;display:flex;align-items:flex-start;gap:12px;margin-bottom:7px}
-.alert-krit{background:rgba(244,114,182,.06);border-color:rgba(244,114,182,.3)}
-.alert-icon{font-size:15px;flex-shrink:0;margin-top:1px}.alert-content{flex:1}.alert-gi{font-size:12px;font-weight:700;color:var(--text)}.alert-upt{font-size:11px;color:var(--text3);margin-top:2px}.score-bar{height:4px;border-radius:2px;overflow:hidden;background:var(--bg3);margin-top:5px}.alert-score{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--critical);flex-shrink:0}
-.usia-row{margin-bottom:14px}.usia-row:last-child{margin-bottom:0}
-.klaster-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.klaster-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;transition:border-color .2s}.klaster-card:hover{border-color:var(--border2)}
-.klaster-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.klaster-badge{font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;padding:4px 10px;border-radius:6px}.klaster-total{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace}
-.klaster-stats{display:grid;grid-template-columns:1fr 1fr;gap:5px}.klaster-stat{display:flex;align-items:center;gap:5px;font-size:10px}.klaster-stat-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0}.klaster-stat-val{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:11px}.klaster-stat-pct{color:var(--text3);font-size:10px}
-.gi-table-wrap{max-height:420px;overflow-y:auto}.gi-table-wrap::-webkit-scrollbar{width:4px}.gi-table-wrap::-webkit-scrollbar-track{background:var(--bg)}.gi-table-wrap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-.mini-bar-inline{display:inline-flex;height:10px;width:80px;border-radius:3px;overflow:hidden;background:var(--bg3);vertical-align:middle}
-.compare-panel{background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.2);border-radius:12px;padding:18px 22px;margin-bottom:20px;display:none}.compare-panel.visible{display:block}.compare-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--adj-color);margin-bottom:14px}.compare-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}.compare-col{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px}.compare-col-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;text-align:center}.compare-row{display:flex;justify-content:space-between;align-items:center;gap:4px;margin-bottom:5px}.compare-row:last-child{margin-bottom:0}.compare-row-label{font-size:10px;color:var(--text2)}.compare-row-val{font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:700}.compare-row-delta{font-size:10px;font-weight:700;min-width:32px;text-align:right}
-.bay-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px}
-.bay-modal{background:var(--card2);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:1150px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 25px 60px rgba(0,0,0,.5)}
-.bay-mhdr{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border);flex-shrink:0;background:linear-gradient(135deg,rgba(239,68,68,.08),rgba(249,115,22,.04))}
-.bay-mtitle{font-size:15px;font-weight:700}.bay-msub{font-size:12px;color:var(--text3);margin-top:3px}
-.bay-mclose{width:32px;height:32px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .2s;flex-shrink:0}
-.bay-mclose:hover{background:var(--critical);border-color:var(--critical);color:white}
-.bay-mbody{overflow-y:auto;padding:18px 24px;flex:1}.bay-mbody::-webkit-scrollbar{width:4px}.bay-mbody::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-.bay-sumgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
-.bay-sumcard{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px}
-.bay-sumlabel{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-.bay-sumval{font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace}
-.bay-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.bay-chip{padding:5px 12px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Space Grotesk',sans-serif}
-.bay-chip:hover,.bay-chip.active{background:rgba(239,68,68,.15);border-color:var(--critical);color:var(--critical)}
-.bay-chip.all.active{background:rgba(56,189,248,.12);border-color:var(--accent);color:var(--accent)}
-.bay-tbl{width:100%;border-collapse:collapse}
-.bay-tbl th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);padding:9px 12px;text-align:left;border-bottom:1px solid var(--border);background:var(--bg3);position:sticky;top:0;z-index:2;white-space:nowrap}
-.bay-tbl td{padding:9px 12px;font-size:12px;border-bottom:1px solid var(--border);vertical-align:top}
-.bay-tbl tr:last-child td{border-bottom:none}.bay-tbl tr:hover td{background:rgba(239,68,68,.04)}
-.hi-bar{display:flex;align-items:center;gap:6px}.hi-num{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;width:36px;text-align:right;flex-shrink:0}.hi-track{flex:1;height:6px;border-radius:3px;background:var(--bg3);overflow:hidden;min-width:60px}.hi-fill{height:100%;border-radius:3px}
-.jus-text{font-size:11px;color:var(--text2);line-height:1.5;max-width:280px}.jus-crit{font-weight:700;color:var(--critical)}.jus-poor{font-weight:700;color:var(--poor)}.jus-fair{font-weight:700;color:var(--fair)}
-.usia-pill{display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace;white-space:nowrap}
-.up-muda{background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3)}.up-tua{background:rgba(234,179,8,.15);color:#eab308;border:1px solid rgba(234,179,8,.3)}.up-sangat{background:rgba(239,68,68,.15);color:var(--critical);border:1px solid rgba(239,68,68,.3)}
-.renc-tag{display:inline-block;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(16,185,129,.12);color:#10b981;border:1px solid rgba(16,185,129,.3);white-space:nowrap}
-footer{text-align:center;padding:20px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);margin-top:8px}
-@media(max-width:1200px){.klaster-grid{grid-template-columns:repeat(2,1fr)}.grid-4{grid-template-columns:repeat(2,1fr)}.compare-grid{grid-template-columns:repeat(3,1fr)}.equip-expand-grid{grid-template-columns:repeat(3,1fr)}.bay-sumgrid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:700px){.grid-2{grid-template-columns:1fr}.klaster-grid{grid-template-columns:1fr 1fr}.equip-expand-grid{grid-template-columns:repeat(2,1fr)}}
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard AHI MTU — UIT JBM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0d0f12;
+    --bg2: #13161b;
+    --bg3: #1a1e25;
+    --bg4: #22272f;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8eaed;
+    --text2: #8a9099;
+    --text3: #555c66;
+    --accent: #3b82f6;
+    --accent2: #1d4ed8;
+    --red: #ef4444;
+    --red-bg: rgba(239,68,68,0.1);
+    --red-border: rgba(239,68,68,0.25);
+    --amber: #f59e0b;
+    --amber-bg: rgba(245,158,11,0.1);
+    --amber-border: rgba(245,158,11,0.25);
+    --green: #22c55e;
+    --green-bg: rgba(34,197,94,0.1);
+    --green-border: rgba(34,197,94,0.25);
+    --teal: #14b8a6;
+    --teal-bg: rgba(20,184,166,0.1);
+    --font: 'IBM Plex Sans', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 16px; }
+  .logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .topbar-divider { width: 1px; height: 20px; background: var(--border); }
+  .topbar-title { font-size: 13px; color: var(--text2); }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  #last-update { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+  #gi-kritikal-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--red-bg); border: 1px solid var(--red-border);
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; color: var(--red);
+    font-family: var(--mono);
+  }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* MAIN LAYOUT */
+  .main { padding: 20px 24px; max-width: 1600px; margin: 0 auto; }
+
+  /* FILTERS */
+  .filter-bar {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+    margin-bottom: 20px;
+  }
+  .filter-group { display: flex; flex-direction: column; gap: 4px; min-width: 130px; }
+  .filter-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--mono); }
+  .filter-select, .filter-input {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: var(--radius);
+    font-family: var(--font);
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .filter-select:hover, .filter-input:hover { border-color: rgba(255,255,255,0.22); }
+  .filter-select:focus, .filter-input:focus { border-color: var(--accent); }
+  .filter-input { min-width: 200px; }
+  .filter-btn {
+    background: var(--accent); color: #fff;
+    border: none; padding: 7px 16px;
+    border-radius: var(--radius); font-size: 13px;
+    cursor: pointer; font-family: var(--font);
+    font-weight: 500; transition: background 0.15s;
+    align-self: flex-end;
+  }
+  .filter-btn:hover { background: var(--accent2); }
+  .filter-btn.reset {
+    background: transparent; color: var(--text2);
+    border: 1px solid var(--border2);
+  }
+  .filter-btn.reset:hover { border-color: var(--border2); background: var(--bg3); }
+  .filter-count {
+    align-self: flex-end;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    padding-bottom: 8px;
+    margin-left: auto;
+  }
+  .filter-count span { color: var(--accent); }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    transition: border-color 0.15s;
+  }
+  .stat-card:hover { border-color: var(--border2); }
+  .stat-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--mono); margin-bottom: 8px; }
+  .stat-value { font-size: 28px; font-weight: 600; line-height: 1; margin-bottom: 4px; }
+  .stat-sub { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+  .stat-critical .stat-value { color: var(--red); }
+  .stat-poor .stat-value { color: var(--amber); }
+  .stat-good .stat-value { color: var(--green); }
+  .stat-total .stat-value { color: var(--text); }
+  .stat-gi .stat-value { color: var(--teal); }
+
+  /* CHARTS ROW */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .chart-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+  }
+  .chart-title { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--mono); margin-bottom: 12px; }
+  .donut-wrap { position: relative; height: 160px; width: 160px; margin: 0 auto; }
+  .legend-list { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .legend-name { color: var(--text2); flex: 1; }
+  .legend-val { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+
+  /* UPT bar chart */
+  .bar-chart-wrap { position: relative; height: 220px; }
+
+  /* TABLE SECTION */
+  .table-section {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .table-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .table-header-left { font-size: 11px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.06em; }
+  .table-header-right { display: flex; gap: 8px; align-items: center; }
+  .tab-btn {
+    background: transparent; border: 1px solid transparent;
+    color: var(--text3); font-size: 12px;
+    padding: 4px 12px; border-radius: var(--radius);
+    cursor: pointer; font-family: var(--font);
+    transition: all 0.15s;
+  }
+  .tab-btn:hover { color: var(--text); background: var(--bg3); }
+  .tab-btn.active { background: var(--bg3); border-color: var(--border2); color: var(--text); }
+
+  .table-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  thead th {
+    background: var(--bg3);
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 10px;
+    color: var(--text3);
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th:hover { color: var(--text2); }
+  thead th.sort-asc::after { content: ' ↑'; color: var(--accent); }
+  thead th.sort-desc::after { content: ' ↓'; color: var(--accent); }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  tbody tr:hover { background: var(--bg3); }
+  tbody td { padding: 9px 12px; color: var(--text2); white-space: nowrap; }
+  tbody td:first-child { color: var(--text); font-weight: 500; }
+
+  /* STATUS BADGES */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .badge-critical { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+  .badge-poor { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+  .badge-fair { background: rgba(234,179,8,0.1); color: #eab308; border: 1px solid rgba(234,179,8,0.25); }
+  .badge-good { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+  .badge-very-good { background: rgba(20,184,166,0.1); color: var(--teal); border: 1px solid rgba(20,184,166,0.25); }
+  .badge-extreme { background: rgba(239,68,68,0.08); color: #f87171; border: 1px solid rgba(239,68,68,0.18); }
+  .badge-tinggi { background: rgba(245,158,11,0.08); color: #fbbf24; border: 1px solid rgba(245,158,11,0.18); }
+  .badge-moderat { background: rgba(99,102,241,0.08); color: #818cf8; border: 1px solid rgba(99,102,241,0.18); }
+  .badge-rendah { background: rgba(34,197,94,0.08); color: #4ade80; border: 1px solid rgba(34,197,94,0.18); }
+
+  /* NILAI HI BAR */
+  .hi-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .hi-bar { height: 4px; border-radius: 2px; min-width: 2px; }
+  .hi-val { font-family: var(--mono); font-size: 11px; color: var(--text2); min-width: 30px; }
+
+  /* GI KRITIKAL indicator */
+  .gi-krit-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red); display: inline-block; margin-right: 4px; }
+
+  /* PAGINATION */
+  .pagination {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .pagination-info { color: var(--text3); font-family: var(--mono); }
+  .pagination-btns { display: flex; gap: 6px; }
+  .page-btn {
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text2); padding: 4px 10px;
+    border-radius: var(--radius); cursor: pointer;
+    font-size: 12px; font-family: var(--font);
+    transition: all 0.12s;
+  }
+  .page-btn:hover { border-color: var(--border2); color: var(--text); }
+  .page-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* LOADING */
+  .loading-overlay {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 999; gap: 16px;
+  }
+  .loading-logo { font-family: var(--mono); font-size: 16px; color: var(--accent); letter-spacing: 0.1em; }
+  .loading-bar-wrap { width: 200px; height: 2px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+  .loading-bar { height: 100%; background: var(--accent); border-radius: 2px; animation: loadbar 1.5s ease-in-out infinite; }
+  @keyframes loadbar { 0%{width:0%;margin-left:0} 50%{width:60%;margin-left:40%} 100%{width:0%;margin-left:100%} }
+  .loading-text { font-size: 12px; color: var(--text3); }
+
+  /* EMPTY STATE */
+  .empty-state { padding: 40px; text-align: center; color: var(--text3); font-size: 13px; }
+
+  /* TOOLTIP for GI */
+  .gi-name { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .charts-row { grid-template-columns: 1fr; }
+    .main { padding: 12px; }
+    .topbar { padding: 0 12px; }
+    .topbar-title { display: none; }
+  }
+
+  select option { background: #22272f; }
 </style>
 </head>
 <body>
-<div class="container">
-<header>
-  <div class="header-left">
-    <div class="pln-badge">&#x26A1;</div>
-    <div class="header-title">
-      <h1>Dashboard AHI MTU &#x2014; Transmisi Jawa Bali</h1>
-      <p>Asset Health Index &middot; Monitoring Unit Transmisi &middot; Konvensional</p>
-    </div>
+
+<div class="loading-overlay" id="loading">
+  <div class="loading-logo">AHI · MTU</div>
+  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+  <div class="loading-text" id="loading-text">Memuat data...</div>
+</div>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-left">
+    <span class="logo">AHI MTU</span>
+    <div class="topbar-divider"></div>
+    <span class="topbar-title">Dashboard Health Index Peralatan — UIT JBM</span>
   </div>
-  <div class="header-right">
-    <div class="update-date">Update: <span>4 May 2026</span></div>
-    <div class="update-date" style="margin-top:4px">Total: <span id="totalEquip">&#x2014;</span> peralatan <span id="kritLabel" style="color:var(--krit-color);font-size:11px"></span></div>
+  <div class="topbar-right">
+    <span id="last-update">—</span>
+    <div id="gi-kritikal-badge" style="display:none">
+      <span class="badge-dot"></span>
+      <span id="gi-kritikal-count">0</span> GI Kritikal
+    </div>
   </div>
 </header>
 
-<div class="banner adj-banner" id="adjBanner">
-  <div class="banner-icon">&#x2699;&#xFE0F;</div>
-  <div class="banner-text">
-    <h3>Mode Penyesuaian AHI (Adjustment)</h3>
-    <div class="banner-rules">
-      <span class="adj-rule-tag">TRAFO &middot; FAIR + Usia &lt; 20 thn &#x2192; GOOD</span>
-      <span class="adj-rule-tag">PMT &middot; FAIR + Usia &lt; 15 thn &#x2192; GOOD</span>
+<!-- MAIN -->
+<main class="main">
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <span class="filter-label">UPT</span>
+      <select class="filter-select" id="f-upt"><option value="">Semua UPT</option></select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">GI</span>
+      <select class="filter-select" id="f-gi" style="min-width:180px"><option value="">Semua GI</option></select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Jenis</span>
+      <select class="filter-select" id="f-jenis"><option value="">Semua</option></select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Tegangan (kV)</span>
+      <select class="filter-select" id="f-tegangan"><option value="">Semua</option></select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Status Hi</span>
+      <select class="filter-select" id="f-status">
+        <option value="">Semua</option>
+        <option value="CRITICAL">CRITICAL</option>
+        <option value="POOR">POOR</option>
+        <option value="FAIR">FAIR</option>
+        <option value="GOOD">GOOD</option>
+        <option value="VERY GOOD">VERY GOOD</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Criticality GI</span>
+      <select class="filter-select" id="f-criticality">
+        <option value="">Semua</option>
+        <option value="EXTREME">EXTREME</option>
+        <option value="SANGAT TINGGI">SANGAT TINGGI</option>
+        <option value="TINGGI">TINGGI</option>
+        <option value="MODERAT">MODERAT</option>
+        <option value="RENDAH">RENDAH</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Status Usia</span>
+      <select class="filter-select" id="f-usia">
+        <option value="">Semua</option>
+        <option value="SANGAT TUA">SANGAT TUA</option>
+        <option value="TUA">TUA</option>
+        <option value="MUDA">MUDA</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">GI Kritikal saja</span>
+      <select class="filter-select" id="f-gikrit">
+        <option value="">Semua GI</option>
+        <option value="1">Hanya GI Kritikal</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Cari Bay / Serial</span>
+      <input type="text" class="filter-input" id="f-search" placeholder="ketik untuk mencari...">
+    </div>
+    <button class="filter-btn reset" onclick="resetFilters()">Reset</button>
+    <div class="filter-count" id="filter-count">Menampilkan <span>—</span> data</div>
+  </div>
+
+  <!-- STATS ROW -->
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card stat-total">
+      <div class="stat-label">Total Peralatan</div>
+      <div class="stat-value" id="s-total">—</div>
+      <div class="stat-sub" id="s-total-sub">item terfilter</div>
+    </div>
+    <div class="stat-card stat-critical">
+      <div class="stat-label">CRITICAL</div>
+      <div class="stat-value" id="s-critical">—</div>
+      <div class="stat-sub" id="s-critical-pct">—</div>
+    </div>
+    <div class="stat-card stat-poor">
+      <div class="stat-label">POOR</div>
+      <div class="stat-value" id="s-poor">—</div>
+      <div class="stat-sub" id="s-poor-pct">—</div>
+    </div>
+    <div class="stat-card stat-poor" style="--amber:#f59e0b">
+      <div class="stat-label">FAIR</div>
+      <div class="stat-value" style="color:#eab308" id="s-fair">—</div>
+      <div class="stat-sub" id="s-fair-pct">—</div>
+    </div>
+    <div class="stat-card stat-good">
+      <div class="stat-label">GOOD + VG</div>
+      <div class="stat-value" id="s-good">—</div>
+      <div class="stat-sub" id="s-good-pct">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Nilai Hi</div>
+      <div class="stat-value" style="color:var(--accent)" id="s-avghi">—</div>
+      <div class="stat-sub">rata-rata skor</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Max Nilai Hi</div>
+      <div class="stat-value" style="color:var(--red)" id="s-maxhi">—</div>
+      <div class="stat-sub" id="s-maxhi-gi">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Sangat Tua</div>
+      <div class="stat-value" style="color:#a78bfa" id="s-tua">—</div>
+      <div class="stat-sub" id="s-tua-pct">—</div>
     </div>
   </div>
-  <div class="banner-meta"><div class="banner-count">1.279</div><div class="banner-count-label">unit di-adjust</div></div>
-  <div class="toggle adj-toggle" id="adjToggle" onclick="toggleAdjustment()"><div class="toggle-knob"></div></div>
-</div>
 
-<div class="banner krit-banner" id="kritBanner">
-  <div class="banner-icon">&#x1F3AF;</div>
-  <div class="banner-text">
-    <h3>Filter GI Kritikal Sistem</h3>
-    <div class="banner-rules">
-      <span class="krit-rule-tag">62 GI/GITET masuk kriteria kritikal UIT JBM</span>
-      <span class="krit-rule-tag">8.208 titik peralatan terpantau</span>
-    </div>
-  </div>
-  <div class="banner-meta"><div class="banner-count">62</div><div class="banner-count-label">GI/GITET kritikal</div></div>
-  <div class="toggle krit-toggle" id="kritToggle" onclick="toggleKritikal()"><div class="toggle-knob"></div></div>
-</div>
-
-<div class="compare-panel" id="comparePanel">
-  <div class="compare-title">&#x1F4CA; Perbandingan Sebelum vs Sesudah Adjustment per UPT</div>
-  <div class="compare-grid" id="compareGrid"></div>
-</div>
-
-<div class="filter-bar">
-  <button class="filter-btn active" onclick="setUpt(event,'ALL')">Semua UPT</button>
-  <button class="filter-btn" onclick="setUpt(event,'UPT BALI')">UPT Bali</button>
-  <button class="filter-btn" onclick="setUpt(event,'UPT GRESIK')">UPT Gresik</button>
-  <button class="filter-btn" onclick="setUpt(event,'UPT MADIUN')">UPT Madiun</button>
-  <button class="filter-btn" onclick="setUpt(event,'UPT MALANG')">UPT Malang</button>
-  <button class="filter-btn" onclick="setUpt(event,'UPT PROBOLINGGO')">UPT Probolinggo</button>
-  <button class="filter-btn" onclick="setUpt(event,'UPT SURABAYA')">UPT Surabaya</button>
-</div>
-
-<div class="grid-4">
-  <div class="kpi-card" style="border-left:3px solid var(--critical)">
-    <div class="kpi-label">&#x1F534; Critical</div><div class="kpi-value" style="color:var(--critical)" id="kpi-critical">&#x2014;</div>
-    <div class="kpi-sub">Prioritas penanganan segera</div><div class="kpi-pct" style="color:var(--critical)" id="pct-critical"></div><div class="kpi-delta" id="delta-critical"></div>
-  </div>
-  <div class="kpi-card" style="border-left:3px solid var(--poor)">
-    <div class="kpi-label">&#x1F7E0; Poor</div><div class="kpi-value" style="color:var(--poor)" id="kpi-poor">&#x2014;</div>
-    <div class="kpi-sub">Kondisi kurang baik</div><div class="kpi-pct" style="color:var(--poor)" id="pct-poor"></div><div class="kpi-delta" id="delta-poor"></div>
-  </div>
-  <div class="kpi-card" style="border-left:3px solid var(--fair)">
-    <div class="kpi-label">&#x1F7E1; Fair</div><div class="kpi-value" style="color:var(--fair)" id="kpi-fair">&#x2014;</div>
-    <div class="kpi-sub">Perlu perhatian</div><div class="kpi-pct" style="color:var(--fair)" id="pct-fair"></div><div class="kpi-delta" id="delta-fair"></div>
-  </div>
-  <div class="kpi-card" style="border-left:3px solid var(--good)">
-    <div class="kpi-label">&#x1F7E2; Good + Very Good</div><div class="kpi-value" style="color:var(--good)" id="kpi-good">&#x2014;</div>
-    <div class="kpi-sub">Kondisi baik</div><div class="kpi-pct" style="color:var(--good)" id="pct-good"></div><div class="kpi-delta" id="delta-good"></div>
-  </div>
-</div>
-
-<div class="section-title" style="margin-bottom:12px">Cluster Level Tegangan</div>
-<div class="klaster-grid" id="klasterCards"></div>
-
-<div class="grid-2">
-  <div class="card">
-    <div class="section-title">Status per Jenis Peralatan</div>
-    <div id="equipBars"></div>
-  </div>
-  <div class="card">
-    <div class="section-title">&#x26A0;&#xFE0F; GI Paling Kritis (Top 10)</div>
-    <div id="worstGiList"></div>
-  </div>
-</div>
-
-<div class="grid-2">
-  <div class="card">
-    <div class="section-title">Komposisi Status</div>
-    <div class="donut-wrap">
-      <div class="donut-chart-container">
-        <canvas id="donutChart" width="140" height="140"></canvas>
-        <div class="donut-center"><div class="donut-center-val" id="donutTotal">&#x2014;</div><div class="donut-center-label">Peralatan</div></div>
+  <!-- CHARTS ROW -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">Distribusi Status Hi</div>
+      <div class="donut-wrap">
+        <canvas id="donutChart" role="img" aria-label="Donut chart distribusi status health index"></canvas>
       </div>
-      <div style="flex:1"><div id="donutLegend"></div></div>
+      <div class="legend-list" id="donut-legend"></div>
     </div>
-  </div>
-  <div class="card">
-    <div class="section-title">Status Usia Peralatan</div>
-    <div id="usiaRows"></div>
-  </div>
-</div>
-
-<div class="card" style="margin-bottom:20px">
-  <div class="section-title" id="giDetailTitle">Detail Gardu Induk &#x2014; Semua UPT</div>
-  <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Klik baris GI untuk rincian peralatan &middot; <span class="krit-tag">K</span> = GI Kritikal &middot; Tombol <span style="background:var(--critical);color:white;border-radius:10px;padding:1px 8px;font-size:10px">N &#x1F50D;</span> = detail bay Critical</div>
-  <div class="gi-table-wrap">
-    <table class="data-table">
-      <thead><tr>
-        <th>#</th><th>Gardu Induk</th><th>UPT</th><th>Total</th>
-        <th>Critical</th><th>Poor</th><th>Fair</th><th>Good</th><th>Very Good</th><th>Distribusi</th>
-      </tr></thead>
-      <tbody id="giTableBody"></tbody>
-    </table>
-  </div>
-</div>
-
-<footer>Dashboard AHI MTU &middot; PLN Transmisi Jawa Bali &middot; Data per 24 April 2026 &middot; 17.300 titik peralatan &middot; 62 GI Kritikal</footer>
-</div>
-
-<!-- BAY MODAL -->
-<div class="bay-overlay" id="bayOverlay" style="display:none" onclick="if(event.target===this)closeBayModal()">
-  <div class="bay-modal">
-    <div class="bay-mhdr">
-      <div><div class="bay-mtitle" id="bayMTitle">&#x2014;</div><div class="bay-msub" id="bayMSub">&#x2014;</div></div>
-      <button class="bay-mclose" onclick="closeBayModal()">&#x2715;</button>
-    </div>
-    <div class="bay-mbody">
-      <div class="bay-sumgrid" id="baySumGrid"></div>
-      <div class="bay-chips" id="bayChips"></div>
-      <div style="overflow-x:auto">
-        <table class="bay-tbl">
-          <thead><tr>
-            <th>#</th><th>Jenis</th><th>Bay</th><th>Phasa</th>
-            <th>Merek / Tipe</th><th>Thn Buat / Ops</th>
-            <th>Nilai HI</th><th>Usia</th><th>Justifikasi</th><th>Rencana</th>
-          </tr></thead>
-          <tbody id="bayTbody"></tbody>
-        </table>
+    <div class="chart-card">
+      <div class="chart-title">Status Hi per UPT</div>
+      <div class="bar-chart-wrap">
+        <canvas id="uptChart" role="img" aria-label="Stacked bar chart status hi per UPT"></canvas>
       </div>
     </div>
   </div>
-</div>
+
+  <!-- TABLE -->
+  <div class="table-section">
+    <div class="table-header">
+      <div class="table-header-left">Data Peralatan</div>
+      <div class="table-header-right">
+        <button class="tab-btn active" onclick="setTab('all', this)">Semua</button>
+        <button class="tab-btn" onclick="setTab('critical', this)">Critical Only</button>
+        <button class="tab-btn" onclick="setTab('gi-krit', this)">GI Kritikal</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="main-table">
+        <thead>
+          <tr>
+            <th onclick="sortBy('Jenis')" data-col="Jenis">Jenis</th>
+            <th onclick="sortBy('Upt')" data-col="Upt">UPT</th>
+            <th onclick="sortBy('Gi')" data-col="Gi">GI</th>
+            <th onclick="sortBy('Bay')" data-col="Bay">Bay</th>
+            <th onclick="sortBy('Phasa')" data-col="Phasa">Phasa</th>
+            <th onclick="sortBy('Daya/Tegangan')" data-col="Daya/Tegangan">kV</th>
+            <th onclick="sortBy('Merek')" data-col="Merek">Merek</th>
+            <th onclick="sortBy('Tahun Buat')" data-col="Tahun Buat">Tahun</th>
+            <th onclick="sortBy('Status Usia')" data-col="Status Usia">Usia</th>
+            <th onclick="sortBy('Criticality Gi')" data-col="Criticality Gi">Criticality</th>
+            <th onclick="sortBy('Status Hi')" data-col="Status Hi">Status Hi</th>
+            <th onclick="sortBy('Nilai Hi')" data-col="Nilai Hi">Nilai Hi</th>
+            <th>Justifikasi</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <div class="pagination-info" id="page-info">—</div>
+      <div class="pagination-btns" id="page-btns"></div>
+    </div>
+  </div>
+
+</main>
 
 <script>
-const DATA_ORI = {"overall":{"CRITICAL":413,"POOR":1140,"FAIR":1209,"GOOD":12032,"VERY GOOD":2504},"total":17298,"adj_count":76,"status_usia":{"MUDA":8850,"TUA":2134,"SANGAT TUA":6314},"overall_kritikal":{"CRITICAL":0,"POOR":0,"FAIR":0,"GOOD":0,"VERY GOOD":0},"total_kritikal":0,"usia_kritikal":{"MUDA":0,"TUA":0,"SANGAT TUA":0},"klaster_data":{"150 kV":{"counts":{"CRITICAL":104,"POOR":641,"FAIR":408,"GOOD":5223,"VERY GOOD":391},"total":6767,"equip_data":{"LA":{"counts":{"CRITICAL":26,"POOR":42,"FAIR":0,"GOOD":2509,"VERY GOOD":1},"total":2578},"PMS":{"counts":{"CRITICAL":20,"POOR":107,"FAIR":29,"GOOD":1753,"VERY GOOD":340},"total":2249},"PMT":{"counts":{"CRITICAL":54,"POOR":488,"FAIR":377,"GOOD":930,"VERY GOOD":46},"total":1895},"TRAFO":{"counts":{"CRITICAL":4,"POOR":4,"FAIR":2,"GOOD":31,"VERY GOOD":4},"total":45}}},"20 kV ke bawah":{"counts":{"CRITICAL":272,"POOR":214,"FAIR":735,"GOOD":5137,"VERY GOOD":1829},"total":8187,"equip_data":{"CT":{"counts":{"CRITICAL":103,"POOR":113,"FAIR":95,"GOOD":3202,"VERY GOOD":1720},"total":5233},"CVT":{"counts":{"CRITICAL":157,"POOR":16,"FAIR":600,"GOOD":1570,"VERY GOOD":104},"total":2447},"LA":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":0,"GOOD":21,"VERY GOOD":0},"total":21},"PMS":{"counts":{"CRITICAL":0,"POOR":1,"FAIR":2,"GOOD":17,"VERY GOOD":2},"total":22},"PMT":{"counts":{"CRITICAL":0,"POOR":4,"FAIR":7,"GOOD":110,"VERY GOOD":1},"total":122},"TRAFO":{"counts":{"CRITICAL":12,"POOR":80,"FAIR":31,"GOOD":217,"VERY GOOD":2},"total":342}}},"500 kV":{"counts":{"CRITICAL":23,"POOR":155,"FAIR":24,"GOOD":430,"VERY GOOD":187},"total":819,"equip_data":{"LA":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":0,"GOOD":133,"VERY GOOD":3},"total":136},"PMS":{"counts":{"CRITICAL":3,"POOR":47,"FAIR":7,"GOOD":268,"VERY GOOD":182},"total":507},"PMT":{"counts":{"CRITICAL":20,"POOR":108,"FAIR":15,"GOOD":26,"VERY GOOD":2},"total":171},"TRAFO":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":2,"GOOD":3,"VERY GOOD":0},"total":5}}},"70 kV":{"counts":{"CRITICAL":14,"POOR":130,"FAIR":42,"GOOD":1242,"VERY GOOD":97},"total":1525,"equip_data":{"LA":{"counts":{"CRITICAL":3,"POOR":37,"FAIR":0,"GOOD":575,"VERY GOOD":0},"total":615},"PMS":{"counts":{"CRITICAL":7,"POOR":25,"FAIR":5,"GOOD":386,"VERY GOOD":96},"total":519},"PMT":{"counts":{"CRITICAL":4,"POOR":68,"FAIR":37,"GOOD":281,"VERY GOOD":1},"total":391}}}},"equip_data":{"CT":{"counts":{"CRITICAL":103,"POOR":113,"FAIR":95,"GOOD":3202,"VERY GOOD":1720},"total":5233},"CVT":{"counts":{"CRITICAL":157,"POOR":16,"FAIR":600,"GOOD":1570,"VERY GOOD":104},"total":2447},"LA":{"counts":{"CRITICAL":29,"POOR":79,"FAIR":0,"GOOD":3238,"VERY GOOD":4},"total":3350},"PMS":{"counts":{"CRITICAL":30,"POOR":180,"FAIR":43,"GOOD":2424,"VERY GOOD":620},"total":3297},"PMT":{"counts":{"CRITICAL":78,"POOR":668,"FAIR":436,"GOOD":1347,"VERY GOOD":50},"total":2579},"TRAFO":{"counts":{"CRITICAL":16,"POOR":84,"FAIR":35,"GOOD":251,"VERY GOOD":6},"total":392}},"upt_data":{"UPT BALI":{"counts":{"CRITICAL":39,"POOR":97,"FAIR":128,"GOOD":1264,"VERY GOOD":320},"total":1848,"klaster_data":{"150 kV":{"counts":{"CRITICAL":18,"POOR":81,"FAIR":40,"GOOD":735,"VERY GOOD":79},"total":953},"20 kV ke bawah":{"counts":{"CRITICAL":21,"POOR":16,"FAIR":88,"GOOD":529,"VERY GOOD":241},"total":895}},"equip_data":{"CT":{"counts":{"CRITICAL":4,"POOR":6,"FAIR":14,"GOOD":347,"VERY GOOD":198},"total":569},"CVT":{"counts":{"CRITICAL":15,"POOR":0,"FAIR":70,"GOOD":153,"VERY GOOD":43},"total":281},"LA":{"counts":{"CRITICAL":6,"POOR":9,"FAIR":0,"GOOD":384,"VERY GOOD":0},"total":399},"PMS":{"counts":{"CRITICAL":8,"POOR":39,"FAIR":5,"GOOD":196,"VERY GOOD":55},"total":303},"PMT":{"counts":{"CRITICAL":4,"POOR":33,"FAIR":35,"GOOD":155,"VERY GOOD":24},"total":251},"TRAFO":{"counts":{"CRITICAL":2,"POOR":10,"FAIR":4,"GOOD":29,"VERY GOOD":0},"total":45}}},"UPT GRESIK":{"counts":{"CRITICAL":52,"POOR":142,"FAIR":175,"GOOD":1505,"VERY GOOD":364},"total":2238,"klaster_data":{"150 kV":{"counts":{"CRITICAL":25,"POOR":112,"FAIR":64,"GOOD":768,"VERY GOOD":84},"total":1053},"20 kV ke bawah":{"counts":{"CRITICAL":27,"POOR":25,"FAIR":110,"GOOD":630,"VERY GOOD":277},"total":1069},"500 kV":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":1,"GOOD":1,"VERY GOOD":0},"total":2},"70 kV":{"counts":{"CRITICAL":0,"POOR":5,"FAIR":0,"GOOD":106,"VERY GOOD":3},"total":114}},"equip_data":{"CT":{"counts":{"CRITICAL":0,"POOR":13,"FAIR":0,"GOOD":430,"VERY GOOD":277},"total":720},"CVT":{"counts":{"CRITICAL":27,"POOR":0,"FAIR":105,"GOOD":177,"VERY GOOD":0},"total":309},"LA":{"counts":{"CRITICAL":0,"POOR":14,"FAIR":0,"GOOD":400,"VERY GOOD":0},"total":414},"PMS":{"counts":{"CRITICAL":0,"POOR":24,"FAIR":1,"GOOD":302,"VERY GOOD":75},"total":402},"PMT":{"counts":{"CRITICAL":25,"POOR":79,"FAIR":63,"GOOD":173,"VERY GOOD":12},"total":352},"TRAFO":{"counts":{"CRITICAL":0,"POOR":12,"FAIR":6,"GOOD":23,"VERY GOOD":0},"total":41}}},"UPT MADIUN":{"counts":{"CRITICAL":38,"POOR":327,"FAIR":327,"GOOD":3159,"VERY GOOD":600},"total":4451,"klaster_data":{"150 kV":{"counts":{"CRITICAL":4,"POOR":154,"FAIR":95,"GOOD":1141,"VERY GOOD":101},"total":1495},"20 kV ke bawah":{"counts":{"CRITICAL":30,"POOR":50,"FAIR":206,"GOOD":1388,"VERY GOOD":366},"total":2040},"500 kV":{"counts":{"CRITICAL":2,"POOR":73,"FAIR":6,"GOOD":126,"VERY GOOD":81},"total":288},"70 kV":{"counts":{"CRITICAL":2,"POOR":50,"FAIR":20,"GOOD":504,"VERY GOOD":52},"total":628}},"equip_data":{"CT":{"counts":{"CRITICAL":12,"POOR":29,"FAIR":22,"GOOD":839,"VERY GOOD":338},"total":1240},"CVT":{"counts":{"CRITICAL":15,"POOR":0,"FAIR":168,"GOOD":463,"VERY GOOD":25},"total":671},"LA":{"counts":{"CRITICAL":0,"POOR":10,"FAIR":0,"GOOD":811,"VERY GOOD":0},"total":821},"PMS":{"counts":{"CRITICAL":0,"POOR":63,"FAIR":24,"GOOD":643,"VERY GOOD":236},"total":966},"PMT":{"counts":{"CRITICAL":4,"POOR":207,"FAIR":106,"GOOD":343,"VERY GOOD":1},"total":661},"TRAFO":{"counts":{"CRITICAL":7,"POOR":18,"FAIR":7,"GOOD":60,"VERY GOOD":0},"total":92}}},"UPT MALANG":{"counts":{"CRITICAL":123,"POOR":221,"FAIR":216,"GOOD":2459,"VERY GOOD":528},"total":3547,"klaster_data":{"150 kV":{"counts":{"CRITICAL":12,"POOR":70,"FAIR":90,"GOOD":763,"VERY GOOD":64},"total":999},"20 kV ke bawah":{"counts":{"CRITICAL":96,"POOR":33,"FAIR":91,"GOOD":1007,"VERY GOOD":371},"total":1598},"500 kV":{"counts":{"CRITICAL":3,"POOR":43,"FAIR":14,"GOOD":98,"VERY GOOD":53},"total":211},"70 kV":{"counts":{"CRITICAL":12,"POOR":75,"FAIR":21,"GOOD":591,"VERY GOOD":40},"total":739}},"equip_data":{"CT":{"counts":{"CRITICAL":19,"POOR":25,"FAIR":3,"GOOD":712,"VERY GOOD":348},"total":1107},"CVT":{"counts":{"CRITICAL":74,"POOR":0,"FAIR":79,"GOOD":240,"VERY GOOD":21},"total":414},"LA":{"counts":{"CRITICAL":13,"POOR":31,"FAIR":0,"GOOD":660,"VERY GOOD":0},"total":704},"PMS":{"counts":{"CRITICAL":9,"POOR":22,"FAIR":3,"GOOD":530,"VERY GOOD":143},"total":707},"PMT":{"counts":{"CRITICAL":5,"POOR":134,"FAIR":122,"GOOD":251,"VERY GOOD":10},"total":522},"TRAFO":{"counts":{"CRITICAL":3,"POOR":9,"FAIR":9,"GOOD":66,"VERY GOOD":6},"total":93}}},"UPT PROBOLINGGO":{"counts":{"CRITICAL":152,"POOR":249,"FAIR":266,"GOOD":2355,"VERY GOOD":420},"total":3442,"klaster_data":{"150 kV":{"counts":{"CRITICAL":43,"POOR":151,"FAIR":96,"GOOD":1221,"VERY GOOD":49},"total":1560},"20 kV ke bawah":{"counts":{"CRITICAL":91,"POOR":59,"FAIR":167,"GOOD":929,"VERY GOOD":318},"total":1564},"500 kV":{"counts":{"CRITICAL":18,"POOR":39,"FAIR":3,"GOOD":205,"VERY GOOD":53},"total":318}},"equip_data":{"CT":{"counts":{"CRITICAL":65,"POOR":28,"FAIR":25,"GOOD":548,"VERY GOOD":303},"total":969},"CVT":{"counts":{"CRITICAL":22,"POOR":16,"FAIR":140,"GOOD":306,"VERY GOOD":15},"total":499},"LA":{"counts":{"CRITICAL":9,"POOR":6,"FAIR":0,"GOOD":638,"VERY GOOD":4},"total":657},"PMS":{"counts":{"CRITICAL":12,"POOR":18,"FAIR":7,"GOOD":572,"VERY GOOD":95},"total":704},"PMT":{"counts":{"CRITICAL":40,"POOR":165,"FAIR":89,"GOOD":256,"VERY GOOD":3},"total":553},"TRAFO":{"counts":{"CRITICAL":4,"POOR":16,"FAIR":5,"GOOD":35,"VERY GOOD":0},"total":60}}},"UPT SURABAYA":{"counts":{"CRITICAL":9,"POOR":104,"FAIR":97,"GOOD":1290,"VERY GOOD":272},"total":1772,"klaster_data":{"150 kV":{"counts":{"CRITICAL":2,"POOR":73,"FAIR":23,"GOOD":595,"VERY GOOD":14},"total":707},"20 kV ke bawah":{"counts":{"CRITICAL":7,"POOR":31,"FAIR":73,"GOOD":654,"VERY GOOD":256},"total":1021},"70 kV":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":1,"GOOD":41,"VERY GOOD":2},"total":44}},"equip_data":{"CT":{"counts":{"CRITICAL":3,"POOR":12,"FAIR":31,"GOOD":326,"VERY GOOD":256},"total":628},"CVT":{"counts":{"CRITICAL":4,"POOR":0,"FAIR":38,"GOOD":231,"VERY GOOD":0},"total":273},"LA":{"counts":{"CRITICAL":1,"POOR":9,"FAIR":0,"GOOD":345,"VERY GOOD":0},"total":355},"PMS":{"counts":{"CRITICAL":1,"POOR":14,"FAIR":3,"GOOD":181,"VERY GOOD":16},"total":215},"PMT":{"counts":{"CRITICAL":0,"POOR":50,"FAIR":21,"GOOD":169,"VERY GOOD":0},"total":240},"TRAFO":{"counts":{"CRITICAL":0,"POOR":19,"FAIR":4,"GOOD":38,"VERY GOOD":0},"total":61}}}},"worst_gi":[{"Gi":"GITET 500KV GRATI","Upt":"UPT PROBOLINGGO","bad_score":107,"counts":{"CRITICAL":26,"POOR":55,"FAIR":15,"GOOD":226,"VERY GOOD":73},"total":395},{"Gi":"GI 150KV PLTU GRESIK","Upt":"UPT GRESIK","bad_score":77,"counts":{"CRITICAL":31,"POOR":15,"FAIR":26,"GOOD":171,"VERY GOOD":98},"total":341},{"Gi":"GI 150KV PAITON","Upt":"UPT PROBOLINGGO","bad_score":71,"counts":{"CRITICAL":24,"POOR":23,"FAIR":12,"GOOD":163,"VERY GOOD":9},"total":231},{"Gi":"GITET 500KV KRIAN","Upt":"UPT MALANG","bad_score":61,"counts":{"CRITICAL":4,"POOR":53,"FAIR":14,"GOOD":201,"VERY GOOD":89},"total":361},{"Gi":"GITET 500KV KEDIRI","Upt":"UPT MADIUN","bad_score":53,"counts":{"CRITICAL":5,"POOR":43,"FAIR":4,"GOOD":131,"VERY GOOD":119},"total":302},{"Gi":"GI 150KV GRATI","Upt":"UPT PROBOLINGGO","bad_score":44,"counts":{"CRITICAL":19,"POOR":6,"FAIR":32,"GOOD":209,"VERY GOOD":40},"total":306},{"Gi":"GITET 500KV NGIMBANG","Upt":"UPT MADIUN","bad_score":35,"counts":{"CRITICAL":1,"POOR":33,"FAIR":5,"GOOD":99,"VERY GOOD":8},"total":146},{"Gi":"GI 70KV POLEHAN","Upt":"UPT MALANG","bad_score":33,"counts":{"CRITICAL":11,"POOR":11,"FAIR":4,"GOOD":63,"VERY GOOD":12},"total":101},{"Gi":"GI 150KV GONDANGWETAN","Upt":"UPT PROBOLINGGO","bad_score":33,"counts":{"CRITICAL":14,"POOR":5,"FAIR":29,"GOOD":140,"VERY GOOD":18},"total":206},{"Gi":"GI 150KV TANGGUL","Upt":"UPT PROBOLINGGO","bad_score":33,"counts":{"CRITICAL":7,"POOR":19,"FAIR":5,"GOOD":108,"VERY GOOD":18},"total":157},{"Gi":"GI 70KV SEKARPUTIH","Upt":"UPT MALANG","bad_score":31,"counts":{"CRITICAL":11,"POOR":9,"FAIR":4,"GOOD":106,"VERY GOOD":23},"total":153},{"Gi":"GI 150KV JEMBER","Upt":"UPT PROBOLINGGO","bad_score":31,"counts":{"CRITICAL":7,"POOR":17,"FAIR":11,"GOOD":113,"VERY GOOD":27},"total":175},{"Gi":"GI 150KV SURABAYA BARAT","Upt":"UPT MALANG","bad_score":30,"counts":{"CRITICAL":11,"POOR":8,"FAIR":50,"GOOD":253,"VERY GOOD":50},"total":372},{"Gi":"GI 150KV PIER","Upt":"UPT PROBOLINGGO","bad_score":30,"counts":{"CRITICAL":5,"POOR":20,"FAIR":17,"GOOD":107,"VERY GOOD":11},"total":160},{"Gi":"GI 150KV PUGER","Upt":"UPT PROBOLINGGO","bad_score":28,"counts":{"CRITICAL":9,"POOR":10,"FAIR":2,"GOOD":66,"VERY GOOD":14},"total":101}],"worst_gi_kritikal":[]};
-const DATA_ADJ = {"overall":{"CRITICAL":413,"POOR":1140,"FAIR":1133,"GOOD":12108,"VERY GOOD":2504},"total":17298,"adj_count":76,"status_usia":{"MUDA":8850,"TUA":2134,"SANGAT TUA":6314},"overall_kritikal":{"CRITICAL":0,"POOR":0,"FAIR":0,"GOOD":0,"VERY GOOD":0},"total_kritikal":0,"usia_kritikal":{"MUDA":0,"TUA":0,"SANGAT TUA":0},"klaster_data":{"150 kV":{"counts":{"CRITICAL":104,"POOR":641,"FAIR":348,"GOOD":5283,"VERY GOOD":391},"total":6767,"equip_data":{"LA":{"counts":{"CRITICAL":26,"POOR":42,"FAIR":0,"GOOD":2509,"VERY GOOD":1},"total":2578},"PMS":{"counts":{"CRITICAL":20,"POOR":107,"FAIR":29,"GOOD":1753,"VERY GOOD":340},"total":2249},"PMT":{"counts":{"CRITICAL":54,"POOR":488,"FAIR":318,"GOOD":989,"VERY GOOD":46},"total":1895},"TRAFO":{"counts":{"CRITICAL":4,"POOR":4,"FAIR":1,"GOOD":32,"VERY GOOD":4},"total":45}}},"20 kV ke bawah":{"counts":{"CRITICAL":272,"POOR":214,"FAIR":722,"GOOD":5150,"VERY GOOD":1829},"total":8187,"equip_data":{"CT":{"counts":{"CRITICAL":103,"POOR":113,"FAIR":95,"GOOD":3202,"VERY GOOD":1720},"total":5233},"CVT":{"counts":{"CRITICAL":157,"POOR":16,"FAIR":600,"GOOD":1570,"VERY GOOD":104},"total":2447},"LA":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":0,"GOOD":21,"VERY GOOD":0},"total":21},"PMS":{"counts":{"CRITICAL":0,"POOR":1,"FAIR":2,"GOOD":17,"VERY GOOD":2},"total":22},"PMT":{"counts":{"CRITICAL":0,"POOR":4,"FAIR":4,"GOOD":113,"VERY GOOD":1},"total":122},"TRAFO":{"counts":{"CRITICAL":12,"POOR":80,"FAIR":21,"GOOD":227,"VERY GOOD":2},"total":342}}},"500 kV":{"counts":{"CRITICAL":23,"POOR":155,"FAIR":24,"GOOD":430,"VERY GOOD":187},"total":819,"equip_data":{"LA":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":0,"GOOD":133,"VERY GOOD":3},"total":136},"PMS":{"counts":{"CRITICAL":3,"POOR":47,"FAIR":7,"GOOD":268,"VERY GOOD":182},"total":507},"PMT":{"counts":{"CRITICAL":20,"POOR":108,"FAIR":15,"GOOD":26,"VERY GOOD":2},"total":171},"TRAFO":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":2,"GOOD":3,"VERY GOOD":0},"total":5}}},"70 kV":{"counts":{"CRITICAL":14,"POOR":130,"FAIR":39,"GOOD":1245,"VERY GOOD":97},"total":1525,"equip_data":{"LA":{"counts":{"CRITICAL":3,"POOR":37,"FAIR":0,"GOOD":575,"VERY GOOD":0},"total":615},"PMS":{"counts":{"CRITICAL":7,"POOR":25,"FAIR":5,"GOOD":386,"VERY GOOD":96},"total":519},"PMT":{"counts":{"CRITICAL":4,"POOR":68,"FAIR":34,"GOOD":284,"VERY GOOD":1},"total":391}}}},"equip_data":{"CT":{"counts":{"CRITICAL":103,"POOR":113,"FAIR":95,"GOOD":3202,"VERY GOOD":1720},"total":5233},"CVT":{"counts":{"CRITICAL":157,"POOR":16,"FAIR":600,"GOOD":1570,"VERY GOOD":104},"total":2447},"LA":{"counts":{"CRITICAL":29,"POOR":79,"FAIR":0,"GOOD":3238,"VERY GOOD":4},"total":3350},"PMS":{"counts":{"CRITICAL":30,"POOR":180,"FAIR":43,"GOOD":2424,"VERY GOOD":620},"total":3297},"PMT":{"counts":{"CRITICAL":78,"POOR":668,"FAIR":371,"GOOD":1412,"VERY GOOD":50},"total":2579},"TRAFO":{"counts":{"CRITICAL":16,"POOR":84,"FAIR":24,"GOOD":262,"VERY GOOD":6},"total":392}},"upt_data":{"UPT BALI":{"counts":{"CRITICAL":39,"POOR":97,"FAIR":120,"GOOD":1272,"VERY GOOD":320},"total":1848,"klaster_data":{"150 kV":{"counts":{"CRITICAL":18,"POOR":81,"FAIR":34,"GOOD":741,"VERY GOOD":79},"total":953},"20 kV ke bawah":{"counts":{"CRITICAL":21,"POOR":16,"FAIR":86,"GOOD":531,"VERY GOOD":241},"total":895}},"equip_data":{"CT":{"counts":{"CRITICAL":4,"POOR":6,"FAIR":14,"GOOD":347,"VERY GOOD":198},"total":569},"CVT":{"counts":{"CRITICAL":15,"POOR":0,"FAIR":70,"GOOD":153,"VERY GOOD":43},"total":281},"LA":{"counts":{"CRITICAL":6,"POOR":9,"FAIR":0,"GOOD":384,"VERY GOOD":0},"total":399},"PMS":{"counts":{"CRITICAL":8,"POOR":39,"FAIR":5,"GOOD":196,"VERY GOOD":55},"total":303},"PMT":{"counts":{"CRITICAL":4,"POOR":33,"FAIR":29,"GOOD":161,"VERY GOOD":24},"total":251},"TRAFO":{"counts":{"CRITICAL":2,"POOR":10,"FAIR":2,"GOOD":31,"VERY GOOD":0},"total":45}}},"UPT GRESIK":{"counts":{"CRITICAL":52,"POOR":142,"FAIR":150,"GOOD":1530,"VERY GOOD":364},"total":2238,"klaster_data":{"150 kV":{"counts":{"CRITICAL":25,"POOR":112,"FAIR":42,"GOOD":790,"VERY GOOD":84},"total":1053},"20 kV ke bawah":{"counts":{"CRITICAL":27,"POOR":25,"FAIR":107,"GOOD":633,"VERY GOOD":277},"total":1069},"500 kV":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":1,"GOOD":1,"VERY GOOD":0},"total":2},"70 kV":{"counts":{"CRITICAL":0,"POOR":5,"FAIR":0,"GOOD":106,"VERY GOOD":3},"total":114}},"equip_data":{"CT":{"counts":{"CRITICAL":0,"POOR":13,"FAIR":0,"GOOD":430,"VERY GOOD":277},"total":720},"CVT":{"counts":{"CRITICAL":27,"POOR":0,"FAIR":105,"GOOD":177,"VERY GOOD":0},"total":309},"LA":{"counts":{"CRITICAL":0,"POOR":14,"FAIR":0,"GOOD":400,"VERY GOOD":0},"total":414},"PMS":{"counts":{"CRITICAL":0,"POOR":24,"FAIR":1,"GOOD":302,"VERY GOOD":75},"total":402},"PMT":{"counts":{"CRITICAL":25,"POOR":79,"FAIR":41,"GOOD":195,"VERY GOOD":12},"total":352},"TRAFO":{"counts":{"CRITICAL":0,"POOR":12,"FAIR":3,"GOOD":26,"VERY GOOD":0},"total":41}}},"UPT MADIUN":{"counts":{"CRITICAL":38,"POOR":327,"FAIR":295,"GOOD":3191,"VERY GOOD":600},"total":4451,"klaster_data":{"150 kV":{"counts":{"CRITICAL":4,"POOR":154,"FAIR":70,"GOOD":1166,"VERY GOOD":101},"total":1495},"20 kV ke bawah":{"counts":{"CRITICAL":30,"POOR":50,"FAIR":201,"GOOD":1393,"VERY GOOD":366},"total":2040},"500 kV":{"counts":{"CRITICAL":2,"POOR":73,"FAIR":6,"GOOD":126,"VERY GOOD":81},"total":288},"70 kV":{"counts":{"CRITICAL":2,"POOR":50,"FAIR":18,"GOOD":506,"VERY GOOD":52},"total":628}},"equip_data":{"CT":{"counts":{"CRITICAL":12,"POOR":29,"FAIR":22,"GOOD":839,"VERY GOOD":338},"total":1240},"CVT":{"counts":{"CRITICAL":15,"POOR":0,"FAIR":168,"GOOD":463,"VERY GOOD":25},"total":671},"LA":{"counts":{"CRITICAL":0,"POOR":10,"FAIR":0,"GOOD":811,"VERY GOOD":0},"total":821},"PMS":{"counts":{"CRITICAL":0,"POOR":63,"FAIR":24,"GOOD":643,"VERY GOOD":236},"total":966},"PMT":{"counts":{"CRITICAL":4,"POOR":207,"FAIR":76,"GOOD":373,"VERY GOOD":1},"total":661},"TRAFO":{"counts":{"CRITICAL":7,"POOR":18,"FAIR":5,"GOOD":62,"VERY GOOD":0},"total":92}}},"UPT MALANG":{"counts":{"CRITICAL":123,"POOR":221,"FAIR":208,"GOOD":2467,"VERY GOOD":528},"total":3547,"klaster_data":{"150 kV":{"counts":{"CRITICAL":12,"POOR":70,"FAIR":85,"GOOD":768,"VERY GOOD":64},"total":999},"20 kV ke bawah":{"counts":{"CRITICAL":96,"POOR":33,"FAIR":89,"GOOD":1009,"VERY GOOD":371},"total":1598},"500 kV":{"counts":{"CRITICAL":3,"POOR":43,"FAIR":14,"GOOD":98,"VERY GOOD":53},"total":211},"70 kV":{"counts":{"CRITICAL":12,"POOR":75,"FAIR":20,"GOOD":592,"VERY GOOD":40},"total":739}},"equip_data":{"CT":{"counts":{"CRITICAL":19,"POOR":25,"FAIR":3,"GOOD":712,"VERY GOOD":348},"total":1107},"CVT":{"counts":{"CRITICAL":74,"POOR":0,"FAIR":79,"GOOD":240,"VERY GOOD":21},"total":414},"LA":{"counts":{"CRITICAL":13,"POOR":31,"FAIR":0,"GOOD":660,"VERY GOOD":0},"total":704},"PMS":{"counts":{"CRITICAL":9,"POOR":22,"FAIR":3,"GOOD":530,"VERY GOOD":143},"total":707},"PMT":{"counts":{"CRITICAL":5,"POOR":134,"FAIR":116,"GOOD":257,"VERY GOOD":10},"total":522},"TRAFO":{"counts":{"CRITICAL":3,"POOR":9,"FAIR":7,"GOOD":68,"VERY GOOD":6},"total":93}}},"UPT PROBOLINGGO":{"counts":{"CRITICAL":152,"POOR":249,"FAIR":265,"GOOD":2356,"VERY GOOD":420},"total":3442,"klaster_data":{"150 kV":{"counts":{"CRITICAL":43,"POOR":151,"FAIR":95,"GOOD":1222,"VERY GOOD":49},"total":1560},"20 kV ke bawah":{"counts":{"CRITICAL":91,"POOR":59,"FAIR":167,"GOOD":929,"VERY GOOD":318},"total":1564},"500 kV":{"counts":{"CRITICAL":18,"POOR":39,"FAIR":3,"GOOD":205,"VERY GOOD":53},"total":318}},"equip_data":{"CT":{"counts":{"CRITICAL":65,"POOR":28,"FAIR":25,"GOOD":548,"VERY GOOD":303},"total":969},"CVT":{"counts":{"CRITICAL":22,"POOR":16,"FAIR":140,"GOOD":306,"VERY GOOD":15},"total":499},"LA":{"counts":{"CRITICAL":9,"POOR":6,"FAIR":0,"GOOD":638,"VERY GOOD":4},"total":657},"PMS":{"counts":{"CRITICAL":12,"POOR":18,"FAIR":7,"GOOD":572,"VERY GOOD":95},"total":704},"PMT":{"counts":{"CRITICAL":40,"POOR":165,"FAIR":89,"GOOD":256,"VERY GOOD":3},"total":553},"TRAFO":{"counts":{"CRITICAL":4,"POOR":16,"FAIR":4,"GOOD":36,"VERY GOOD":0},"total":60}}},"UPT SURABAYA":{"counts":{"CRITICAL":9,"POOR":104,"FAIR":95,"GOOD":1292,"VERY GOOD":272},"total":1772,"klaster_data":{"150 kV":{"counts":{"CRITICAL":2,"POOR":73,"FAIR":22,"GOOD":596,"VERY GOOD":14},"total":707},"20 kV ke bawah":{"counts":{"CRITICAL":7,"POOR":31,"FAIR":72,"GOOD":655,"VERY GOOD":256},"total":1021},"70 kV":{"counts":{"CRITICAL":0,"POOR":0,"FAIR":1,"GOOD":41,"VERY GOOD":2},"total":44}},"equip_data":{"CT":{"counts":{"CRITICAL":3,"POOR":12,"FAIR":31,"GOOD":326,"VERY GOOD":256},"total":628},"CVT":{"counts":{"CRITICAL":4,"POOR":0,"FAIR":38,"GOOD":231,"VERY GOOD":0},"total":273},"LA":{"counts":{"CRITICAL":1,"POOR":9,"FAIR":0,"GOOD":345,"VERY GOOD":0},"total":355},"PMS":{"counts":{"CRITICAL":1,"POOR":14,"FAIR":3,"GOOD":181,"VERY GOOD":16},"total":215},"PMT":{"counts":{"CRITICAL":0,"POOR":50,"FAIR":20,"GOOD":170,"VERY GOOD":0},"total":240},"TRAFO":{"counts":{"CRITICAL":0,"POOR":19,"FAIR":3,"GOOD":39,"VERY GOOD":0},"total":61}}}},"worst_gi":[{"Gi":"GITET 500KV GRATI","Upt":"UPT PROBOLINGGO","bad_score":107,"counts":{"CRITICAL":26,"POOR":55,"FAIR":14,"GOOD":227,"VERY GOOD":73},"total":395},{"Gi":"GI 150KV PLTU GRESIK","Upt":"UPT GRESIK","bad_score":77,"counts":{"CRITICAL":31,"POOR":15,"FAIR":26,"GOOD":171,"VERY GOOD":98},"total":341},{"Gi":"GI 150KV PAITON","Upt":"UPT PROBOLINGGO","bad_score":71,"counts":{"CRITICAL":24,"POOR":23,"FAIR":12,"GOOD":163,"VERY GOOD":9},"total":231},{"Gi":"GITET 500KV KRIAN","Upt":"UPT MALANG","bad_score":61,"counts":{"CRITICAL":4,"POOR":53,"FAIR":14,"GOOD":201,"VERY GOOD":89},"total":361},{"Gi":"GITET 500KV KEDIRI","Upt":"UPT MADIUN","bad_score":53,"counts":{"CRITICAL":5,"POOR":43,"FAIR":4,"GOOD":131,"VERY GOOD":119},"total":302},{"Gi":"GI 150KV GRATI","Upt":"UPT PROBOLINGGO","bad_score":44,"counts":{"CRITICAL":19,"POOR":6,"FAIR":32,"GOOD":209,"VERY GOOD":40},"total":306},{"Gi":"GITET 500KV NGIMBANG","Upt":"UPT MADIUN","bad_score":35,"counts":{"CRITICAL":1,"POOR":33,"FAIR":5,"GOOD":99,"VERY GOOD":8},"total":146},{"Gi":"GI 70KV POLEHAN","Upt":"UPT MALANG","bad_score":33,"counts":{"CRITICAL":11,"POOR":11,"FAIR":4,"GOOD":63,"VERY GOOD":12},"total":101},{"Gi":"GI 150KV GONDANGWETAN","Upt":"UPT PROBOLINGGO","bad_score":33,"counts":{"CRITICAL":14,"POOR":5,"FAIR":29,"GOOD":140,"VERY GOOD":18},"total":206},{"Gi":"GI 150KV TANGGUL","Upt":"UPT PROBOLINGGO","bad_score":33,"counts":{"CRITICAL":7,"POOR":19,"FAIR":5,"GOOD":108,"VERY GOOD":18},"total":157},{"Gi":"GI 70KV SEKARPUTIH","Upt":"UPT MALANG","bad_score":31,"counts":{"CRITICAL":11,"POOR":9,"FAIR":4,"GOOD":106,"VERY GOOD":23},"total":153},{"Gi":"GI 150KV JEMBER","Upt":"UPT PROBOLINGGO","bad_score":31,"counts":{"CRITICAL":7,"POOR":17,"FAIR":11,"GOOD":113,"VERY GOOD":27},"total":175},{"Gi":"GI 150KV SURABAYA BARAT","Upt":"UPT MALANG","bad_score":30,"counts":{"CRITICAL":11,"POOR":8,"FAIR":50,"GOOD":253,"VERY GOOD":50},"total":372},{"Gi":"GI 150KV PIER","Upt":"UPT PROBOLINGGO","bad_score":30,"counts":{"CRITICAL":5,"POOR":20,"FAIR":17,"GOOD":107,"VERY GOOD":11},"total":160},{"Gi":"GI 150KV PUGER","Upt":"UPT PROBOLINGGO","bad_score":28,"counts":{"CRITICAL":9,"POOR":10,"FAIR":2,"GOOD":66,"VERY GOOD":14},"total":101}],"worst_gi_kritikal":[]};
-const GI_KRITIKAL = ["GITET 500kV Kediri", "GISTET 500kV Paiton", "GITET 500kV Grati", "GITET 500kV Krian", "GISTET 500kV Gresik", "GITET 500kV Ngimbang", "GIS 150kV Gresik", "GIS 150kV Waru", "GI 150kV Buduran", "GIS 150kV Tandes", "GI 150kV Perak", "GIS 150kV Ujung", "GI 150kV Bangkalan", "GI 150kV Kraksaan", "GI 150kV Sampang", "GI 150kV Pamekasan", "GIS 150kV Karangpilang", "GIS 150kV Sawahan", "GIS 150kV Gunungsari", "GI 150kV Darmogrande", "GI 150kV Rungkut", "GI 150kV Sambikerep", "GI 150kV Sukolilo", "GI 150kV Gilitimur", "GI 150kV Paiton", "GI 150kV Situbondo", "GI 150kV Bondowoso", "GI 150kV Banyuwangi", "GI 150kV Lumajang", "GI 150kV Tanggul", "GI 150kV Surabaya Barat", "GI 150kV Kasihatan", "GI 150kV Cerme", "GIs 150kV Driyorejo", "GI 150kV Babadan", "GI 150kV Balongbendo", "GI 150kV Sekarputih", "GI 150kV Ngoro", "GI 150kV GIlimanuk", "GI 150kV Kediri", "GI 150kV Banaran", "GI 150kV Surya Zigzag", "GI 150kV New Nganjuk", "GI 150kV Manisrejo", "GI 150kV Babat", "GI 150kV Lamongan", "GI 150kV Jayakertas", "GI 150kV Kertosono", "GI 150kV Bojonegoro", "GI 150kV Tuban", "GI 150kV Kerek", "GI 150kV Nganjuk", "GI 150kV Grati", "GI 150kV Gondang Wetan", "GIS 150kV Bangil", "GI 150kV Pier", "GI 150kV KIS", "GI 150kV Lawang", "GI 150kV Bulukandang", "GI 150kV Newporong", "GI 150kV Sutami", "GI 150kV Wlingi"];
+// ─── CONFIG ────────────────────────────────────────────────────────────────
+const CSV_AHI  = 'AHI_MTU.csv';
+const CSV_KRIT = 'gi_kritikal.csv';
+const PAGE_SIZE = 50;
 
+// ─── STATE ─────────────────────────────────────────────────────────────────
+let rawData = [];
+let giKritSet = new Set();
+let filteredData = [];
+let currentPage = 1;
+let sortCol = 'Nilai Hi';
+let sortDir = 'desc';
+let activeTab = 'all';
+let donutChart, uptChart;
 
-// ── State ─────────────────────────────────────────────────
-var adjOn = false, kritOn = false, currentUpt = 'ALL', expandedGi = null;
-var bayActiveEquip = 'ALL', bayCurrentGi = null;
+// ─── STATUS CONFIG ──────────────────────────────────────────────────────────
+const STATUS_COLORS = {
+  'CRITICAL':   { bg:'#ef4444', hex:'#ef4444' },
+  'POOR':       { bg:'#f59e0b', hex:'#f59e0b' },
+  'FAIR':       { bg:'#eab308', hex:'#eab308' },
+  'GOOD':       { bg:'#22c55e', hex:'#22c55e' },
+  'VERY GOOD':  { bg:'#14b8a6', hex:'#14b8a6' },
+};
 
-// ── Helpers ───────────────────────────────────────────────
-function D() { return adjOn ? DATA_ADJ : DATA_ORI; }
-function pct(v,t){ return t ? ((v/t)*100).toFixed(1) : '0.0'; }
-function fmt(n){ return Number(n).toLocaleString('id-ID'); }
+// ─── INIT ───────────────────────────────────────────────────────────────────
+async function init() {
+  setLoading('Memuat daftar GI kritikal...');
+  try {
+    const res1 = await fetch(CSV_KRIT);
+    const txt1 = await res1.text();
+    const p1 = Papa.parse(txt1, { header:true, skipEmptyLines:true });
+    p1.data.forEach(r => { const g = (r.Gi||r.gi||'').trim(); if(g) giKritSet.add(g); });
+    document.getElementById('gi-kritikal-count').textContent = giKritSet.size;
+    document.getElementById('gi-kritikal-badge').style.display = 'flex';
+  } catch(e) { console.warn('gi_kritikal.csv not found'); }
 
-function mkBar(counts, total) {
-  return S_ORDER.map(function(s){
-    var w = total ? (counts[s]||0)/total*100 : 0;
-    return '<div style="width:'+w.toFixed(2)+'%;background:'+S_COLOR[s]+';height:100%;transition:width .5s ease"></div>';
-  }).join('');
+  setLoading('Memuat data AHI MTU...');
+  const res2 = await fetch(CSV_AHI);
+  const txt2 = await res2.text();
+  setLoading('Memproses data...');
+  const parsed = Papa.parse(txt2, { header:true, skipEmptyLines:true, dynamicTyping:false });
+  rawData = parsed.data.filter(r => r.Gi && r.Gi.trim());
+
+  // Detect update date
+  const today = new Date();
+  document.getElementById('last-update').textContent = 'Data: ' +
+    today.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+
+  buildFilters();
+  applyFilters();
+  document.getElementById('loading').style.display = 'none';
 }
 
-// ── Toggle handlers ───────────────────────────────────────
-function toggleAdjustment() {
-  adjOn = !adjOn;
-  document.getElementById('adjToggle').classList.toggle('on', adjOn);
-  document.getElementById('adjBanner').classList.toggle('active', adjOn);
-  document.getElementById('comparePanel').classList.toggle('visible', adjOn);
-  if (adjOn) renderCompare();
-  renderAll();
+function setLoading(txt) {
+  document.getElementById('loading-text').textContent = txt;
 }
 
-function toggleKritikal() {
-  kritOn = !kritOn;
-  expandedGi = null;
-  document.getElementById('kritToggle').classList.toggle('on', kritOn);
-  document.getElementById('kritBanner').classList.toggle('active', kritOn);
-  renderAll();
+// ─── BUILD FILTER DROPDOWNS ─────────────────────────────────────────────────
+function buildFilters() {
+  const upts   = [...new Set(rawData.map(r=>r.Upt).filter(v=>v&&v!=='-'))].sort();
+  const gis    = [...new Set(rawData.map(r=>r.Gi).filter(Boolean))].sort();
+  const jenis  = [...new Set(rawData.map(r=>r['#']).filter(Boolean))].sort();
+  const tegs   = [...new Set(rawData.map(r=>r['Daya/Tegangan']).filter(Boolean))]
+                  .map(Number).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
+
+  fill('f-upt', upts);
+  fill('f-gi', gis);
+  fill('f-jenis', jenis);
+  fill('f-tegangan', tegs.map(t=>({value:t, label:t+' kV'})));
 }
 
-// ── Active data resolver ─────────────────────────────────
-function activeData() {
-  var d = D(), u = currentUpt;
-  if (kritOn) {
-    return {
-      counts:  u==='ALL' ? d.overall_kritikal             : d.upt_data[u].counts_kritikal,
-      total:   u==='ALL' ? d.total_kritikal                : d.upt_data[u].total_kritikal,
-      usia:    u==='ALL' ? d.usia_kritikal                  : d.upt_data[u].usia_kritikal,
-      klaster: u==='ALL' ? buildKlasterKrit(d)              : (d.upt_data[u].klaster_kritikal || {}),
-      equip:   u==='ALL' ? buildEquipKrit(d)                : (d.upt_data[u].equip_kritikal || {})
-    };
-  }
+function fill(id, items) {
+  const sel = document.getElementById(id);
+  items.forEach(item => {
+    const opt = document.createElement('option');
+    if(typeof item === 'object') { opt.value = item.value; opt.textContent = item.label; }
+    else { opt.value = item; opt.textContent = item; }
+    sel.appendChild(opt);
+  });
+}
+
+// ─── FILTER LOGIC ───────────────────────────────────────────────────────────
+function getFilters() {
   return {
-    counts:  u==='ALL' ? d.overall      : d.upt_data[u].counts,
-    total:   u==='ALL' ? d.total        : d.upt_data[u].total,
-    usia:    u==='ALL' ? d.status_usia  : d.upt_data[u].status_usia,
-    klaster: u==='ALL' ? d.klaster_data : d.upt_data[u].klaster_data,
-    equip:   u==='ALL' ? d.equip_data   : d.upt_data[u].equip_data
+    upt:        document.getElementById('f-upt').value,
+    gi:         document.getElementById('f-gi').value,
+    jenis:      document.getElementById('f-jenis').value,
+    tegangan:   document.getElementById('f-tegangan').value,
+    status:     document.getElementById('f-status').value,
+    criticality:document.getElementById('f-criticality').value,
+    usia:       document.getElementById('f-usia').value,
+    giKrit:     document.getElementById('f-gikrit').value,
+    search:     document.getElementById('f-search').value.trim().toLowerCase(),
   };
 }
 
-function buildKlasterKrit(d) {
-  var out = {};
-  KL_ORDER.forEach(function(kl){
-    var c = {}, t = 0;
-    S_ORDER.forEach(function(s){ c[s]=0; });
-    Object.keys(d.upt_data).forEach(function(u){
-      var k = d.upt_data[u].klaster_kritikal && d.upt_data[u].klaster_kritikal[kl];
-      if (k) { t += k.total; S_ORDER.forEach(function(s){ c[s]+=(k.counts[s]||0); }); }
-    });
-    if (t > 0) out[kl] = {counts:c, total:t};
-  });
-  return out;
+function applyFilters() {
+  const f = getFilters();
+  let data = rawData;
+
+  if(f.upt)        data = data.filter(r => r.Upt === f.upt);
+  if(f.gi)         data = data.filter(r => r.Gi === f.gi);
+  if(f.jenis)      data = data.filter(r => r['#'] === f.jenis);
+  if(f.tegangan)   data = data.filter(r => r['Daya/Tegangan'] == f.tegangan);
+  if(f.status)     data = data.filter(r => (r['Status Hi']||'').toUpperCase() === f.status.toUpperCase());
+  if(f.criticality)data = data.filter(r => (r['Criticality Gi']||'').toUpperCase().includes(f.criticality.toUpperCase()));
+  if(f.usia)       data = data.filter(r => (r['Status Usia']||'').toUpperCase() === f.usia.toUpperCase());
+  if(f.giKrit==='1') data = data.filter(r => giKritSet.has((r.Gi||'').trim()));
+  if(f.search)     data = data.filter(r =>
+    (r.Bay||'').toLowerCase().includes(f.search) ||
+    (r['Serial Id']||'').toLowerCase().includes(f.search) ||
+    (r.Gi||'').toLowerCase().includes(f.search) ||
+    (r.Merek||'').toLowerCase().includes(f.search)
+  );
+
+  // Tab filter
+  if(activeTab === 'critical') data = data.filter(r => (r['Status Hi']||'').toUpperCase() === 'CRITICAL');
+  if(activeTab === 'gi-krit')  data = data.filter(r => giKritSet.has((r.Gi||'').trim()));
+
+  filteredData = data;
+  currentPage = 1;
+  updateStats();
+  updateCharts();
+  renderTable();
+  document.getElementById('filter-count').innerHTML = `Menampilkan <span>${filteredData.length.toLocaleString('id-ID')}</span> data`;
 }
 
-function buildEquipKrit(d) {
-  var out = {};
-  EQ_ORDER.forEach(function(eq){
-    var c = {}, t = 0;
-    S_ORDER.forEach(function(s){ c[s]=0; });
-    Object.keys(d.upt_data).forEach(function(u){
-      var e = d.upt_data[u].equip_kritikal && d.upt_data[u].equip_kritikal[eq];
-      if (e) { t += e.total; S_ORDER.forEach(function(s){ c[s]+=(e.counts[s]||0); }); }
-    });
-    if (t > 0) out[eq] = {counts:c, total:t};
+function resetFilters() {
+  ['f-upt','f-gi','f-jenis','f-tegangan','f-status','f-criticality','f-usia','f-gikrit'].forEach(id => {
+    document.getElementById(id).value = '';
   });
-  return out;
+  document.getElementById('f-search').value = '';
+  activeTab = 'all';
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  applyFilters();
 }
 
-// ── Compare panel ─────────────────────────────────────────
-function renderCompare() {
-  var upts = ['ALL'].concat(Object.keys(DATA_ORI.upt_data));
-  function gv(c,s){ return s==='GOOD+VG' ? (c.GOOD||0)+(c['VERY GOOD']||0) : (c[s]||0); }
-  var html = '';
-  upts.forEach(function(u){
-    var oc = u==='ALL' ? DATA_ORI.overall : DATA_ORI.upt_data[u].counts;
-    var ac = u==='ALL' ? DATA_ADJ.overall : DATA_ADJ.upt_data[u].counts;
-    var lbl = u==='ALL' ? 'Semua' : u.replace('UPT ','');
-    html += '<div class="compare-col"><div class="compare-col-title">'+lbl+'</div>';
-    [['CRITICAL','#ef4444'],['FAIR','#eab308'],['GOOD+VG','#3b82f6']].forEach(function(p){
-      var stat=p[0], col=p[1];
-      var ov=gv(oc,stat), av=gv(ac,stat), diff=av-ov;
-      var good=(stat==='GOOD+VG'&&diff>0)||(stat!=='GOOD+VG'&&diff<0);
-      var dcolor = diff===0?'#64748b':good?'#10b981':'#ef4444';
-      var dlabel = diff===0?'&#x2014;':(diff>0?'+':'')+diff;
-      var slabel = stat==='GOOD+VG'?'Good+VG':stat;
-      html += '<div class="compare-row">'
-        +'<span class="compare-row-label" style="color:'+col+'">'+slabel+'</span>'
-        +'<span class="compare-row-val" style="color:'+col+'">'+fmt(ov)+'</span>'
-        +'<span class="compare-row-delta" style="color:'+dcolor+'">'+dlabel+'</span>'
-        +'</div>';
-    });
-    html += '</div>';
-  });
-  document.getElementById('compareGrid').innerHTML = html;
+// ─── STATS ──────────────────────────────────────────────────────────────────
+function updateStats() {
+  const d = filteredData;
+  const n = d.length;
+  const count = st => d.filter(r=>(r['Status Hi']||'').toUpperCase()===st).length;
+  const crit = count('CRITICAL'), poor = count('POOR'), fair = count('FAIR');
+  const good = d.filter(r=>['GOOD','VERY GOOD'].includes((r['Status Hi']||'').toUpperCase())).length;
+  const tua  = d.filter(r=>(r['Status Usia']||'').toUpperCase()==='SANGAT TUA').length;
+  const hiVals = d.map(r=>+r['Nilai Hi']).filter(v=>!isNaN(v)&&v>0);
+  const avg = hiVals.length ? (hiVals.reduce((a,b)=>a+b,0)/hiVals.length) : 0;
+  const maxHi = hiVals.length ? Math.max(...hiVals) : 0;
+  const maxRow = d.find(r=>+r['Nilai Hi']===maxHi);
+
+  setText('s-total', n.toLocaleString('id-ID'));
+  setText('s-critical', crit.toLocaleString('id-ID'));
+  setText('s-critical-pct', pct(crit,n));
+  setText('s-poor', poor.toLocaleString('id-ID'));
+  setText('s-poor-pct', pct(poor,n));
+  setText('s-fair', fair.toLocaleString('id-ID'));
+  setText('s-fair-pct', pct(fair,n));
+  setText('s-good', good.toLocaleString('id-ID'));
+  setText('s-good-pct', pct(good,n));
+  setText('s-avghi', avg.toFixed(1));
+  setText('s-maxhi', maxHi);
+  setText('s-maxhi-gi', maxRow ? shortGi(maxRow.Gi) : '—');
+  setText('s-tua', tua.toLocaleString('id-ID'));
+  setText('s-tua-pct', pct(tua,n));
 }
 
-// ── KPIs ──────────────────────────────────────────────────
-function renderKPIs() {
-  var ad = activeData(), counts = ad.counts, total = ad.total;
-  // Baseline always from DATA_ORI (not adjusted) for delta comparison
-  var oriCounts = kritOn
-    ? (currentUpt==='ALL' ? DATA_ORI.overall_kritikal : DATA_ORI.upt_data[currentUpt].counts_kritikal)
-    : (currentUpt==='ALL' ? DATA_ORI.overall           : DATA_ORI.upt_data[currentUpt].counts);
-  document.getElementById('totalEquip').textContent = fmt(total);
-  document.getElementById('kritLabel').textContent = kritOn ? '&#x2014; GI Kritikal' : '';
-  var specs = [
-    {id:'critical', s:'CRITICAL'},
-    {id:'poor',     s:'POOR'},
-    {id:'fair',     s:'FAIR'},
-    {id:'good',     s:null}
-  ];
-  specs.forEach(function(sp){
-    var v   = sp.s ? (counts[sp.s]||0) : (counts.GOOD||0)+(counts['VERY GOOD']||0);
-    var ov  = sp.s ? (oriCounts[sp.s]||0) : (oriCounts.GOOD||0)+(oriCounts['VERY GOOD']||0);
-    var diff = v - ov;
-    document.getElementById('kpi-'+sp.id).textContent = fmt(v);
-    document.getElementById('pct-'+sp.id).textContent = pct(v,total)+'%';
-    var el = document.getElementById('delta-'+sp.id);
-    if (adjOn && diff !== 0) {
-      var isGood = (sp.id==='good'&&diff>0)||(sp.id!=='good'&&diff<0);
-      el.innerHTML = '<span class="'+(isGood?'delta-down':'delta-up')+'">'+(diff>0?'+':'')+fmt(diff)+' vs sebelum adj</span>';
-    } else {
-      el.innerHTML = '';
+function pct(v,n) { return n ? (v/n*100).toFixed(1)+'%' : '—'; }
+function setText(id,v) { const el=document.getElementById(id); if(el) el.textContent=v; }
+function shortGi(gi) { return (gi||'').replace('GI 150KV ','').replace('GITET 500KV ','').replace('GI 70KV ','').replace('GIS 150KV ','').replace('GISTET 500KV ',''); }
+
+// ─── CHARTS ─────────────────────────────────────────────────────────────────
+function updateCharts() {
+  updateDonut();
+  updateUptChart();
+}
+
+function updateDonut() {
+  const order = ['CRITICAL','POOR','FAIR','GOOD','VERY GOOD'];
+  const counts = order.map(s => filteredData.filter(r=>(r['Status Hi']||'').toUpperCase()===s).length);
+  const colors = order.map(s => STATUS_COLORS[s].hex);
+
+  if(donutChart) donutChart.destroy();
+  const ctx = document.getElementById('donutChart').getContext('2d');
+  donutChart = new Chart(ctx, {
+    type:'doughnut',
+    data: { labels:order, datasets:[{ data:counts, backgroundColor:colors, borderWidth:2, borderColor:'#13161b' }] },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      cutout:'68%',
+      plugins: { legend:{display:false}, tooltip:{
+        callbacks:{ label: ctx => ` ${ctx.label}: ${ctx.raw.toLocaleString('id-ID')}` }
+      }}
+    }
+  });
+
+  // Legend
+  const leg = document.getElementById('donut-legend');
+  leg.innerHTML = '';
+  order.forEach((s,i) => {
+    leg.innerHTML += `<div class="legend-item">
+      <span class="legend-dot" style="background:${colors[i]}"></span>
+      <span class="legend-name">${s}</span>
+      <span class="legend-val">${counts[i].toLocaleString('id-ID')}</span>
+    </div>`;
+  });
+}
+
+function updateUptChart() {
+  const upts = [...new Set(filteredData.map(r=>r.Upt).filter(v=>v&&v!=='-'))].sort();
+  const statuses = ['CRITICAL','POOR','FAIR','GOOD','VERY GOOD'];
+  const colors   = ['#ef4444','#f59e0b','#eab308','#22c55e','#14b8a6'];
+
+  const datasets = statuses.map((s,i) => ({
+    label:s,
+    data: upts.map(u => filteredData.filter(r=>r.Upt===u&&(r['Status Hi']||'').toUpperCase()===s).length),
+    backgroundColor: colors[i],
+    borderRadius: 3,
+    borderSkipped: false,
+  }));
+
+  if(uptChart) uptChart.destroy();
+  const ctx = document.getElementById('uptChart').getContext('2d');
+  uptChart = new Chart(ctx, {
+    type:'bar',
+    data:{ labels: upts.map(u=>u.replace('UPT ','')), datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false }, tooltip:{ mode:'index', intersect:false }},
+      scales:{
+        x:{ stacked:true, ticks:{ color:'#8a9099', font:{size:11} }, grid:{color:'rgba(255,255,255,0.04)'} },
+        y:{ stacked:true, ticks:{ color:'#8a9099', font:{size:11} }, grid:{color:'rgba(255,255,255,0.04)'} }
+      }
     }
   });
 }
 
-// ── Klaster cards ─────────────────────────────────────────
-function renderKlaster() {
-  var ad = activeData(), klaster = ad.klaster;
-  var oriKl = kritOn
-    ? (currentUpt==='ALL' ? buildKlasterKrit(DATA_ORI) : (DATA_ORI.upt_data[currentUpt].klaster_kritikal||{}))
-    : (currentUpt==='ALL' ? DATA_ORI.klaster_data       :  DATA_ORI.upt_data[currentUpt].klaster_data);
-  var html = '';
-  KL_ORDER.forEach(function(kl){
-    var kd = klaster && klaster[kl]; if (!kd || kd.total===0) return;
-    var st = KL_STYLE[kl] || {bg:'rgba(99,102,241,.1)',color:'#818cf8',icon:'&#x1F539;'};
-    var fair = kd.counts.FAIR||0, good = (kd.counts.GOOD||0)+(kd.counts['VERY GOOD']||0);
-    var ok = oriKl && oriKl[kl];
-    var adjFair = (adjOn&&ok) ? (ok.counts.FAIR||0)-fair : 0;
-    var adjGood = (adjOn&&ok) ? good-((ok.counts.GOOD||0)+(ok.counts['VERY GOOD']||0)) : 0;
-    function ks(color, val, p, note) {
-      return '<div class="klaster-stat">'
-        +'<div class="klaster-stat-dot" style="background:'+color+'"></div>'
-        +'<span class="klaster-stat-val" style="color:'+color+'">'+fmt(val)+'</span>'
-        +'<span class="klaster-stat-pct">('+p+'%)'+note+'</span></div>';
+// ─── TABLE ──────────────────────────────────────────────────────────────────
+function sortBy(col) {
+  if(sortCol===col) sortDir = sortDir==='asc'?'desc':'asc';
+  else { sortCol=col; sortDir='desc'; }
+  document.querySelectorAll('thead th').forEach(th=>{
+    th.classList.remove('sort-asc','sort-desc');
+    if(th.dataset.col===col) th.classList.add(sortDir==='asc'?'sort-asc':'sort-desc');
+  });
+  currentPage=1;
+  renderTable();
+}
+
+function renderTable() {
+  let data = [...filteredData];
+
+  // Sort
+  data.sort((a,b) => {
+    let va = a[sortCol]||'', vb = b[sortCol]||'';
+    if(sortCol==='Nilai Hi'||sortCol==='Tahun Buat'||sortCol==='Daya/Tegangan') {
+      va=+va||0; vb=+vb||0;
+      return sortDir==='asc'?va-vb:vb-va;
     }
-    html += '<div class="klaster-card" style="border-top:3px solid '+st.color+'">'
-      +'<div class="klaster-header">'
-      +'<span class="klaster-badge" style="background:'+st.bg+';color:'+st.color+'">'+st.icon+' '+kl+'</span>'
-      +'<span class="klaster-total">'+fmt(kd.total)+' unit</span></div>'
-      +'<div style="margin:8px 0"><div class="stacked-bar" style="height:10px">'+mkBar(kd.counts,kd.total)+'</div></div>'
-      +'<div class="klaster-stats">'
-      +ks('var(--critical)', kd.counts.CRITICAL||0, pct(kd.counts.CRITICAL||0, kd.total), '')
-      +ks('var(--poor)',     kd.counts.POOR||0,     pct(kd.counts.POOR||0, kd.total), '')
-      +ks('var(--fair)',     fair,                  pct(fair, kd.total), adjOn&&adjFair>0?' <span style="color:var(--adj-color);font-size:9px">&#x2193;'+adjFair+'</span>':'')
-      +ks('var(--good)',     good,                  pct(good, kd.total), adjOn&&adjGood>0?' <span style="color:var(--adj-color);font-size:9px">&#x2191;'+adjGood+'</span>':'')
-      +'</div></div>';
+    const order = {'CRITICAL':0,'POOR':1,'FAIR':2,'GOOD':3,'VERY GOOD':4};
+    if(sortCol==='Status Hi') {
+      const oa=order[va.toUpperCase()]??5, ob=order[vb.toUpperCase()]??5;
+      return sortDir==='asc'?oa-ob:ob-oa;
+    }
+    const crit = {'EXTREME':0,'SANGAT TINGGI':1,'TINGGI':2,'MODERAT':3,'MODERATE':3,'RENDAH':4};
+    if(sortCol==='Criticality Gi') {
+      const oa=crit[va.toUpperCase()]??5, ob=crit[vb.toUpperCase()]??5;
+      return sortDir==='asc'?oa-ob:ob-oa;
+    }
+    return sortDir==='asc'?String(va).localeCompare(String(vb)):String(vb).localeCompare(String(va));
   });
-  document.getElementById('klasterCards').innerHTML = html;
-}
 
-// ── Equip bars ────────────────────────────────────────────
-function renderEquipBars() {
-  var ad = activeData(), edMap = ad.equip;
-  var oriEq = kritOn
-    ? (currentUpt==='ALL' ? buildEquipKrit(DATA_ORI) : (DATA_ORI.upt_data[currentUpt].equip_kritikal||{}))
-    : (currentUpt==='ALL' ? DATA_ORI.equip_data       :  DATA_ORI.upt_data[currentUpt].equip_data);
-  var html = '';
-  EQ_ORDER.forEach(function(eq){
-    var ed = edMap && edMap[eq]; if (!ed || ed.total===0) return;
-    var oriFair = (oriEq && oriEq[eq]) ? (oriEq[eq].counts.FAIR||0) : 0;
-    var adjNote = (adjOn && ed.counts.FAIR < oriFair)
-      ? ' <span style="color:var(--adj-color)">&#x2193;'+fmt(oriFair-ed.counts.FAIR)+'</span>' : '';
-    html += '<div class="equip-row">'
-      +'<div class="equip-name">'+eq+'</div>'
-      +'<div class="equip-bar-wrap">'
-      +'<div class="stacked-bar" style="height:10px">'+mkBar(ed.counts,ed.total)+'</div>'
-      +'<div style="display:flex;justify-content:space-between;margin-top:3px">'
-      +'<span style="font-size:10px;color:var(--critical);font-family:monospace">&#x2717; '+fmt((ed.counts.CRITICAL||0)+(ed.counts.POOR||0))+'</span>'
-      +'<span style="font-size:10px;color:var(--fair);font-family:monospace">&#x223C; '+fmt(ed.counts.FAIR||0)+adjNote+'</span>'
-      +'<span style="font-size:10px;color:var(--verygood);font-family:monospace">&#x2713; '+fmt((ed.counts.GOOD||0)+(ed.counts['VERY GOOD']||0))+'</span>'
-      +'</div></div>'
-      +'<div class="equip-total">'+fmt(ed.total)+'</div>'
-      +'</div>';
-  });
-  document.getElementById('equipBars').innerHTML = html;
-}
+  const total = data.length;
+  const pages = Math.max(1, Math.ceil(total/PAGE_SIZE));
+  const start = (currentPage-1)*PAGE_SIZE;
+  const slice = data.slice(start, start+PAGE_SIZE);
 
-// ── Worst GI ──────────────────────────────────────────────
-function renderWorstGI() {
-  var d = D();
-  var worst;
-  if (currentUpt === 'ALL') {
-    worst = kritOn ? d.worst_gi_kritikal : d.worst_gi;
+  const tbody = document.getElementById('table-body');
+  if(slice.length===0) {
+    tbody.innerHTML = '<tr><td colspan="13" class="empty-state">Tidak ada data yang sesuai filter</td></tr>';
   } else {
-    worst = d.upt_data[currentUpt].gi_list
-      .filter(function(g){ return !kritOn || g.kritikal; })
-      .map(function(g){ return {Gi:g.name, Upt:currentUpt, bad_score:g.counts.CRITICAL*2+g.counts.POOR}; })
-      .sort(function(a,b){ return b.bad_score - a.bad_score; })
-      .slice(0,10);
+    tbody.innerHTML = slice.map(r => rowHtml(r)).join('');
   }
-  var maxS = (worst && worst.length) ? worst[0].bad_score : 1;
-  var html = '';
-  worst.slice(0,10).forEach(function(g,i){
-    var bw = (g.bad_score/maxS*100).toFixed(0);
-    var isK = GI_KRITIKAL.indexOf(g.Gi) >= 0;
-    var bayBays = CRITICAL_BAYS[g.Gi];
-    var bayBtn = bayBays ? '<button class="crit-btn" onclick="openBayModal(\''+g.Gi.replace(/\\/g,'\\\\').replace(/'/g,'\\\'')+'\')" title="Detail bay Critical">'+bayBays.length+' &#x1F50D;</button>' : '';
-    html += '<div class="alert-box'+(isK?' alert-krit':'')+'">'
-      +'<div class="alert-icon">'+(i<3?'&#x1F534;':i<6?'&#x1F7E0;':'&#x1F7E1;')+'</div>'
-      +'<div class="alert-content">'
-      +'<div class="alert-gi">'+g.Gi+(isK?' <span class="krit-tag">K</span>':'')+' '+bayBtn+'</div>'
-      +'<div class="alert-upt">'+g.Upt+'</div>'
-      +'<div class="score-bar"><div style="width:'+bw+'%;background:linear-gradient(90deg,var(--critical),var(--poor));height:4px;border-radius:2px"></div></div>'
-      +'</div>'
-      +'<div class="alert-score">'+g.bad_score+'</div>'
-      +'</div>';
+
+  // Pagination
+  const info = document.getElementById('page-info');
+  info.textContent = `${(start+1).toLocaleString('id-ID')}–${Math.min(start+PAGE_SIZE,total).toLocaleString('id-ID')} dari ${total.toLocaleString('id-ID')}`;
+  renderPageBtns(pages);
+}
+
+function rowHtml(r) {
+  const hi = +r['Nilai Hi']||0;
+  const maxHi = 300;
+  const barW = Math.min(80, hi/maxHi*80);
+  const barColor = hi>=150?'#ef4444':hi>=100?'#f59e0b':hi>=50?'#eab308':'#22c55e';
+  const isGiKrit = giKritSet.has((r.Gi||'').trim());
+
+  return `<tr>
+    <td><span class="badge" style="background:rgba(99,102,241,0.1);color:#a5b4fc;border:1px solid rgba(99,102,241,0.2)">${esc(r['#']||'—')}</span></td>
+    <td style="color:var(--text3)">${esc((r.Upt||'').replace('UPT ',''))}</td>
+    <td><span class="gi-name">${isGiKrit?'<span class="gi-krit-dot"></span>':''}${esc(r.Gi||'—')}</span></td>
+    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis" title="${esc(r.Bay||'')}">${esc(r.Bay||'—')}</td>
+    <td style="color:var(--text3)">${esc(r.Phasa||'—')}</td>
+    <td style="color:var(--text3);font-family:var(--mono)">${r['Daya/Tegangan']||'—'}</td>
+    <td style="color:var(--text3)">${esc(r.Merek||'—')}</td>
+    <td style="font-family:var(--mono);color:var(--text3)">${r['Tahun Buat']||'—'}</td>
+    <td>${usiaHtml(r['Status Usia'])}</td>
+    <td>${critHtml(r['Criticality Gi'])}</td>
+    <td>${statusHtml(r['Status Hi'])}</td>
+    <td>
+      <div class="hi-bar-wrap">
+        <div class="hi-bar" style="width:${barW}px;background:${barColor}"></div>
+        <span class="hi-val">${hi||'—'}</span>
+      </div>
+    </td>
+    <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;color:var(--text3);font-size:11px" title="${esc(r['Justifikasi Prioritas']||'')}">${esc(r['Justifikasi Prioritas']||'—')}</td>
+  </tr>`;
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function statusHtml(s) {
+  const v = (s||'').toUpperCase().trim();
+  const cls = v==='CRITICAL'?'critical':v==='POOR'?'poor':v==='FAIR'?'fair':v==='VERY GOOD'?'very-good':'good';
+  return `<span class="badge badge-${cls}">${v||'—'}</span>`;
+}
+
+function critHtml(s) {
+  const v = (s||'').toUpperCase().trim();
+  if(v==='EXTREME') return `<span class="badge badge-extreme">EXTREME</span>`;
+  if(v.includes('SANGAT TINGGI')) return `<span class="badge badge-extreme">SANGAT TINGGI</span>`;
+  if(v==='TINGGI') return `<span class="badge badge-tinggi">TINGGI</span>`;
+  if(v==='MODERAT'||v==='MODERATE') return `<span class="badge badge-moderat">MODERAT</span>`;
+  if(v==='RENDAH') return `<span class="badge badge-rendah">RENDAH</span>`;
+  return `<span style="color:var(--text3)">${s||'—'}</span>`;
+}
+
+function usiaHtml(s) {
+  const v = (s||'').toUpperCase().trim();
+  if(v==='SANGAT TUA') return `<span class="badge" style="background:rgba(167,139,250,0.1);color:#a78bfa;border:1px solid rgba(167,139,250,0.2)">SANGAT TUA</span>`;
+  if(v==='TUA') return `<span style="color:#f59e0b;font-size:11px">TUA</span>`;
+  return `<span style="color:var(--text3);font-size:11px">MUDA</span>`;
+}
+
+function renderPageBtns(pages) {
+  const wrap = document.getElementById('page-btns');
+  wrap.innerHTML = '';
+
+  const addBtn = (label, page, disabled=false, active=false) => {
+    const btn = document.createElement('button');
+    btn.className = 'page-btn' + (active?' active':'');
+    btn.textContent = label;
+    btn.disabled = disabled;
+    btn.onclick = () => { currentPage=page; renderTable(); };
+    wrap.appendChild(btn);
+  };
+
+  addBtn('‹', currentPage-1, currentPage===1);
+  const range = pageRange(currentPage, pages);
+  range.forEach(p => {
+    if(p==='...') {
+      const sp = document.createElement('span');
+      sp.textContent='…'; sp.style.cssText='color:var(--text3);padding:0 4px;align-self:center;font-size:12px';
+      wrap.appendChild(sp);
+    } else addBtn(p, p, false, p===currentPage);
   });
-  document.getElementById('worstGiList').innerHTML = html;
+  addBtn('›', currentPage+1, currentPage===pages);
 }
 
-// ── Donut ─────────────────────────────────────────────────
-function renderDonut() {
-  var ad = activeData(), counts = ad.counts, total = ad.total;
-  document.getElementById('donutTotal').textContent = fmt(total);
-  var cv = document.getElementById('donutChart'), ctx = cv.getContext('2d');
-  ctx.clearRect(0,0,140,140);
-  var a = -Math.PI/2;
-  S_ORDER.forEach(function(s){
-    var sa = (counts[s]||0)/total*2*Math.PI;
-    ctx.beginPath(); ctx.moveTo(70,70); ctx.arc(70,70,55,a,a+sa); ctx.closePath();
-    ctx.fillStyle = S_COLOR[s]; ctx.fill(); a += sa;
-  });
-  ctx.beginPath(); ctx.arc(70,70,35,0,2*Math.PI); ctx.fillStyle='#111827'; ctx.fill();
-
-  var oriCounts = kritOn
-    ? (currentUpt==='ALL' ? DATA_ORI.overall_kritikal : DATA_ORI.upt_data[currentUpt].counts_kritikal)
-    : (currentUpt==='ALL' ? DATA_ORI.overall           : DATA_ORI.upt_data[currentUpt].counts);
-  var leg = '';
-  S_ORDER.forEach(function(s){
-    var v=counts[s]||0, ov=oriCounts[s]||0, diff=v-ov;
-    var dt = (adjOn&&diff!==0) ? ' <span style="color:'+(diff<0?'#10b981':'#f97316')+';font-size:10px">('+(diff>0?'+':'')+diff+')</span>' : '';
-    leg += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">'
-      +'<div style="width:10px;height:10px;border-radius:2px;background:'+S_COLOR[s]+';flex-shrink:0"></div>'
-      +'<div style="flex:1;font-size:11px;color:#94a3b8">'+s+'</div>'
-      +'<div style="font-family:monospace;font-size:11px">'+fmt(v)+dt+'</div>'
-      +'<div style="font-size:10px;color:#64748b;width:40px;text-align:right">'+pct(v,total)+'%</div>'
-      +'</div>';
-  });
-  document.getElementById('donutLegend').innerHTML = leg;
+function pageRange(cur, total) {
+  if(total<=7) return Array.from({length:total},(_,i)=>i+1);
+  if(cur<=4) return [1,2,3,4,5,'...',total];
+  if(cur>=total-3) return [1,'...',total-4,total-3,total-2,total-1,total];
+  return [1,'...',cur-1,cur,cur+1,'...',total];
 }
 
-// ── Usia ──────────────────────────────────────────────────
-function renderUsia() {
-  var usia = activeData().usia || {};
-  var tot = (usia.MUDA||0)+(usia.TUA||0)+(usia['SANGAT TUA']||0);
-  var maxV = Math.max(usia.MUDA||0, usia.TUA||0, usia['SANGAT TUA']||0);
-  var items = [
-    {label:'Muda',       key:'MUDA',       color:'#10b981'},
-    {label:'Tua',        key:'TUA',         color:'#eab308'},
-    {label:'Sangat Tua', key:'SANGAT TUA',  color:'#ef4444'}
-  ];
-  var html = '';
-  items.forEach(function(item){
-    var v = usia[item.key]||0;
-    var p = tot ? (v/tot*100).toFixed(1) : '0.0';
-    var bw = maxV ? (v/maxV*100).toFixed(1) : 0;
-    html += '<div class="usia-row">'
-      +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px">'
-      +'<span style="font-size:12px;font-weight:600;color:'+item.color+'">'+item.label+'</span>'
-      +'<div><span style="font-size:14px;font-weight:700;font-family:monospace;color:'+item.color+'">'+fmt(v)+'</span>'
-      +' <span style="font-size:11px;color:var(--text3)">('+p+'%)</span></div></div>'
-      +'<div style="height:14px;border-radius:7px;background:var(--bg3);overflow:hidden">'
-      +'<div style="width:'+bw+'%;height:100%;border-radius:7px;background:linear-gradient(90deg,'+item.color+','+item.color+'88);transition:width .6s ease"></div>'
-      +'</div></div>';
-  });
-  document.getElementById('usiaRows').innerHTML = html;
+// ─── TAB ────────────────────────────────────────────────────────────────────
+function setTab(tab, btn) {
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentPage = 1;
+  applyFilters();
 }
 
-// ── GI Table ──────────────────────────────────────────────
-function renderGITable() {
-  var d = D();
-  var giList = [];
-  if (currentUpt === 'ALL') {
-    document.getElementById('giDetailTitle').innerHTML = kritOn
-      ? 'Detail GI Kritikal &#x2014; Semua UPT'
-      : 'Detail Gardu Induk &#x2014; Semua UPT';
-    Object.keys(d.upt_data).forEach(function(u){
-      d.upt_data[u].gi_list.forEach(function(gi){
-        if (!kritOn || gi.kritikal)
-          giList.push({name:gi.name, counts:gi.counts, total:gi.total, equip:gi.equip, kritikal:gi.kritikal, upt:u});
-      });
-    });
-  } else {
-    document.getElementById('giDetailTitle').innerHTML = kritOn
-      ? 'Detail GI Kritikal &#x2014; '+currentUpt
-      : 'Detail Gardu Induk &#x2014; '+currentUpt;
-    d.upt_data[currentUpt].gi_list.forEach(function(gi){
-      if (!kritOn || gi.kritikal)
-        giList.push({name:gi.name, counts:gi.counts, total:gi.total, equip:gi.equip, kritikal:gi.kritikal, upt:currentUpt});
-    });
-  }
-  giList.sort(function(a,b){
-    return (b.counts.CRITICAL*2+b.counts.POOR) - (a.counts.CRITICAL*2+a.counts.POOR);
-  });
-
-  var html = '';
-  giList.forEach(function(gi, i){
-    var bs  = gi.counts.CRITICAL*2+gi.counts.POOR;
-    var bm  = S_ORDER.map(function(s){
-      return '<div style="width:'+(gi.total?(gi.counts[s]||0)/gi.total*100:0).toFixed(2)+'%;background:'+S_COLOR[s]+';height:100%"></div>';
-    }).join('');
-    var isExp    = (expandedGi === i);
-    var kritTag  = gi.kritikal ? ' <span class="krit-tag">K</span>' : '';
-    var arrow    = isExp ? '&#x25B2;' : '&#x25BC;';
-    var critCnt  = gi.counts.CRITICAL||0;
-    var critCell;
-    if (critCnt > 0 && CRITICAL_BAYS[gi.name]) {
-      var safeName = gi.name.replace(/\\/g,'\\\\').replace(/'/g,'\\\'');
-      critCell = '<button class="crit-btn" onclick="event.stopPropagation();openBayModal(\''+safeName+'\')" title="Detail bay Critical">'+critCnt+' &#x1F50D;</button>';
-    } else {
-      critCell = '<span class="badge badge-critical">'+critCnt+'</span>';
-    }
-
-    html += '<tr class="gi-row" onclick="toggleEquip('+i+')">'
-      +'<td><span class="rank-num'+(bs>30?' danger':'')+'">'+( i+1)+'</span></td>'
-      +'<td style="font-weight:600">'+gi.name+kritTag+' <span style="font-size:10px;color:var(--text3)">'+arrow+'</span></td>'
-      +'<td style="color:var(--text3);font-size:11px">'+gi.upt.replace('UPT ','')+'</td>'
-      +'<td style="font-family:monospace">'+fmt(gi.total)+'</td>'
-      +'<td>'+critCell+'</td>'
-      +'<td><span class="badge badge-poor">'+(gi.counts.POOR||0)+'</span></td>'
-      +'<td><span class="badge badge-fair">'+(gi.counts.FAIR||0)+'</span></td>'
-      +'<td><span class="badge badge-good">'+(gi.counts.GOOD||0)+'</span></td>'
-      +'<td><span class="badge badge-verygood">'+(gi.counts['VERY GOOD']||0)+'</span></td>'
-      +'<td><div class="mini-bar-inline">'+bm+'</div></td>'
-      +'</tr>';
-
-    if (isExp && gi.equip && Object.keys(gi.equip).length > 0) {
-      var ehtml = '';
-      EQ_ORDER.forEach(function(eq){
-        var ec = gi.equip[eq]; if (!ec) return;
-        var etot = S_ORDER.reduce(function(acc,s){ return acc+(ec[s]||0); }, 0);
-        if (etot === 0) return;
-        var ebm = S_ORDER.map(function(s){
-          return '<div style="width:'+(etot?(ec[s]||0)/etot*100:0).toFixed(2)+'%;background:'+S_COLOR[s]+';height:100%"></div>';
-        }).join('');
-        ehtml += '<div class="equip-expand-card">'
-          +'<div style="display:flex;justify-content:space-between;margin-bottom:5px">'
-          +'<span style="font-size:12px;font-weight:700;color:var(--accent)">'+eq+'</span>'
-          +'<span style="font-size:10px;color:var(--text3)">'+fmt(etot)+' unit</span></div>'
-          +'<div class="stacked-bar" style="height:8px;margin-bottom:5px">'+ebm+'</div>'
-          +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px">';
-        S_ORDER.forEach(function(s){
-          if ((ec[s]||0) === 0) return;
-          ehtml += '<div style="font-size:10px;font-family:monospace;color:'+S_COLOR[s]+'">'+s.substring(0,4)+': <b>'+(ec[s]||0)+'</b></div>';
-        });
-        ehtml += '</div></div>';
-      });
-      html += '<tr class="equip-expand-row"><td colspan="10"><div class="equip-expand">'
-        +'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Rincian per Jenis Peralatan</div>'
-        +'<div class="equip-expand-grid">'+ehtml+'</div>'
-        +'</div></td></tr>';
-    }
-  });
-  document.getElementById('giTableBody').innerHTML = html;
-}
-
-function toggleEquip(idx) {
-  expandedGi = (expandedGi === idx) ? null : idx;
-  renderGITable();
-}
-
-function setUpt(e, upt) {
-  currentUpt = upt;
-  expandedGi = null;
-  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
-  e.target.classList.add('active');
-  renderAll();
-}
-
-function renderAll() {
-  renderKPIs();
-  renderKlaster();
-  renderEquipBars();
-  renderWorstGI();
-  renderDonut();
-  renderUsia();
-  renderGITable();
-}
-
-// ── BAY MODAL ─────────────────────────────────────────────
-function openBayModal(giName) {
-  var bays = CRITICAL_BAYS[giName];
-  if (!bays || bays.length === 0) return;
-  bayCurrentGi   = giName;
-  bayActiveEquip = 'ALL';
-  document.getElementById('bayMTitle').textContent = giName;
-  document.getElementById('bayMSub').textContent   = bays[0].upt + ' \u00B7 ' + bays.length + ' peralatan CRITICAL';
-  document.getElementById('bayOverlay').style.display = 'flex';
-  document.body.style.overflow = 'hidden';
-  renderBayContent(bays);
-}
-
-function closeBayModal() {
-  document.getElementById('bayOverlay').style.display = 'none';
-  document.body.style.overflow = '';
-  bayCurrentGi = null;
-}
-
-function renderBayContent(bays) {
-  var total=bays.length, sumHi=0, maxHi=0, sangat=0, eqMap={};
-  var adaRencana = 0;
-  bays.forEach(function(b){
-    sumHi += b.nilai_hi;
-    if (b.nilai_hi > maxHi) maxHi = b.nilai_hi;
-    if (b.status_usia === 'SANGAT TUA') sangat++;
-    eqMap[b.equip] = (eqMap[b.equip]||0)+1;
-    if (b.rencana && b.rencana !== '-') adaRencana++;
-  });
-  var avgHi = total ? Math.round(sumHi/total) : 0;
-
-  document.getElementById('baySumGrid').innerHTML =
-    bayCard('Total Critical', total, 'var(--critical)') +
-    bayCard('Rata-rata Nilai HI', avgHi, 'var(--poor)') +
-    bayCard('Nilai HI Tertinggi', maxHi, 'var(--critical)') +
-    bayCard('Sangat Tua', sangat, 'var(--fair)') +
-    bayCard('Ada Rencana', adaRencana, 'var(--verygood)');
-
-  var types = ['ALL'].concat(Object.keys(eqMap).sort());
-  document.getElementById('bayChips').innerHTML = types.map(function(t){
-    var cnt = t==='ALL' ? total : eqMap[t];
-    var cls = 'bay-chip' + (t==='ALL'?' all':'') + (bayActiveEquip===t?' active':'');
-    return '<button class="'+cls+'" onclick="bayFilter(\''+t+'\')">'+t+' ('+cnt+')</button>';
-  }).join('');
-
-  var rows = bayActiveEquip==='ALL' ? bays : bays.filter(function(b){ return b.equip===bayActiveEquip; });
-  var html = '';
-  rows.forEach(function(b, i){
-    var hiColor   = b.nilai_hi>=150?'var(--critical)':b.nilai_hi>=120?'var(--poor)':'var(--fair)';
-    var hiPct     = Math.min(100, b.nilai_hi/200*100).toFixed(0);
-    var usiaCls   = b.status_usia==='SANGAT TUA'?'up-sangat':b.status_usia==='TUA'?'up-tua':'up-muda';
-    var usiaShort = b.status_usia==='SANGAT TUA'?'S.TUA':b.status_usia;
-    var jus = (b.justifikasi||'-')
-      .replace(/CRITICAL/g,'<span class="jus-crit">CRITICAL</span>')
-      .replace(/POOR/g,'<span class="jus-poor">POOR</span>')
-      .replace(/FAIR/g,'<span class="jus-fair">FAIR</span>');
-    // Rencana cell
-    var renc = b.rencana && b.rencana !== '-' ? b.rencana : '-';
-    var rencCell = renc !== '-'
-      ? '<span class="renc-tag">'+renc+'</span>'
-      : '<span style="color:var(--text3);font-size:11px">&#x2014;</span>';
-    html += '<tr>'
-      +'<td style="color:var(--text3);font-size:11px">'+(i+1)+'</td>'
-      +'<td><span class="badge badge-critical">'+b.equip+'</span></td>'
-      +'<td style="font-weight:600;font-size:12px">'+b.bay+'</td>'
-      +'<td style="font-weight:700;color:var(--accent)">'+b.phasa+'</td>'
-      +'<td style="font-size:11px"><div style="font-weight:600">'+b.merek+'</div><div style="color:var(--text3)">'+b.tipe+'</div></td>'
-      +'<td style="font-size:11px;white-space:nowrap"><div>'+(b.thn_buat||'-')+'</div><div style="color:var(--text3)">'+b.thn_ops+'</div></td>'
-      +'<td style="min-width:120px"><div class="hi-bar">'
-      +'<div class="hi-track"><div class="hi-fill" style="width:'+hiPct+'%;background:'+hiColor+'"></div></div>'
-      +'<span class="hi-num" style="color:'+hiColor+'">'+b.nilai_hi+'</span></div></td>'
-      +'<td><span class="usia-pill '+usiaCls+'">'+usiaShort+'</span></td>'
-      +'<td class="jus-text">'+jus+'</td>'
-      +'<td style="min-width:140px">'+rencCell+'</td>'
-      +'</tr>';
-  });
-  document.getElementById('bayTbody').innerHTML = html;
-}
-
-function bayCard(label, val, color) {
-  return '<div class="bay-sumcard">'
-    +'<div class="bay-sumlabel">'+label+'</div>'
-    +'<div class="bay-sumval" style="color:'+color+'">'+fmt(val)+'</div>'
-    +'</div>';
-}
-
-function bayFilter(eq) {
-  bayActiveEquip = eq;
-  if (bayCurrentGi && CRITICAL_BAYS[bayCurrentGi]) renderBayContent(CRITICAL_BAYS[bayCurrentGi]);
-}
-
-document.addEventListener('keydown', function(e){
-  if (e.key === 'Escape') closeBayModal();
+// ─── EVENT LISTENERS ─────────────────────────────────────────────────────────
+['f-upt','f-gi','f-jenis','f-tegangan','f-status','f-criticality','f-usia','f-gikrit'].forEach(id => {
+  document.getElementById(id).addEventListener('change', applyFilters);
+});
+let searchTimer;
+document.getElementById('f-search').addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(applyFilters, 300);
 });
 
-// ── Init ──────────────────────────────────────────────────
-renderAll();
-
-
+// ─── START ───────────────────────────────────────────────────────────────────
+init().catch(err => {
+  document.getElementById('loading-text').textContent = 'Gagal memuat data: ' + err.message;
+});
 </script>
 </body>
 </html>
