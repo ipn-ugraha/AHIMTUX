@@ -300,12 +300,12 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
 
   <div class="cgrid2" style="margin-bottom:16px">
     <div class="ccard">
-      <div class="ctitle">Distribusi MTU per Kelompok Usia Operasi</div>
-      <div class="cwrap2"><canvas id="usiaC" role="img" aria-label="Bar distribusi MTU per usia operasi"></canvas></div>
+      <div class="ctitle">Distribusi MTU per Status Usia</div>
+      <div class="cwrap2"><canvas id="usiaC" role="img" aria-label="Bar distribusi MTU per status usia"></canvas></div>
     </div>
     <div class="ccard">
-      <div class="ctitle">Status Hi per Kelompok Usia</div>
-      <div class="cwrap2"><canvas id="usiaStC" role="img" aria-label="Stacked bar status Hi per kelompok usia"></canvas></div>
+      <div class="ctitle">Status Hi per Kelompok Usia Operasi (Tahun Operasi)</div>
+      <div class="cwrap2"><canvas id="usiaStC" role="img" aria-label="Stacked bar status Hi per kelompok usia operasi"></canvas></div>
     </div>
   </div>
 
@@ -597,12 +597,19 @@ function updCharts(){
   // ── Single-pass aggregation ──────────────────────────────────────────────
   // Counters: uptSt[upt][status], kvSt[kv][status], jenisSt[jenis][status],
   //           usiaSt[bucketIdx][status], stCount[status]
-  const uptSt={}, kvSt={}, jenisSt={}, usiaSt={}, stCount={};
+  const uptSt={}, kvSt={}, jenisSt={}, usiaSt={}, ageSt={}, stCount={};
   ST_LST.forEach(s=>stCount[s]=0);
+
+  // Age buckets for chart 2 (Tahun Operasi)
+  const AGE_BUCKETS=[
+    {lbl:'≤5 th',min:0,max:5},{lbl:'6–10 th',min:6,max:10},
+    {lbl:'11–15 th',min:11,max:15},{lbl:'16–20 th',min:16,max:20},
+    {lbl:'21–25 th',min:21,max:25},{lbl:'26–30 th',min:26,max:30},
+    {lbl:'31–40 th',min:31,max:40},{lbl:'>40 th',min:41,max:999}
+  ];
 
   filtered.forEach(r=>{
     const st=r._se, upt=r.Upt||'', kv=r._kv||'', jen=r['#']||'';
-    // status total
     if(stCount[st]!==undefined) stCount[st]++;
     // UPT
     if(upt&&upt!=='-'){
@@ -619,12 +626,20 @@ function updCharts(){
       if(!jenisSt[jen]) jenisSt[jen]={};
       jenisSt[jen][st]=(jenisSt[jen][st]||0)+1;
     }
-    // Usia (Status Usia)
+    // Chart 1: Status Usia (MUDA/TUA/SANGAT TUA)
     const usiaKey=(r['Status Usia']||'').toUpperCase().trim();
     const bi=USIA_BUCKETS.findIndex(b=>b.key===usiaKey);
     if(bi>=0){
       if(!usiaSt[bi]) usiaSt[bi]={};
       usiaSt[bi][st]=(usiaSt[bi][st]||0)+1;
+    }
+    // Chart 2: Tahun Operasi → bucket usia aktual
+    if(r._age!=null){
+      const ai=AGE_BUCKETS.findIndex(b=>r._age>=b.min&&r._age<=b.max);
+      if(ai>=0){
+        if(!ageSt[ai]) ageSt[ai]={};
+        ageSt[ai][st]=(ageSt[ai][st]||0)+1;
+      }
     }
   });
 
@@ -727,15 +742,15 @@ function updCharts(){
     }
   });
 
-  // ── Usia × Status stacked ─────────────────────────────────────────────────
+  // ── Status Hi per Kelompok Usia (Tahun Operasi) ───────────────────────────
   dc('ust');
   charts.ust=new Chart(document.getElementById('usiaStC').getContext('2d'),{
     type:'bar',
     data:{
-      labels:USIA_BUCKETS.map(b=>b.lbl),
+      labels:AGE_BUCKETS.map(b=>b.lbl),
       datasets:ST_LST.map((s,i)=>({
         label:s,
-        data:USIA_BUCKETS.map((_,bi)=>(usiaSt[bi]&&usiaSt[bi][s])||0),
+        data:AGE_BUCKETS.map((_,ai)=>(ageSt[ai]&&ageSt[ai][s])||0),
         backgroundColor:ST_COL[i],borderRadius:3,borderSkipped:false
       }))
     },
