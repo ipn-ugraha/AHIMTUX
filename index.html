@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+ <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
+  <!-- refresh setiap 5 menit (300 detik) -->
+<meta http-equiv="refresh" content="300">
   
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -742,30 +743,37 @@ function updCharts(){
 
   // ── Usia distribusi ───────────────────────────────────────────────────────
   dc('us');
+  // ── Distribusi MTU per Status Usia × Status Hi (stacked) ────────────────
+  dc('us');
   const GRAD=['#22c55e','#f59e0b','#ef4444'];
   charts.us=new Chart(document.getElementById('usiaC').getContext('2d'),{
     type:'bar',
     data:{
       labels:USIA_BUCKETS.map(b=>b.lbl),
-      datasets:[{
-        label:'Jumlah MTU',
-        data:USIA_BUCKETS.map((_,i)=>Object.values(usiaSt[i]||{}).reduce((a,b)=>a+b,0)),
-        backgroundColor:USIA_BUCKETS.map((_,i)=>GRAD[i]),
-        borderRadius:4,borderSkipped:false
-      }]
+      datasets:ST_LST.map((s,i)=>({
+        label:s,
+        data:USIA_BUCKETS.map((_,bi)=>(usiaSt[bi]&&usiaSt[bi][s])||0),
+        backgroundColor:ST_COL[i],borderRadius:3,borderSkipped:false
+      }))
     },
     options:{
       responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{
-        label:c=>`${c.raw.toLocaleString('id-ID')} MTU`,
-        afterLabel:c=>{
-          const bi=c.dataIndex, bst=usiaSt[bi]||{};
-          return ST_LST.map(s=>bst[s]?`  ${s}: ${bst[s]}`:'').filter(Boolean).join('\n');
+      plugins:{
+        legend:{display:true,position:'top',labels:{color:'#8a9099',font:{size:10},boxWidth:10,padding:8}},
+        tooltip:{
+          mode:'index',intersect:false,
+          callbacks:{
+            afterTitle:c=>{
+              const bi=c[0].dataIndex;
+              const total=Object.values(usiaSt[bi]||{}).reduce((a,b)=>a+b,0);
+              return `Total: ${total.toLocaleString('id-ID')} MTU`;
+            }
+          }
         }
-      }}},
+      },
       scales:{
-        x:{ticks:{color:'#8a9099',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}},
-        y:{ticks:{color:'#8a9099',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}}
+        x:{stacked:true,ticks:{color:'#8a9099',font:{size:12}},grid:{color:'rgba(255,255,255,0.04)'}},
+        y:{stacked:true,ticks:{color:'#8a9099',font:{size:11}},grid:{color:'rgba(255,255,255,0.04)'}}
       }
     }
   });
