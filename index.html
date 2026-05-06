@@ -360,10 +360,9 @@ const ST_COL=['#ef4444','#f59e0b','#eab308','#22c55e','#14b8a6'];
 const ST_LST=['CRITICAL','POOR','FAIR','GOOD','VERY GOOD'];
 // Usia buckets (tahun operasi)
 const USIA_BUCKETS=[
-  {lbl:'≤5 th',min:0,max:5},{lbl:'6–10 th',min:6,max:10},
-  {lbl:'11–15 th',min:11,max:15},{lbl:'16–20 th',min:16,max:20},
-  {lbl:'21–25 th',min:21,max:25},{lbl:'26–30 th',min:26,max:30},
-  {lbl:'31–40 th',min:31,max:40},{lbl:'>40 th',min:41,max:999}
+  {lbl:'MUDA',key:'MUDA'},
+  {lbl:'TUA',key:'TUA'},
+  {lbl:'SANGAT TUA',key:'SANGAT TUA'}
 ];
 
 let raw=[], giKrit=new Set(), filtered=[], giGroups=[];
@@ -620,13 +619,12 @@ function updCharts(){
       if(!jenisSt[jen]) jenisSt[jen]={};
       jenisSt[jen][st]=(jenisSt[jen][st]||0)+1;
     }
-    // Usia bucket
-    if(r._age!=null){
-      const bi=USIA_BUCKETS.findIndex(b=>r._age>=b.min&&r._age<=b.max);
-      if(bi>=0){
-        if(!usiaSt[bi]) usiaSt[bi]={};
-        usiaSt[bi][st]=(usiaSt[bi][st]||0)+1;
-      }
+    // Usia (Status Usia)
+    const usiaKey=(r['Status Usia']||'').toUpperCase().trim();
+    const bi=USIA_BUCKETS.findIndex(b=>b.key===usiaKey);
+    if(bi>=0){
+      if(!usiaSt[bi]) usiaSt[bi]={};
+      usiaSt[bi][st]=(usiaSt[bi][st]||0)+1;
     }
   });
 
@@ -701,7 +699,7 @@ function updCharts(){
 
   // ── Usia distribusi ───────────────────────────────────────────────────────
   dc('us');
-  const GRAD=['#14b8a6','#22c55e','#84cc16','#eab308','#f59e0b','#f97316','#ef4444','#b91c1c'];
+  const GRAD=['#22c55e','#f59e0b','#ef4444'];
   charts.us=new Chart(document.getElementById('usiaC').getContext('2d'),{
     type:'bar',
     data:{
