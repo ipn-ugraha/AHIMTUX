@@ -248,6 +248,12 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
       </select>
     </div>
     <div class="fg">
+      <span class="fl">Tier GI</span>
+      <select class="fs" id="f-tier" onchange="applyFilters()" style="min-width:100px">
+        <option value="">Semua Tier</option>
+      </select>
+    </div>
+    <div class="fg">
       <span class="fl">GI Kritikal</span>
       <select class="fs" id="f-gk" onchange="applyFilters()">
         <option value="">Semua GI</option>
@@ -351,7 +357,7 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
 </main>
 
 <script>
-const CSV_AHI='AHI_MTU.csv', CSV_KRIT='gi_kritikal.csv';
+const CSV_AHI='AHI_MTU.csv', CSV_KRIT='gi_referensi.csv';
 const PAGE=40, YR=new Date().getFullYear();
 const VALID_PFX=['GI ','GIS ','GITET ','GISTET '];
 const ST_ORD={'CRITICAL':0,'POOR':1,'FAIR':2,'GOOD':3,'VERY GOOD':4};
@@ -365,7 +371,7 @@ const USIA_BUCKETS=[
   {lbl:'SANGAT TUA',key:'SANGAT TUA'}
 ];
 
-let raw=[], giKrit=new Set(), filtered=[], giGroups=[];
+let raw=[], giKrit=new Set(), giTierMap=new Map(), filtered=[], giGroups=[];
 let page=1, scol='maxhi', sdir='desc', tab='all';
 let expGi=new Set(), expBay=new Set(), charts={};
 
@@ -374,7 +380,13 @@ async function init(){
   try{
     const r=await fetch(CSV_KRIT);
     Papa.parse(await r.text(),{header:true,skipEmptyLines:true})
-      .data.forEach(x=>{const g=(x.Gi||x.gi||'').trim();if(g)giKrit.add(g);});
+      .data.forEach(x=>{
+        const g=(x.Gi||x.gi||'').trim();
+        if(!g) return;
+        if((x.Kritikal||'').trim()==='Ya') giKrit.add(g);
+        const tier=(x.Tier||'').trim();
+        if(tier) giTierMap.set(g, tier);
+      });
   }catch(e){}
 
   setP(15,'Mengunduh data MTU...');
@@ -427,6 +439,15 @@ async function init(){
   const gk=document.getElementById('gkbadge');
   if(gk) gk.style.display='flex';
   document.querySelectorAll('#gkn').forEach(el=>el.textContent=giKrit.size);
+
+  // Populate Tier dropdown
+  const tiers=[...new Set(giTierMap.values())].map(Number).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
+  const tierSel=document.getElementById('f-tier');
+  tiers.forEach(t=>{
+    const o=document.createElement('option');
+    o.value=t; o.textContent='Tier '+t;
+    tierSel.appendChild(o);
+  });
 
   buildFilters();
 
@@ -512,6 +533,7 @@ function getF(){
     sta:  document.getElementById('f-status').value,
     crit: document.getElementById('f-crit').value,
     usia: document.getElementById('f-usia').value,
+    tier: document.getElementById('f-tier').value,
     gk:   document.getElementById('f-gk').value,
     q:    document.getElementById('f-q').value.trim().toLowerCase(),
   };
@@ -527,6 +549,7 @@ function applyFilters(){
   if(f.sta)  d=d.filter(r=>r._se===f.sta.toUpperCase());
   if(f.crit) d=d.filter(r=>(r['Criticality Gi']||'').toUpperCase().includes(f.crit.toUpperCase()));
   if(f.usia) d=d.filter(r=>(r['Status Usia']||'').toUpperCase()===f.usia.toUpperCase());
+  if(f.tier) d=d.filter(r=>giTierMap.get((r.Gi||'').trim())==f.tier);
   if(f.gk==='1') d=d.filter(r=>giKrit.has((r.Gi||'').trim()));
   if(f.q)    d=d.filter(r=>
     (r.Bay||'').toLowerCase().includes(f.q)||
@@ -543,7 +566,7 @@ function applyFilters(){
 }
 
 function resetFilters(){
-  ['f-upt','f-gi','f-teg','f-jenis','f-status','f-crit','f-usia','f-gk']
+  ['f-upt','f-gi','f-teg','f-jenis','f-status','f-crit','f-usia','f-tier','f-gk']
     .forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-q').value='';
   buildGiOpts('');
@@ -829,6 +852,7 @@ function renderTable(){
 // ── GI ROW (level 1) ─────────────────────────────────────────────────────────
 function giHtml(g){
   const isOpen=expGi.has(g.gi), krit=giKrit.has((g.gi||'').trim());
+  const tier=giTierMap.get((g.gi||'').trim());
   const bw=Math.min(55,g.maxhi/300*55);
   const bc=g.maxhi>=150?'#ef4444':g.maxhi>=100?'#f59e0b':g.maxhi>=50?'#eab308':'#22c55e';
   // collect rencana from all MTU rows that have it
@@ -840,7 +864,7 @@ function giHtml(g){
     </td>
     <td><span class="gi-tgl" onclick="tgGi('${e(g.gi).replace(/'/g,"\\'")}')">
       ${krit?'<span class="gkd"></span>':''}<span class="giname" style="font-weight:600">${e(g.gi||'—')}</span>
-    </span></td>
+    </span>${tier?`<span class="badge" style="margin-left:6px;background:rgba(99,102,241,.12);color:#a5b4fc;border:1px solid rgba(99,102,241,.25);font-size:9px">T${e(tier)}</span>`:''}</td>
     <td><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">${g.kv||'—'}</span></td>
     <td>${critH(g.crit)}</td>
     <td style="font-size:11px;color:var(--text3)">${e((g.upt||'').replace('UPT ',''))}</td>
