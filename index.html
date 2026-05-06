@@ -1,14 +1,12 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
- <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <!-- refresh setiap 5 menit (300 detik) -->
-<meta http-equiv="refresh" content="300">
-  
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta http-equiv="refresh" content="300">
 <title>Dashboard AHI MTU — UIT JBM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -71,6 +69,20 @@ body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14
 .fcnt{align-self:flex-end;font-family:var(--mono);font-size:11px;color:var(--text3);padding-bottom:6px;margin-left:auto}
 .fcnt span{color:var(--accent)}
 select option{background:#22272f}
+/* Custom multi-select Tier */
+.ms-wrap{position:relative;min-width:110px}
+.ms-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:5px 28px 5px 9px;border-radius:var(--r);font-family:var(--font);font-size:12px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:left;position:relative;outline:none}
+.ms-btn::after{content:'▾';position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:10px;pointer-events:none}
+.ms-btn:hover,.ms-btn.open{border-color:rgba(255,255,255,0.22)}
+.ms-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;min-width:150px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);z-index:300;box-shadow:0 8px 24px rgba(0,0,0,.5);max-height:260px;overflow-y:auto}
+.ms-dropdown.open{display:block}
+.ms-item{display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:var(--text2);transition:background .1s;user-select:none}
+.ms-item:hover{background:var(--bg4);color:var(--text)}
+.ms-item input[type=checkbox]{accent-color:var(--accent);width:13px;height:13px;cursor:pointer;flex-shrink:0}
+.ms-item.checked{color:var(--text)}
+.ms-divider{height:1px;background:var(--border);margin:4px 0}
+.ms-clear{padding:5px 12px;font-size:11px;color:var(--text3);cursor:pointer;text-align:center}
+.ms-clear:hover{color:var(--accent)}
 
 /* STATS */
 .srow{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px;margin-bottom:16px}
@@ -255,9 +267,13 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
     </div>
     <div class="fg">
       <span class="fl">Tier GI</span>
-      <select class="fs" id="f-tier" onchange="applyFilters()" style="min-width:100px">
-        <option value="">Semua Tier</option>
-      </select>
+      <div class="ms-wrap" id="tier-wrap">
+        <button type="button" class="ms-btn" id="tier-btn" onclick="toggleTierDrop(event)">Semua Tier</button>
+        <div class="ms-dropdown" id="tier-drop">
+          <div class="ms-divider"></div>
+          <div class="ms-clear" onclick="clearTier()">Hapus pilihan</div>
+        </div>
+      </div>
     </div>
     <div class="fg">
       <span class="fl">GI Kritikal</span>
@@ -381,6 +397,35 @@ let raw=[], giKrit=new Set(), giTierMap=new Map(), filtered=[], giGroups=[];
 let page=1, scol='maxhi', sdir='desc', tab='all';
 let expGi=new Set(), expBay=new Set(), charts={};
 
+// ── TIER DROPDOWN HELPERS ────────────────────────────────────────────────────
+function toggleTierDrop(e){
+  e.stopPropagation();
+  const drop=document.getElementById('tier-drop');
+  const btn=document.getElementById('tier-btn');
+  drop.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+function updTierBtn(){
+  const checked=[...document.querySelectorAll('#tier-drop input:checked')];
+  const btn=document.getElementById('tier-btn');
+  if(!checked.length) btn.textContent='Semua Tier';
+  else if(checked.length===1) btn.textContent='Tier '+checked[0].value;
+  else btn.textContent=`${checked.length} Tier dipilih`;
+}
+function clearTier(){
+  document.querySelectorAll('#tier-drop input').forEach(cb=>cb.checked=false);
+  updTierBtn(); applyFilters();
+  document.getElementById('tier-drop').classList.remove('open');
+  document.getElementById('tier-btn').classList.remove('open');
+}
+// Close dropdown when clicking outside
+document.addEventListener('click',e=>{
+  if(!document.getElementById('tier-wrap').contains(e.target)){
+    document.getElementById('tier-drop').classList.remove('open');
+    document.getElementById('tier-btn').classList.remove('open');
+  }
+});
+
 async function init(){
   setP(5,'Memuat GI kritikal...');
   try{
@@ -446,13 +491,21 @@ async function init(){
   if(gk) gk.style.display='flex';
   document.querySelectorAll('#gkn').forEach(el=>el.textContent=giKrit.size);
 
-  // Populate Tier dropdown
+  // Populate Tier custom multi-select dropdown
   const tiers=[...new Set(giTierMap.values())].map(Number).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
-  const tierSel=document.getElementById('f-tier');
+  const tierDrop=document.getElementById('tier-drop');
   tiers.forEach(t=>{
-    const o=document.createElement('option');
-    o.value=t; o.textContent='Tier '+t;
-    tierSel.appendChild(o);
+    const item=document.createElement('div');
+    item.className='ms-item';
+    item.dataset.value=String(t);
+    item.innerHTML=`<input type="checkbox" id="tier-cb-${t}" value="${t}"><label for="tier-cb-${t}" style="cursor:pointer;flex:1">Tier ${t}</label>`;
+    item.querySelector('input').addEventListener('change',()=>{updTierBtn();applyFilters();});
+    item.addEventListener('click',e=>{
+      if(e.target.tagName!=='INPUT'&&e.target.tagName!=='LABEL'){
+        const cb=item.querySelector('input'); cb.checked=!cb.checked; updTierBtn(); applyFilters();
+      }
+    });
+    tierDrop.insertBefore(item, tierDrop.querySelector('.ms-divider'));
   });
 
   buildFilters();
@@ -539,7 +592,7 @@ function getF(){
     sta:  document.getElementById('f-status').value,
     crit: document.getElementById('f-crit').value,
     usia: document.getElementById('f-usia').value,
-    tier: document.getElementById('f-tier').value,
+    tier: [...document.querySelectorAll('#tier-drop input:checked')].map(o=>o.value),
     gk:   document.getElementById('f-gk').value,
     q:    document.getElementById('f-q').value.trim().toLowerCase(),
   };
@@ -555,7 +608,7 @@ function applyFilters(){
   if(f.sta)  d=d.filter(r=>r._se===f.sta.toUpperCase());
   if(f.crit) d=d.filter(r=>(r['Criticality Gi']||'').toUpperCase().includes(f.crit.toUpperCase()));
   if(f.usia) d=d.filter(r=>(r['Status Usia']||'').toUpperCase()===f.usia.toUpperCase());
-  if(f.tier) d=d.filter(r=>giTierMap.get((r.Gi||'').trim())==f.tier);
+  if(f.tier.length) d=d.filter(r=>f.tier.includes(giTierMap.get((r.Gi||'').trim())));
   if(f.gk==='1') d=d.filter(r=>giKrit.has((r.Gi||'').trim()));
   if(f.q)    d=d.filter(r=>
     (r.Bay||'').toLowerCase().includes(f.q)||
@@ -572,8 +625,11 @@ function applyFilters(){
 }
 
 function resetFilters(){
-  ['f-upt','f-gi','f-teg','f-jenis','f-status','f-crit','f-usia','f-tier','f-gk']
+  ['f-upt','f-gi','f-teg','f-jenis','f-status','f-crit','f-usia','f-gk']
     .forEach(id=>document.getElementById(id).value='');
+  // clear multi-select tier
+  document.querySelectorAll('#tier-drop input').forEach(cb=>cb.checked=false);
+  updTierBtn();
   document.getElementById('f-q').value='';
   buildGiOpts('');
   tab='all';
