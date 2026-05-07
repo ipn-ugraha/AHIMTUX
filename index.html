@@ -276,6 +276,22 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
       </div>
     </div>
     <div class="fg">
+      <span class="fl">Jenis Bay</span>
+      <select class="fs" id="f-bay-kat" onchange="applyFilters()" style="min-width:130px">
+        <option value="">Semua Jenis</option>
+        <option value="PHT">PHT</option>
+        <option value="TRAFO">Trafo</option>
+        <option value="IBT">IBT</option>
+        <option value="DIAMETER">Diameter</option>
+        <option value="BUSBAR">Busbar</option>
+        <option value="PEMBANGKIT">Pembangkit</option>
+        <option value="REAKTOR">Reaktor</option>
+        <option value="KAPASITOR">Kapasitor</option>
+        <option value="KOPEL">Kopel</option>
+        <option value="LAINNYA">Lainnya</option>
+      </select>
+    </div>
+    <div class="fg">
       <span class="fl">GI Kritikal</span>
       <select class="fs" id="f-gk" onchange="applyFilters()">
         <option value="">Semua GI</option>
@@ -397,7 +413,23 @@ let raw=[], giKrit=new Set(), giTierMap=new Map(), filtered=[], giGroups=[];
 let page=1, scol='maxhi', sdir='desc', tab='all';
 let expGi=new Set(), expBay=new Set(), charts={};
 
-// ── TIER DROPDOWN HELPERS ────────────────────────────────────────────────────
+// ── KATEGORISASI BAY ─────────────────────────────────────────────────────────
+function katBay(b){
+  const u=String(b).toUpperCase().trim();
+  if(!u||u==='-') return 'LAINNYA';
+  if(/DIAMETER/.test(u))                                    return 'DIAMETER';
+  if(/\bIBT\b|INTERBUS|AUTOTRANSFORMATOR|GSUT/.test(u))    return 'IBT';
+  if(/TRAFO|TRF\b|TR#|TR\s|TR-/.test(u))                   return 'TRAFO';
+  if(/PHT|PENYULANG|FDR\b|FEEDER/.test(u))                 return 'PHT';
+  if(/BUSBAR|BUS TIE|^BUS\b/.test(u))                      return 'BUSBAR';
+  if(/KOPEL|KOPPLING|TIE BUS/.test(u))                     return 'KOPEL';
+  if(/KAPASITOR|CAPACITOR|\bCAP\b|SC#/.test(u))            return 'KAPASITOR';
+  if(/REACTOR|REAKTOR|SHUNT\b|INDUKTOR/.test(u))           return 'REAKTOR';
+  if(/PLTU|PLTG|PLTGU|PLTS|PLTD|GT#|ST#|MTR#|SST#/.test(u)) return 'PEMBANGKIT';
+  return 'LAINNYA';
+}
+
+async function init(){
 function toggleTierDrop(e){
   e.stopPropagation();
   const drop=document.getElementById('tier-drop');
@@ -481,6 +513,7 @@ async function init(){
     r._adj = false;
     const m=(r.Gi||'').match(/(\d+)KV/i);
     r._kv  = m?+m[1]:null;
+    r._bayKat = katBay(r.Bay||'');
   });
 
   setP(96,'Menyiapkan tampilan...');
@@ -592,6 +625,7 @@ function getF(){
     sta:  document.getElementById('f-status').value,
     crit: document.getElementById('f-crit').value,
     usia: document.getElementById('f-usia').value,
+    baykat: document.getElementById('f-bay-kat').value,
     tier: [...document.querySelectorAll('#tier-drop input:checked')].map(o=>o.value),
     gk:   document.getElementById('f-gk').value,
     q:    document.getElementById('f-q').value.trim().toLowerCase(),
@@ -608,6 +642,7 @@ function applyFilters(){
   if(f.sta)  d=d.filter(r=>r._se===f.sta.toUpperCase());
   if(f.crit) d=d.filter(r=>(r['Criticality Gi']||'').toUpperCase().includes(f.crit.toUpperCase()));
   if(f.usia) d=d.filter(r=>(r['Status Usia']||'').toUpperCase()===f.usia.toUpperCase());
+  if(f.baykat) d=d.filter(r=>r._bayKat===f.baykat);
   if(f.tier.length) d=d.filter(r=>f.tier.includes(giTierMap.get((r.Gi||'').trim())));
   if(f.gk==='1') d=d.filter(r=>giKrit.has((r.Gi||'').trim()));
   if(f.q)    d=d.filter(r=>
@@ -625,7 +660,7 @@ function applyFilters(){
 }
 
 function resetFilters(){
-  ['f-upt','f-gi','f-teg','f-jenis','f-status','f-crit','f-usia','f-gk']
+  ['f-upt','f-gi','f-teg','f-jenis','f-status','f-crit','f-usia','f-gk','f-bay-kat']
     .forEach(id=>document.getElementById(id).value='');
   // clear multi-select tier
   document.querySelectorAll('#tier-drop input').forEach(cb=>cb.checked=false);
@@ -967,6 +1002,7 @@ function bayHtml(g,b){
       <span class="bay-tgl" onclick="tgBayB64('${bkSafe}')">
         <span class="bname">${e(b.bay||'—')}</span>
       </span>
+      <span style="margin-left:6px;font-size:9px;font-family:var(--mono);color:var(--text3);background:var(--bg4);padding:1px 5px;border-radius:3px;border:1px solid var(--border)">${e(b.mtus[0]?._bayKat||'')}</span>
     </td>
     <td></td><td></td>
     <td style="font-size:11px;color:var(--text3)">${b.mtus.length} MTU</td>
