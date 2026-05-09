@@ -299,8 +299,20 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
       </select>
     </div>
     <div class="fg">
+      <span class="fl">KTT</span>
+      <select class="fs" id="f-ktt" onchange="applyFilters()" style="min-width:120px">
+        <option value="">Semua GI</option>
+        <option value="1">Ada KTT</option>
+        <option value="0">Tidak ada KTT</option>
+      </select>
+    </div>
+    <div class="fg">
       <span class="fl">Cari</span>
       <input type="text" class="fi" id="f-q" placeholder="Bay, Serial, GI, Merek...">
+    </div>
+    <div class="fg">
+      <span class="fl">Cari Rencana</span>
+      <input type="text" class="fi" id="f-rencana" placeholder="kata kunci rencana..." style="min-width:180px">
     </div>
     <button class="fbtn rst" onclick="resetFilters()">Reset</button>
     <div class="fcnt" id="fcnt">Menampilkan <span>—</span></div>
@@ -409,7 +421,7 @@ const USIA_BUCKETS=[
   {lbl:'SANGAT TUA',key:'SANGAT TUA'}
 ];
 
-let raw=[], giKrit=new Set(), giTierMap=new Map(), filtered=[], giGroups=[];
+let raw=[], giKrit=new Set(), giTierMap=new Map(), giKttMap=new Map(), filtered=[], giGroups=[];
 let page=1, scol='maxhi', sdir='desc', tab='all';
 let expGi=new Set(), expBay=new Set(), charts={};
 
@@ -468,6 +480,8 @@ async function init(){
         if((x.Kritikal||'').trim()==='Ya') giKrit.add(g);
         const tier=(x.Tier||'').trim();
         if(tier) giTierMap.set(g, tier);
+        const ktt=(x.KTT||'').trim();
+        if(ktt) giKttMap.set(g, ktt);
       });
   }catch(e){}
 
@@ -626,8 +640,10 @@ function getF(){
     usia: document.getElementById('f-usia').value,
     baykat: document.getElementById('f-bay-kat').value,
     tier: [...document.querySelectorAll('#tier-drop input:checked')].map(o=>o.value),
-    gk:   document.getElementById('f-gk').value,
-    q:    document.getElementById('f-q').value.trim().toLowerCase(),
+    gk:      document.getElementById('f-gk').value,
+    ktt:     document.getElementById('f-ktt').value,
+    q:       document.getElementById('f-q').value.trim().toLowerCase(),
+    rencana: document.getElementById('f-rencana').value.trim().toLowerCase(),
   };
 }
 
@@ -644,12 +660,15 @@ function applyFilters(){
   if(f.baykat) d=d.filter(r=>r._bayKat===f.baykat);
   if(f.tier.length) d=d.filter(r=>f.tier.includes(giTierMap.get((r.Gi||'').trim())));
   if(f.gk==='1') d=d.filter(r=>giKrit.has((r.Gi||'').trim()));
-  if(f.q)    d=d.filter(r=>
+  if(f.ktt==='1') d=d.filter(r=>giKttMap.has((r.Gi||'').trim()));
+  if(f.ktt==='0') d=d.filter(r=>!giKttMap.has((r.Gi||'').trim()));
+  if(f.q) d=d.filter(r=>
     (r.Bay||'').toLowerCase().includes(f.q)||
     (r['Serial Id']||'').toLowerCase().includes(f.q)||
     (r.Gi||'').toLowerCase().includes(f.q)||
     (r.Merek||'').toLowerCase().includes(f.q)
   );
+  if(f.rencana) d=d.filter(r=>(r.Rencana||'').toLowerCase().includes(f.rencana));
   if(tab==='critical') d=d.filter(r=>r._se==='CRITICAL');
   if(tab==='gi-krit')  d=d.filter(r=>giKrit.has((r.Gi||'').trim()));
 
@@ -659,12 +678,13 @@ function applyFilters(){
 }
 
 function resetFilters(){
-  ['f-upt','f-gi','f-teg','f-jenis','f-status','f-crit','f-usia','f-gk','f-bay-kat']
+  ['f-upt','f-gi','f-teg','f-jenis','f-status','f-crit','f-usia','f-gk','f-bay-kat','f-ktt']
     .forEach(id=>document.getElementById(id).value='');
   // clear multi-select tier
   document.querySelectorAll('#tier-drop input').forEach(cb=>cb.checked=false);
   updTierBtn();
   document.getElementById('f-q').value='';
+  document.getElementById('f-rencana').value='';
   buildGiOpts('');
   tab='all';
   document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('on',i===0));
@@ -956,18 +976,27 @@ function renderTable(){
 function giHtml(g){
   const isOpen=expGi.has(g.gi), krit=giKrit.has((g.gi||'').trim());
   const tier=giTierMap.get((g.gi||'').trim());
+  const ktt=giKttMap.get((g.gi||'').trim());
   const bw=Math.min(55,g.maxhi/300*55);
   const bc=g.maxhi>=150?'#ef4444':g.maxhi>=100?'#f59e0b':g.maxhi>=50?'#eab308':'#22c55e';
   // collect rencana from all MTU rows that have it
   const rencanaList=[...new Set(g.rows.map(r=>(r.Rencana||'').trim()).filter(v=>v&&v!=='nan'&&v!=='#N/A'))];
   const rencanaStr=rencanaList.slice(0,2).join(' | ')+(rencanaList.length>2?` (+${rencanaList.length-2})`:'');
+  // tooltip: nama GI + KTT + Tier + status kritikal
+  const ttParts=[g.gi||''];
+  if(ktt) ttParts.push(`KTT: ${ktt}`);
+  if(tier) ttParts.push(`Tier: ${tier}`);
+  if(krit) ttParts.push('★ GI Kritikal');
+  const tt=ttParts.join('\n');
   let h=`<tr class="row-gi">
     <td style="text-align:center;padding:7px 6px">
       <span class="exp-icon${isOpen?' open':''}" style="color:var(--accent)">▶</span>
     </td>
-    <td><span class="gi-tgl" onclick="tgGi('${e(g.gi).replace(/'/g,"\\'")}')">
-      ${krit?'<span class="gkd"></span>':''}<span class="giname" style="font-weight:600">${e(g.gi||'—')}</span>
-    </span>${tier?`<span class="badge" style="margin-left:6px;background:rgba(99,102,241,.12);color:#a5b4fc;border:1px solid rgba(99,102,241,.25);font-size:9px">T${e(tier)}</span>`:''}</td>
+    <td title="${e(tt)}" style="${ktt?'cursor:help':''}">
+      <span class="gi-tgl" onclick="tgGi('${e(g.gi).replace(/'/g,"\\'")}')">
+        ${krit?'<span class="gkd"></span>':''}<span class="giname" style="font-weight:600">${e(g.gi||'—')}</span>
+      </span>${tier?`<span class="badge" style="margin-left:6px;background:rgba(99,102,241,.12);color:#a5b4fc;border:1px solid rgba(99,102,241,.25);font-size:9px">T${e(tier)}</span>`:''}${ktt?`<span class="badge" style="margin-left:4px;background:rgba(20,184,166,.12);color:var(--tel);border:1px solid rgba(20,184,166,.25);font-size:9px" title="${e(ktt)}">KTT</span>`:''}
+    </td>
     <td><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">${g.kv||'—'}</span></td>
     <td>${critH(g.crit)}</td>
     <td style="font-size:11px;color:var(--text3)">${e((g.upt||'').replace('UPT ',''))}</td>
@@ -1098,6 +1127,7 @@ function pgRange(c,t){
 }
 
 let st_; document.getElementById('f-q').addEventListener('input',()=>{clearTimeout(st_);st_=setTimeout(applyFilters,300);});
+let st2_; document.getElementById('f-rencana').addEventListener('input',()=>{clearTimeout(st2_);st2_=setTimeout(applyFilters,300);});
 
 init().catch(err=>{document.getElementById('ltxt').textContent='Gagal: '+err.message;});
 </script>
