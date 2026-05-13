@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta http-equiv="refresh" content="900">
+<meta http-equiv="refresh" content="300">
 <title>Dashboard AHI MTU — UIT JBM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -14,14 +14,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 :root{
-  --bg:#0d0f12;--bg2:#13161b;--bg3:#1a1e25;--bg4:#22272f;
-  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
-  --text:#e8eaed;--text2:#8a9099;--text3:#555c66;
+  --bg:#1c1f23;--bg2:#23272d;--bg3:#2a2f38;--bg4:#323842;
+  --border:rgba(255,255,255,0.09);--border2:rgba(255,255,255,0.16);
+  --text:#f0f2f5;--text2:#a8b0bc;--text3:#6b7585;
   --accent:#3b82f6;--accent2:#1d4ed8;
-  --red:#ef4444;--red-bg:rgba(239,68,68,0.1);--red-bdr:rgba(239,68,68,0.25);
-  --amb:#f59e0b;--amb-bg:rgba(245,158,11,0.1);--amb-bdr:rgba(245,158,11,0.25);
+  --red:#ef4444;--red-bg:rgba(239,68,68,0.12);--red-bdr:rgba(239,68,68,0.3);
+  --amb:#f59e0b;--amb-bg:rgba(245,158,11,0.12);--amb-bdr:rgba(245,158,11,0.3);
   --yel:#eab308;
-  --grn:#22c55e;--grn-bg:rgba(34,197,94,0.1);--grn-bdr:rgba(34,197,94,0.25);
+  --grn:#22c55e;--grn-bg:rgba(34,197,94,0.12);--grn-bdr:rgba(34,197,94,0.3);
   --tel:#14b8a6;--pur:#a78bfa;
   --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;
   --r:8px;--rl:12px;
@@ -244,11 +244,18 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
     </div>
     <div class="fg">
       <span class="fl">Status Hi</span>
-      <select class="fs" id="f-status" onchange="applyFilters()">
-        <option value="">Semua</option>
-        <option>CRITICAL</option><option>POOR</option><option>FAIR</option>
-        <option>GOOD</option><option>VERY GOOD</option>
-      </select>
+      <div class="ms-wrap" id="status-wrap">
+        <button type="button" class="ms-btn" id="status-btn" onclick="toggleStatusDrop(event)">Semua Status</button>
+        <div class="ms-dropdown" id="status-drop">
+          <div class="ms-item" data-value="CRITICAL" onclick="msItemClick(this,'status')"><input type="checkbox" value="CRITICAL" id="sc-cr"><label for="sc-cr" style="cursor:pointer;flex:1;color:#ef4444">CRITICAL</label></div>
+          <div class="ms-item" data-value="POOR"     onclick="msItemClick(this,'status')"><input type="checkbox" value="POOR"     id="sc-po"><label for="sc-po" style="cursor:pointer;flex:1;color:#f59e0b">POOR</label></div>
+          <div class="ms-item" data-value="FAIR"     onclick="msItemClick(this,'status')"><input type="checkbox" value="FAIR"     id="sc-fa"><label for="sc-fa" style="cursor:pointer;flex:1;color:#eab308">FAIR</label></div>
+          <div class="ms-item" data-value="GOOD"     onclick="msItemClick(this,'status')"><input type="checkbox" value="GOOD"     id="sc-go"><label for="sc-go" style="cursor:pointer;flex:1;color:#22c55e">GOOD</label></div>
+          <div class="ms-item" data-value="VERY GOOD" onclick="msItemClick(this,'status')"><input type="checkbox" value="VERY GOOD" id="sc-vg"><label for="sc-vg" style="cursor:pointer;flex:1;color:#14b8a6">VERY GOOD</label></div>
+          <div class="ms-divider"></div>
+          <div class="ms-clear" onclick="clearStatus()">Hapus pilihan</div>
+        </div>
+      </div>
     </div>
     <div class="fg">
       <span class="fl">Criticality GI</span>
@@ -441,6 +448,32 @@ function katBay(b){
   return 'LAINNYA';
 }
 
+function toggleStatusDrop(e){
+  e.stopPropagation();
+  document.getElementById('status-drop').classList.toggle('open');
+  document.getElementById('status-btn').classList.toggle('open');
+}
+function updStatusBtn(){
+  const checked=[...document.querySelectorAll('#status-drop input:checked')];
+  const btn=document.getElementById('status-btn');
+  if(!checked.length) btn.textContent='Semua Status';
+  else if(checked.length===1) btn.textContent=checked[0].value;
+  else btn.textContent=`${checked.length} Status dipilih`;
+}
+function clearStatus(){
+  document.querySelectorAll('#status-drop input').forEach(cb=>cb.checked=false);
+  updStatusBtn(); applyFilters();
+  document.getElementById('status-drop').classList.remove('open');
+  document.getElementById('status-btn').classList.remove('open');
+}
+function msItemClick(item,id){
+  if(event.target.tagName!=='INPUT'&&event.target.tagName!=='LABEL'){
+    const cb=item.querySelector('input'); cb.checked=!cb.checked;
+  }
+  if(id==='tier') updTierBtn(); else if(id==='status') updStatusBtn();
+  applyFilters();
+}
+
 function toggleTierDrop(e){
   e.stopPropagation();
   const drop=document.getElementById('tier-drop');
@@ -466,6 +499,10 @@ document.addEventListener('click',e=>{
   if(!document.getElementById('tier-wrap').contains(e.target)){
     document.getElementById('tier-drop').classList.remove('open');
     document.getElementById('tier-btn').classList.remove('open');
+  }
+  if(document.getElementById('status-wrap')&&!document.getElementById('status-wrap').contains(e.target)){
+    document.getElementById('status-drop').classList.remove('open');
+    document.getElementById('status-btn').classList.remove('open');
   }
 });
 
@@ -635,7 +672,7 @@ function getF(){
     gi:   document.getElementById('f-gi').value,
     teg:  document.getElementById('f-teg').value,
     jen:  document.getElementById('f-jenis').value,
-    sta:  document.getElementById('f-status').value,
+    sta:  [...document.querySelectorAll('#status-drop input:checked')].map(o=>o.value),
     crit: document.getElementById('f-crit').value,
     usia: document.getElementById('f-usia').value,
     baykat: document.getElementById('f-bay-kat').value,
@@ -654,7 +691,7 @@ function applyFilters(){
   if(f.gi)   d=d.filter(r=>r.Gi===f.gi);
   if(f.teg)  d=d.filter(r=>r._kv==+f.teg);
   if(f.jen)  d=d.filter(r=>r['#']===f.jen);
-  if(f.sta)  d=d.filter(r=>r._se===f.sta.toUpperCase());
+  if(f.sta.length) d=d.filter(r=>f.sta.includes(r._se));
   if(f.crit) d=d.filter(r=>(r['Criticality Gi']||'').toUpperCase().includes(f.crit.toUpperCase()));
   if(f.usia) d=d.filter(r=>(r['Status Usia']||'').toUpperCase()===f.usia.toUpperCase());
   if(f.baykat) d=d.filter(r=>r._bayKat===f.baykat);
@@ -678,11 +715,10 @@ function applyFilters(){
 }
 
 function resetFilters(){
-  ['f-upt','f-gi','f-teg','f-jenis','f-status','f-crit','f-usia','f-gk','f-bay-kat','f-ktt']
+  ['f-upt','f-gi','f-teg','f-jenis','f-crit','f-usia','f-gk','f-bay-kat','f-ktt']
     .forEach(id=>document.getElementById(id).value='');
-  // clear multi-select tier
-  document.querySelectorAll('#tier-drop input').forEach(cb=>cb.checked=false);
-  updTierBtn();
+  document.querySelectorAll('#tier-drop input,#status-drop input').forEach(cb=>cb.checked=false);
+  updTierBtn(); updStatusBtn();
   document.getElementById('f-q').value='';
   document.getElementById('f-rencana').value='';
   buildGiOpts('');
