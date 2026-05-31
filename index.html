@@ -12,6 +12,8 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js" onerror="console.log('config.js tidak ditemukan, pakai modal setup')"></script>
 <style>
 :root{
   --bg:#1c1f23;--bg2:#23272d;--bg3:#2a2f38;--bg4:#323842;
@@ -125,6 +127,45 @@ tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
 tbody tr:hover{background:rgba(255,255,255,0.02)}
 tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
 
+/* EDIT BUTTON & MODAL */
+.edit-btn{background:transparent;border:1px solid var(--border2);color:var(--text3);width:22px;height:22px;border-radius:5px;cursor:pointer;font-size:11px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;padding:0}
+.edit-btn:hover{color:var(--accent);border-color:var(--accent);background:rgba(59,130,246,.1)}
+.row-mtu:hover .edit-btn{color:var(--text2)}
+.edit-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9998;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+.edit-overlay.open{display:flex}
+.edit-modal{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.6)}
+.edit-head{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.edit-head-title{font-size:15px;font-weight:600;color:var(--text)}
+.edit-head-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+.edit-close{background:transparent;border:none;color:var(--text3);font-size:20px;cursor:pointer;padding:0;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:5px}
+.edit-close:hover{background:var(--bg3);color:var(--text)}
+.edit-body{padding:18px 22px;overflow-y:auto;flex:1}
+.edit-section{margin-bottom:16px}
+.edit-section-title{font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.edit-field{margin-bottom:10px}
+.edit-field.full{grid-column:1 / -1}
+.edit-label{display:block;font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.edit-input,.edit-select,.edit-textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:8px 10px;border-radius:6px;font-family:var(--font);font-size:12px;outline:none;transition:border-color .15s}
+.edit-input:focus,.edit-select:focus,.edit-textarea:focus{border-color:var(--accent)}
+.edit-input[readonly]{background:var(--bg);color:var(--text3);cursor:not-allowed}
+.edit-textarea{resize:vertical;min-height:60px;font-family:var(--font)}
+.edit-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.edit-status{font-family:var(--mono);font-size:11px;color:var(--text3)}
+.edit-status.ok{color:var(--grn)}
+.edit-status.err{color:var(--red)}
+.edit-btns{display:flex;gap:8px}
+.btn-cancel{padding:8px 14px;background:transparent;border:1px solid var(--border2);color:var(--text2);border-radius:6px;font-family:var(--font);font-size:12px;cursor:pointer}
+.btn-cancel:hover{background:var(--bg3)}
+.btn-save{padding:8px 18px;background:var(--accent);border:none;color:#fff;border-radius:6px;font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer}
+.btn-save:hover{background:var(--accent2)}
+.btn-save:disabled{opacity:.5;cursor:not-allowed}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:12px 18px;font-size:12px;font-family:var(--mono);z-index:10000;box-shadow:0 8px 24px rgba(0,0,0,0.5);display:none;align-items:center;gap:10px}
+.toast.show{display:flex;animation:tslide .3s ease}
+.toast.ok{border-color:var(--grn);color:var(--grn)}
+.toast.err{border-color:var(--red);color:var(--red)}
+@keyframes tslide{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+
 /* GI / BAY / MTU rows */
 .row-gi td:nth-child(2){color:var(--text);font-weight:600}
 .row-bay td:nth-child(2){padding-left:28px;color:var(--text);font-weight:500}
@@ -186,6 +227,212 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
 </head>
 <body>
 
+<!-- AUDIT LOG MODAL -->
+<div class="edit-overlay" id="auditOverlay">
+  <div class="edit-modal" style="max-width:1000px;max-height:90vh">
+    <div class="edit-head">
+      <div>
+        <div class="edit-head-title">📜 Audit Log</div>
+        <div class="edit-head-sub" id="auditSubtitle">Riwayat perubahan data</div>
+      </div>
+      <button class="edit-close" id="auditCloseBtn">✕</button>
+    </div>
+    <div class="edit-body" style="padding:0">
+
+      <div style="padding:14px 22px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <select id="auditFilterAction" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:6px 10px;border-radius:6px;font-family:var(--font);font-size:12px;outline:none">
+          <option value="">Semua Aksi</option>
+          <option value="edit_mtu">Edit MTU</option>
+          <option value="upload_csv">Upload CSV</option>
+        </select>
+        <input type="text" id="auditFilterUser" placeholder="Filter username..." style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:6px 10px;border-radius:6px;font-family:var(--mono);font-size:12px;outline:none;width:160px">
+        <button id="auditRefreshBtn" style="background:var(--accent);border:none;color:#fff;padding:6px 14px;border-radius:6px;font-family:var(--font);font-size:12px;cursor:pointer">↻ Refresh</button>
+        <span id="auditCount" style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--text3)">—</span>
+      </div>
+
+      <div style="overflow-x:auto;max-height:60vh">
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead style="background:var(--bg3);position:sticky;top:0;z-index:5">
+            <tr>
+              <th style="padding:9px 12px;text-align:left;font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)">Waktu</th>
+              <th style="padding:9px 12px;text-align:left;font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)">User</th>
+              <th style="padding:9px 12px;text-align:left;font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)">Aksi</th>
+              <th style="padding:9px 12px;text-align:left;font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)">Target</th>
+              <th style="padding:9px 12px;text-align:left;font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)">Detail</th>
+              <th style="padding:9px 12px;text-align:right;font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)">Rows</th>
+            </tr>
+          </thead>
+          <tbody id="auditBody">
+            <tr><td colspan="6" style="padding:40px;text-align:center;color:var(--text3);font-family:var(--mono)">Memuat...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+    <div class="edit-foot">
+      <span class="edit-status" id="auditStatus"></span>
+      <button class="btn-cancel" id="auditCloseBtn2">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN MODAL -->
+<div id="loginOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:10000;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:32px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.6);position:relative">
+    <button id="loginCloseBtn" title="Tutup" style="position:absolute;top:14px;right:14px;background:transparent;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:5px">✕</button>
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-family:var(--mono);font-size:12px;color:var(--accent);letter-spacing:.1em;margin-bottom:8px">AHI · MTU · UIT JBM</div>
+      <h2 style="font-size:20px;font-weight:600;color:var(--text);margin-bottom:6px">Login Dashboard</h2>
+      <p style="font-size:12px;color:var(--text3);font-family:var(--mono)">Login diperlukan untuk edit data</p>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Username</label>
+      <input type="text" id="loginUser" placeholder="admin" autocomplete="username" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none">
+    </div>
+    <div style="margin-bottom:8px">
+      <label style="display:block;font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Password</label>
+      <input type="password" id="loginPwd" placeholder="••••••••" autocomplete="current-password" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none">
+    </div>
+    <div id="loginError" style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:8px 12px;margin:12px 0;font-family:var(--mono);font-size:11px;color:var(--red)"></div>
+    <button id="loginSubmitBtn" style="width:100%;padding:11px;background:var(--accent);border:none;color:#fff;border-radius:7px;font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;margin-top:14px">Login</button>
+    <div style="text-align:center;margin-top:18px;font-family:var(--mono);font-size:10px;color:var(--text3)">
+      Tidak punya akun? Hubungi admin.
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MTU MODAL -->
+<div class="edit-overlay" id="editOverlay">
+  <div class="edit-modal">
+    <div class="edit-head">
+      <div>
+        <div class="edit-head-title">Edit Data MTU</div>
+        <div class="edit-head-sub" id="editSubtitle">—</div>
+      </div>
+      <button class="edit-close" id="editCloseBtn">✕</button>
+    </div>
+    <div class="edit-body">
+
+      <div class="edit-section">
+        <div class="edit-section-title">📋 Identitas (read-only)</div>
+        <div class="edit-grid">
+          <div class="edit-field"><label class="edit-label">GI</label><input type="text" class="edit-input" id="eGi" readonly></div>
+          <div class="edit-field"><label class="edit-label">Bay</label><input type="text" class="edit-input" id="eBay" readonly></div>
+          <div class="edit-field"><label class="edit-label">Tipe (#)</label><input type="text" class="edit-input" id="eTipe" readonly></div>
+          <div class="edit-field"><label class="edit-label">Serial Id</label><input type="text" class="edit-input" id="eSerial" readonly></div>
+          <div class="edit-field"><label class="edit-label">Merek</label><input type="text" class="edit-input" id="eMerek" readonly></div>
+          <div class="edit-field"><label class="edit-label">Tipe Detail</label><input type="text" class="edit-input" id="eTipeD" readonly></div>
+        </div>
+      </div>
+
+      <div class="edit-section">
+        <div class="edit-section-title">⚡ Data Operasional</div>
+        <div class="edit-grid">
+          <div class="edit-field">
+            <label class="edit-label">Status Hi</label>
+            <select class="edit-select" id="eStatusHi">
+              <option value="">—</option>
+              <option value="CRITICAL">CRITICAL</option>
+              <option value="POOR">POOR</option>
+              <option value="FAIR">FAIR</option>
+              <option value="GOOD">GOOD</option>
+              <option value="VERY GOOD">VERY GOOD</option>
+            </select>
+          </div>
+          <div class="edit-field"><label class="edit-label">Nilai Hi</label><input type="number" class="edit-input" id="eNilaiHi" step="0.01"></div>
+          <div class="edit-field full">
+            <label class="edit-label">Justifikasi Prioritas</label>
+            <textarea class="edit-textarea" id="eJust" rows="2"></textarea>
+          </div>
+          <div class="edit-field full">
+            <label class="edit-label">Rencana</label>
+            <textarea class="edit-textarea" id="eRencana" rows="3"></textarea>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="edit-foot">
+      <span class="edit-status" id="editStatus"></span>
+      <div class="edit-btns">
+        <button class="btn-cancel" id="editCancelBtn">Batal</button>
+        <button class="btn-save" id="editSaveBtn">Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- UPLOAD CSV MODAL -->
+<div class="edit-overlay" id="uploadOverlay">
+  <div class="edit-modal" style="max-width:520px">
+    <div class="edit-head">
+      <div>
+        <div class="edit-head-title">↑ Upload CSV ke Database</div>
+        <div class="edit-head-sub">Tabel: AHI_MTU</div>
+      </div>
+      <button class="edit-close" id="uploadCloseBtn">✕</button>
+    </div>
+    <div class="edit-body">
+
+      <div class="edit-section">
+        <div class="edit-section-title">📁 File CSV</div>
+        <div class="edit-field">
+          <label class="edit-label">Pilih file</label>
+          <input type="file" id="uploadFile" accept=".csv" style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:8px 10px;border-radius:6px;font-size:12px">
+        </div>
+        <div id="uploadFileInfo" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text2)"></div>
+      </div>
+
+      <div class="edit-section">
+        <div class="edit-section-title">⚙️ Mode Upload</div>
+        <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.25);border-radius:6px;padding:12px">
+          <div style="font-size:12px;color:var(--red);font-weight:500;margin-bottom:4px">⚠️ Ganti Semua (Replace All)</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.5">Semua data lama di tabel <b>AHI_MTU</b> akan <b style="color:var(--red)">DIHAPUS</b>, lalu diganti dengan data dari CSV.</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:6px;font-family:var(--mono)">⛔ Aksi ini tidak bisa di-undo</div>
+        </div>
+      </div>
+
+      <div id="uploadProgress" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;margin-top:8px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-family:var(--mono);font-size:11px;color:var(--text2)" id="uploadProgressText">Memproses...</span><span style="font-family:var(--mono);font-size:11px;color:var(--accent)" id="uploadProgressPct">0%</span></div>
+        <div style="height:6px;background:var(--bg);border-radius:3px;overflow:hidden"><div id="uploadProgressBar" style="height:100%;background:var(--accent);width:0%;transition:width .3s"></div></div>
+      </div>
+
+    </div>
+    <div class="edit-foot">
+      <span class="edit-status" id="uploadStatus"></span>
+      <div class="edit-btns">
+        <button class="btn-cancel" id="uploadCancelBtn">Batal</button>
+        <button class="btn-save" id="uploadSubmitBtn">Upload</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUPABASE CONFIG MODAL -->
+<div id="sbConfigModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:28px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.6)">
+    <div style="margin-bottom:18px">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.05em;margin-bottom:6px">SUPABASE CONFIG</div>
+      <h2 style="font-size:18px;font-weight:600;color:var(--text);margin-bottom:6px">Koneksi Database</h2>
+      <p style="font-size:12px;color:var(--text3);font-family:var(--mono)">Isi kredensial Supabase untuk memuat data</p>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Project URL</label>
+      <input type="text" id="sbUrlInput" placeholder="https://xxxxxxxx.supabase.co" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none">
+    </div>
+    <div style="margin-bottom:18px">
+      <label style="display:block;font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Anon Key</label>
+      <input type="password" id="sbKeyInput" placeholder="eyJhbGci..." style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:10px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none">
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button id="sbCancelBtn" style="padding:8px 16px;background:transparent;border:1px solid var(--border2);color:var(--text2);border-radius:7px;font-family:var(--font);font-size:12px;cursor:pointer">Batal</button>
+      <button id="sbSaveBtn" style="padding:8px 18px;background:var(--accent);border:none;color:#fff;border-radius:7px;font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer">Simpan & Load</button>
+    </div>
+  </div>
+</div>
+
 <div class="lov" id="loading">
   <div class="llogo">AHI · MTU</div>
   <div style="width:220px">
@@ -206,6 +453,16 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
   <div class="tright">
     <span id="last-update">—</span>
     <div id="gkbadge"><span class="bdot"></span><span id="gkn">0</span> GI Kritikal</div>
+    <div id="userBadge" style="display:none;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border2);padding:4px 10px;border-radius:20px;font-family:var(--mono);font-size:11px;color:var(--text2)">
+      <span id="userName">—</span>
+      <span id="userRole" style="background:var(--accent);color:#fff;padding:1px 7px;border-radius:10px;font-size:9px;text-transform:uppercase">—</span>
+    </div>
+    <button id="downloadBtn" title="Download data CSV" style="background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">↓ CSV</button>
+    <button id="uploadBtn" title="Upload CSV (admin only)" style="display:none;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">↑ Upload</button>
+    <button id="auditBtn" title="Audit Log (admin only)" style="display:none;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">📜 Log</button>
+    <button id="sbSettingBtn" title="Pengaturan Supabase" style="background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">⚙ DB</button>
+    <button id="loginBtn" title="Login untuk edit data" style="background:var(--accent);border:1px solid var(--accent);color:#fff;padding:5px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer;font-weight:500">🔐 Login</button>
+    <button id="logoutBtn" title="Logout" style="display:none;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">🚪 Logout</button>
   </div>
 </header>
 
@@ -414,7 +671,7 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
 </main>
 
 <script>
-const CSV_AHI='AHI_MTU.csv', CSV_KRIT='gi_referensi.csv';
+const SB_TABLE_AHI='AHI_MTU', SB_TABLE_REF='gi_referensi';
 const PAGE=40, YR=new Date().getFullYear();
 const VALID_PFX=['GI ','GIS ','GITET ','GISTET '];
 const ST_ORD={'CRITICAL':0,'POOR':1,'FAIR':2,'GOOD':3,'VERY GOOD':4};
@@ -431,6 +688,11 @@ const USIA_BUCKETS=[
 let raw=[], giKrit=new Set(), giTierMap=new Map(), giKttMap=new Map(), filtered=[], giGroups=[];
 let page=1, scol='maxhi', sdir='desc', tab='all';
 let expGi=new Set(), expBay=new Set(), charts={};
+let sbDb=null, editingIdx=-1;
+
+// ── AUTH STATE ───────────────────────────────────────────────────────────────
+const AUTH_DOMAIN = '@ahi-mtu.local';
+let currentUser = null, currentRole = null;
 
 // ── KATEGORISASI BAY ─────────────────────────────────────────────────────────
 function katBay(b){
@@ -507,52 +769,98 @@ document.addEventListener('click',e=>{
 });
 
 async function init(){
-  setP(5,'Memuat GI kritikal...');
-  try{
-    const r=await fetch(CSV_KRIT);
-    Papa.parse(await r.text(),{header:true,skipEmptyLines:true})
-      .data.forEach(x=>{
-        const g=(x.Gi||x.gi||'').trim();
-        if(!g) return;
-        if((x.Kritikal||'').trim()==='Ya') giKrit.add(g);
-        const tier=(x.Tier||'').trim();
-        if(tier) giTierMap.set(g, tier);
-        const ktt=(x.KTT||'').trim();
-        if(ktt) giKttMap.set(g, ktt);
-      });
-  }catch(e){}
-
-  setP(15,'Mengunduh data MTU...');
-
-  // Fetch with progress tracking
-  const resp = await fetch(CSV_AHI);
-  const contentLen = +resp.headers.get('Content-Length') || 0;
-  let received = 0;
-  const chunks = [];
-  const reader = resp.body.getReader();
-  while(true){
-    const {done, value} = await reader.read();
-    if(done) break;
-    chunks.push(value);
-    received += value.length;
-    if(contentLen){
-      const pct = Math.min(75, 15 + Math.round((received/contentLen)*60));
-      setP(pct, `Mengunduh... ${Math.round(received/1024)} KB`);
-    }
+  // Priority: config.js → localStorage → modal setup
+  let sbUrl, sbKey, usingConfigJs = false;
+  
+  // 1. Coba dari config.js (jika ada window.SUPABASE_URL)
+  if(typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_ANON_KEY !== 'undefined' 
+     && SUPABASE_URL && SUPABASE_ANON_KEY 
+     && !SUPABASE_URL.includes('xxxxxxxx')){
+    sbUrl = SUPABASE_URL;
+    sbKey = SUPABASE_ANON_KEY;
+    usingConfigJs = true;
+    // Sembunyikan tombol ⚙ DB karena tidak perlu lagi
+    document.getElementById('sbSettingBtn').style.display = 'none';
+  } else {
+    // 2. Fallback ke localStorage
+    sbUrl = localStorage.getItem('sb_url');
+    sbKey = localStorage.getItem('sb_key');
   }
-  setP(78,'Parsing CSV...');
+  
+  // 3. Kalau tetap kosong, buka modal setup
+  if(!sbUrl || !sbKey){
+    document.getElementById('loading').style.display='none';
+    openSbConfig();
+    return;
+  }
 
-  // Decode and parse
-  const blob = new Blob(chunks);
-  const text = await blob.text();
+  let db;
+  try{
+    db = supabase.createClient(sbUrl, sbKey);
+    sbDb = db;
+  }catch(e){
+    setP(0,'URL Supabase tidak valid');
+    throw new Error('URL Supabase tidak valid: '+e.message);
+  }
 
-  setP(85,'Memproses data...');
-  const parsed = Papa.parse(text,{header:true,skipEmptyLines:true,dynamicTyping:false});
+  // ── AUTH CHECK (optional - public view enabled) ────────────────────────────
+  setP(2,'Memeriksa sesi login...');
+  const sessionRes = await db.auth.getSession();
+  if(sessionRes.data.session){
+    currentUser = sessionRes.data.session.user;
+    setP(4,'Memuat role user...');
+    await loadUserRole();
+  }else{
+    currentUser = null;
+    currentRole = null; // guest - read only
+  }
+  showUserBadge();
 
-  raw = parsed.data.filter(r=>{
-    const gi=(r.Gi||'').trim();
-    return gi && VALID_PFX.some(px=>gi.startsWith(px));
-  });
+  // Load gi_referensi (small table, single fetch)
+  setP(5,'Memuat GI referensi dari Supabase...');
+  try{
+    const refRes = await db.from(SB_TABLE_REF).select('*');
+    if(refRes.error) throw new Error('gi_referensi: '+refRes.error.message);
+    (refRes.data||[]).forEach(x=>{
+      const g=(x.Gi||x.gi||'').trim();
+      if(!g) return;
+      if((x.Kritikal||'').trim()==='Ya') giKrit.add(g);
+      const tier=(x.Tier||'').toString().trim();
+      if(tier) giTierMap.set(g, tier);
+      const ktt=(x.KTT||'').trim();
+      if(ktt) giKttMap.set(g, ktt);
+    });
+  }catch(e){
+    console.warn('gi_referensi error:',e.message);
+  }
+
+  // Load AHI_MTU with chunking (handles >1000 rows)
+  setP(10,'Menghitung jumlah data MTU...');
+  const countRes = await db.from(SB_TABLE_AHI).select('*',{count:'exact',head:true});
+  if(countRes.error) throw new Error('AHI_MTU count: '+countRes.error.message);
+  const totalCount = countRes.count || 0;
+
+  if(totalCount === 0){
+    raw=[];
+    setP(96,'Data kosong...');
+  }else{
+    const CHUNK=1000;
+    const totalChunks=Math.ceil(totalCount/CHUNK);
+    let allRows=[];
+    for(let i=0;i<totalChunks;i++){
+      const from=i*CHUNK, to=Math.min((i+1)*CHUNK-1,totalCount-1);
+      const pct=15+Math.round((i/totalChunks)*60);
+      setP(pct,`Mengunduh MTU... ${allRows.length.toLocaleString()}/${totalCount.toLocaleString()}`);
+      const r=await db.from(SB_TABLE_AHI).select('*').range(from,to);
+      if(r.error) throw new Error('AHI_MTU chunk '+(i+1)+': '+r.error.message);
+      allRows=allRows.concat(r.data||[]);
+    }
+    setP(78,'Memproses data...');
+    raw = allRows.filter(r=>{
+      const gi=(r.Gi||'').trim();
+      return gi && VALID_PFX.some(px=>gi.startsWith(px));
+    });
+  }
 
   setP(92,'Menghitung nilai...');
   raw.forEach(r=>{
@@ -1087,8 +1395,12 @@ function mtuH(r){
   const bc=hi>=150?'#ef4444':hi>=100?'#f59e0b':hi>=50?'#eab308':'#22c55e';
   const ren=(r.Rencana||'').trim();
   const renClean=(ren==='nan'||ren==='#N/A')?'':ren;
+  const rowIdx = raw.indexOf(r);
+  const canEdit = ['admin','editor'].includes(currentRole);
   return `<tr class="row-mtu">
-    <td></td>
+    <td style="text-align:center;padding:6px 6px">
+      ${canEdit ? `<button class="edit-btn" onclick="openEditMtu(${rowIdx})" title="Edit data MTU">✎</button>` : ''}
+    </td>
     <td style="padding-left:52px"><span class="badge" style="background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.2);font-size:9px">${e(r['#']||'—')}</span></td>
     <td style="color:var(--text2)">${e(r.Merek||'—')} <span style="color:var(--text3);font-size:10px">${e(r.Tipe||'')}</span></td>
     <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${r.Phasa||'—'}</td>
@@ -1165,7 +1477,609 @@ function pgRange(c,t){
 let st_; document.getElementById('f-q').addEventListener('input',()=>{clearTimeout(st_);st_=setTimeout(applyFilters,300);});
 let st2_; document.getElementById('f-rencana').addEventListener('input',()=>{clearTimeout(st2_);st2_=setTimeout(applyFilters,300);});
 
-init().catch(err=>{document.getElementById('ltxt').textContent='Gagal: '+err.message;});
+// ── SUPABASE CONFIG HANDLERS ─────────────────────────────────────────────────
+function openSbConfig(){
+  document.getElementById('sbUrlInput').value = localStorage.getItem('sb_url') || '';
+  document.getElementById('sbKeyInput').value = localStorage.getItem('sb_key') || '';
+  document.getElementById('sbConfigModal').style.display = 'flex';
+}
+function closeSbConfig(){
+  document.getElementById('sbConfigModal').style.display = 'none';
+}
+document.getElementById('sbSettingBtn').addEventListener('click',openSbConfig);
+document.getElementById('sbCancelBtn').addEventListener('click',closeSbConfig);
+document.getElementById('sbSaveBtn').addEventListener('click',()=>{
+  const url=document.getElementById('sbUrlInput').value.trim();
+  const key=document.getElementById('sbKeyInput').value.trim();
+  if(!url||!key){alert('URL dan Key wajib diisi!');return;}
+  localStorage.setItem('sb_url',url);
+  localStorage.setItem('sb_key',key);
+  closeSbConfig();
+  location.reload();
+});
+
+// ── EDIT MTU HANDLERS ────────────────────────────────────────────────────────
+function openEditMtu(idx){
+  if(idx<0||idx>=raw.length) return;
+  const r = raw[idx];
+  editingIdx = idx;
+
+  document.getElementById('editSubtitle').textContent =
+    (r.Gi||'—') + ' › ' + (r.Bay||'—') + ' › ' + (r['#']||'—');
+
+  // Read-only fields
+  document.getElementById('eGi').value = r.Gi||'';
+  document.getElementById('eBay').value = r.Bay||'';
+  document.getElementById('eTipe').value = r['#']||'';
+  document.getElementById('eSerial').value = r['Serial Id']||'';
+  document.getElementById('eMerek').value = r.Merek||'';
+  document.getElementById('eTipeD').value = r.Tipe||'';
+
+  // Editable fields
+  document.getElementById('eStatusHi').value = (r['Status Hi']||'').toUpperCase().trim();
+  document.getElementById('eNilaiHi').value = r['Nilai Hi']||'';
+  document.getElementById('eJust').value = r['Justifikasi Prioritas']||'';
+  document.getElementById('eRencana').value = r.Rencana||'';
+
+  document.getElementById('editStatus').textContent = '';
+  document.getElementById('editStatus').className = 'edit-status';
+  document.getElementById('editSaveBtn').disabled = false;
+  document.getElementById('editOverlay').classList.add('open');
+}
+
+function closeEditMtu(){
+  document.getElementById('editOverlay').classList.remove('open');
+  editingIdx = -1;
+}
+
+function showToast(msg, type){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show '+(type||'ok');
+  setTimeout(()=>{t.classList.remove('show');},3000);
+}
+
+async function saveEditMtu(){
+  if(editingIdx<0) return;
+  const r = raw[editingIdx];
+  if(!sbDb){ alert('Database belum terhubung'); return; }
+
+  // Auth check via role
+  if(!['admin','editor'].includes(currentRole)){
+    document.getElementById('editStatus').textContent = '✗ Akses ditolak. Role: '+(currentRole||'guest');
+    document.getElementById('editStatus').className = 'edit-status err';
+    return;
+  }
+
+  // Need an identifier - try id first, fall back to Serial Id
+  const hasId = r.id !== undefined && r.id !== null;
+  if(!hasId && !r['Serial Id']){
+    alert('Baris ini tidak punya id atau Serial Id - tidak bisa diupdate');
+    return;
+  }
+
+  const updates = {
+    'Status Hi': document.getElementById('eStatusHi').value,
+    'Nilai Hi': document.getElementById('eNilaiHi').value || null,
+    'Justifikasi Prioritas': document.getElementById('eJust').value,
+    'Rencana': document.getElementById('eRencana').value
+  };
+
+  // Snapshot old values for audit
+  const oldData = {
+    Gi: r.Gi, Bay: r.Bay, 'Serial Id': r['Serial Id'],
+    'Status Hi': r['Status Hi'],
+    'Nilai Hi': r['Nilai Hi'],
+    'Justifikasi Prioritas': r['Justifikasi Prioritas'],
+    'Rencana': r.Rencana
+  };
+
+  // Track changes (hanya yang berubah)
+  const changes = {};
+  ['Status Hi','Nilai Hi','Justifikasi Prioritas','Rencana'].forEach(f=>{
+    const ov = String(oldData[f]||'').trim();
+    const nv = String(updates[f]||'').trim();
+    if(ov !== nv) changes[f] = {from: oldData[f], to: updates[f]};
+  });
+
+  const statusEl = document.getElementById('editStatus');
+  const saveBtn = document.getElementById('editSaveBtn');
+  statusEl.textContent = '⏳ Menyimpan...';
+  statusEl.className = 'edit-status';
+  saveBtn.disabled = true;
+
+  try{
+    const query = sbDb.from(SB_TABLE_AHI).update(updates);
+    const filtered = hasId ? query.eq('id', r.id) : query.eq('Serial Id', r['Serial Id']);
+    const result = await filtered.select();
+
+    if(result.error) throw result.error;
+    if(!result.data || result.data.length===0){
+      throw new Error('Tidak ada baris yang terupdate (cek RLS policy untuk UPDATE)');
+    }
+
+    // Update local data
+    Object.assign(r, updates);
+    // Recompute derived values
+    r._so = (r['Status Hi']||'').toUpperCase().trim();
+    r._se = r._so;
+    r._adj = false;
+
+    // Log audit (silent - jangan ganggu UX kalau gagal)
+    logAudit('edit_mtu', {
+      target: (oldData.Gi||'—')+' › '+(oldData.Bay||'—')+' › '+(oldData['Serial Id']||'—'),
+      changes: changes,
+      rows: 1
+    }).catch(e=>console.warn('Audit log gagal:',e.message));
+
+    statusEl.textContent = '✓ Berhasil disimpan';
+    statusEl.className = 'edit-status ok';
+    showToast('✓ Data berhasil diperbarui di database','ok');
+
+    // Re-render
+    applyFilters();
+
+    setTimeout(closeEditMtu, 800);
+  }catch(err){
+    statusEl.textContent = '✗ '+err.message;
+    statusEl.className = 'edit-status err';
+    saveBtn.disabled = false;
+    showToast('✗ Gagal: '+err.message,'err');
+  }
+}
+
+document.getElementById('editCloseBtn').addEventListener('click',closeEditMtu);
+document.getElementById('editCancelBtn').addEventListener('click',closeEditMtu);
+document.getElementById('editSaveBtn').addEventListener('click',saveEditMtu);
+document.getElementById('editOverlay').addEventListener('click',(e)=>{
+  if(e.target.id==='editOverlay') closeEditMtu();
+});
+
+// ── DOWNLOAD CSV ─────────────────────────────────────────────────────────────
+function downloadCSV(){
+  if(!raw || raw.length===0){ showToast('Tidak ada data untuk didownload','err'); return; }
+
+  // Strip internal fields (yang diawali _)
+  const cleanData = raw.map(r=>{
+    const obj = {};
+    Object.keys(r).forEach(k=>{
+      if(!k.startsWith('_')) obj[k] = r[k];
+    });
+    return obj;
+  });
+
+  const csv = Papa.unparse(cleanData);
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  // Format: AHI_MTU_2026-05-31_14-30-45.csv
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const ts = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+  a.href = url;
+  a.download = `AHI_MTU_${ts}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`✓ Download ${cleanData.length} baris`,'ok');
+}
+document.getElementById('downloadBtn').addEventListener('click',downloadCSV);
+
+// ── UPLOAD CSV ───────────────────────────────────────────────────────────────
+let uploadedRows = null;
+
+function openUploadModal(){
+  if(currentRole !== 'admin'){
+    showToast('Hanya admin yang bisa upload data','err');
+    return;
+  }
+  document.getElementById('uploadFile').value = '';
+  document.getElementById('uploadFileInfo').style.display = 'none';
+  document.getElementById('uploadProgress').style.display = 'none';
+  document.getElementById('uploadStatus').textContent = '';
+  document.getElementById('uploadStatus').className = 'edit-status';
+  document.getElementById('uploadSubmitBtn').disabled = false;
+  document.getElementById('uploadSubmitBtn').textContent = 'Upload';
+  uploadedRows = null;
+  document.getElementById('uploadOverlay').classList.add('open');
+}
+function closeUploadModal(){
+  document.getElementById('uploadOverlay').classList.remove('open');
+}
+
+document.getElementById('uploadBtn').addEventListener('click',openUploadModal);
+document.getElementById('uploadCloseBtn').addEventListener('click',closeUploadModal);
+document.getElementById('uploadCancelBtn').addEventListener('click',closeUploadModal);
+document.getElementById('uploadOverlay').addEventListener('click',(e)=>{
+  if(e.target.id==='uploadOverlay') closeUploadModal();
+});
+
+document.getElementById('uploadFile').addEventListener('change',function(e){
+  const file = e.target.files[0];
+  if(!file){ uploadedRows=null; document.getElementById('uploadFileInfo').style.display='none'; return; }
+
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    dynamicTyping: false,
+    complete: function(results){
+      if(results.errors && results.errors.length>0){
+        showToast('Error parsing CSV: '+results.errors[0].message,'err');
+        return;
+      }
+      uploadedRows = results.data;
+      const info = document.getElementById('uploadFileInfo');
+      const cols = uploadedRows.length>0 ? Object.keys(uploadedRows[0]) : [];
+      info.innerHTML = `📄 <b>${file.name}</b><br>` +
+        `📊 ${uploadedRows.length.toLocaleString()} baris × ${cols.length} kolom<br>` +
+        `<span style="color:var(--text3);font-size:10px">Kolom: ${cols.slice(0,8).join(', ')}${cols.length>8?'...':''}</span>`;
+      info.style.display = 'block';
+    },
+    error: function(err){
+      showToast('Gagal parsing: '+err.message,'err');
+    }
+  });
+});
+
+function setUploadProgress(pct, text){
+  document.getElementById('uploadProgress').style.display = 'block';
+  document.getElementById('uploadProgressBar').style.width = pct+'%';
+  document.getElementById('uploadProgressPct').textContent = pct+'%';
+  document.getElementById('uploadProgressText').textContent = text;
+}
+
+async function submitUpload(){
+  // Auth check via role
+  if(currentRole !== 'admin'){
+    document.getElementById('uploadStatus').textContent = '✗ Hanya admin yang bisa upload';
+    document.getElementById('uploadStatus').className = 'edit-status err';
+    return;
+  }
+
+  if(!uploadedRows || uploadedRows.length===0){
+    document.getElementById('uploadStatus').textContent = '✗ Pilih file CSV dulu';
+    document.getElementById('uploadStatus').className = 'edit-status err';
+    return;
+  }
+
+  if(!sbDb){ alert('Database belum terhubung'); return; }
+
+  // Konfirmasi sebelum replace all
+  if(!confirm(`⚠️ PERINGATAN!\n\nSemua data lama di tabel AHI_MTU akan DIHAPUS, lalu diganti dengan ${uploadedRows.length} baris dari CSV.\n\nAksi ini TIDAK BISA DIBATALKAN.\n\nLanjutkan?`)){
+    return;
+  }
+
+  const submitBtn = document.getElementById('uploadSubmitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Uploading...';
+
+  // Strip internal fields & id (let DB auto-generate for new rows)
+  const cleanRows = uploadedRows.map(r=>{
+    const obj = {};
+    Object.keys(r).forEach(k=>{
+      if(!k.startsWith('_') && k !== 'id') obj[k] = r[k];
+    });
+    return obj;
+  });
+
+  try{
+    // STEP 1: Delete all existing data
+    setUploadProgress(5, 'Menghapus data lama...');
+    const delRes = await sbDb.from(SB_TABLE_AHI).delete().neq('Gi','___NEVER_MATCH___');
+    if(delRes.error) throw new Error('Gagal hapus data lama: '+delRes.error.message);
+
+    // STEP 2: Insert new data in chunks
+    const CHUNK = 500;
+    const totalChunks = Math.ceil(cleanRows.length / CHUNK);
+    let inserted = 0;
+
+    for(let i=0; i<totalChunks; i++){
+      const from = i*CHUNK;
+      const to = Math.min((i+1)*CHUNK, cleanRows.length);
+      const chunk = cleanRows.slice(from, to);
+      const pct = 10 + Math.round((i/totalChunks)*85);
+      setUploadProgress(pct, `Insert chunk ${i+1}/${totalChunks} (${inserted+chunk.length}/${cleanRows.length})`);
+
+      const result = await sbDb.from(SB_TABLE_AHI).insert(chunk);
+      if(result.error) throw new Error(`Chunk ${i+1}: ${result.error.message}`);
+      inserted += chunk.length;
+    }
+
+    setUploadProgress(100, '✓ Selesai!');
+    showToast(`✓ Berhasil upload ${inserted.toLocaleString()} baris`,'ok');
+
+    // Log audit
+    const fileName = document.getElementById('uploadFile').files[0]?.name || 'unknown.csv';
+    logAudit('upload_csv', {
+      file: fileName,
+      rows_inserted: inserted,
+      mode: 'replace_all'
+    }, inserted).catch(e=>console.warn('Audit log gagal:',e.message));
+
+    document.getElementById('uploadStatus').textContent = `✓ ${inserted.toLocaleString()} baris berhasil`;
+    document.getElementById('uploadStatus').className = 'edit-status ok';
+
+    setTimeout(()=>{
+      closeUploadModal();
+      if(confirm('Upload berhasil! Reload halaman untuk melihat data terbaru?')){
+        location.reload();
+      }
+    }, 1200);
+
+  }catch(err){
+    document.getElementById('uploadStatus').textContent = '✗ '+err.message;
+    document.getElementById('uploadStatus').className = 'edit-status err';
+    showToast('✗ Gagal: '+err.message,'err');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Upload';
+  }
+}
+
+document.getElementById('uploadSubmitBtn').addEventListener('click',submitUpload);
+
+// ── AUDIT LOG ────────────────────────────────────────────────────────────────
+async function logAudit(action, details, rows){
+  if(!sbDb || !currentUser) return; // skip kalau guest
+  const username = currentUser._username || currentUser.email.split('@')[0];
+  const targetInfo = details.target || (details.file ? `File: ${details.file}` : '');
+  const row = {
+    action: action,
+    user_id: currentUser.id,
+    username: username,
+    target_info: targetInfo,
+    details: details,
+    rows_affected: rows || (details.rows||1)
+  };
+  const { error } = await sbDb.from('audit_log').insert(row);
+  if(error) throw error;
+}
+
+function openAuditLog(){
+  if(currentRole !== 'admin'){
+    showToast('Hanya admin yang bisa lihat audit log','err');
+    return;
+  }
+  document.getElementById('auditFilterAction').value = '';
+  document.getElementById('auditFilterUser').value = '';
+  document.getElementById('auditOverlay').classList.add('open');
+  loadAuditLog();
+}
+
+function closeAuditLog(){
+  document.getElementById('auditOverlay').classList.remove('open');
+}
+
+async function loadAuditLog(){
+  const body = document.getElementById('auditBody');
+  const countEl = document.getElementById('auditCount');
+  body.innerHTML = '<tr><td colspan="6" style="padding:40px;text-align:center;color:var(--text3);font-family:var(--mono)">Memuat...</td></tr>';
+
+  const filterAction = document.getElementById('auditFilterAction').value;
+  const filterUser = document.getElementById('auditFilterUser').value.trim().toLowerCase();
+
+  let query = sbDb.from('audit_log').select('*').order('created_at',{ascending:false}).limit(500);
+  if(filterAction) query = query.eq('action', filterAction);
+  if(filterUser) query = query.ilike('username', `%${filterUser}%`);
+
+  const { data, error } = await query;
+  if(error){
+    body.innerHTML = `<tr><td colspan="6" style="padding:40px;text-align:center;color:var(--red);font-family:var(--mono)">✗ ${escapeHtml(error.message)}</td></tr>`;
+    countEl.textContent = '—';
+    return;
+  }
+
+  if(!data || data.length===0){
+    body.innerHTML = '<tr><td colspan="6" style="padding:40px;text-align:center;color:var(--text3);font-family:var(--mono)">Belum ada log</td></tr>';
+    countEl.textContent = '0 log';
+    return;
+  }
+
+  countEl.textContent = `${data.length} log` + (data.length===500?' (max 500 terbaru)':'');
+
+  const rows = data.map(log=>{
+    const dt = new Date(log.created_at);
+    const dtStr = dt.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'2-digit'})+
+                  ' '+dt.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+    const actionLabel = log.action==='edit_mtu'?'<span style="color:var(--accent);font-size:10px;font-family:var(--mono)">EDIT MTU</span>':
+                        log.action==='upload_csv'?'<span style="color:var(--amb);font-size:10px;font-family:var(--mono)">UPLOAD CSV</span>':
+                        `<span style="color:var(--text3);font-size:10px;font-family:var(--mono)">${escapeHtml(log.action)}</span>`;
+
+    let detailHtml = '';
+    if(log.details){
+      if(log.details.changes){
+        // Edit: tampilkan field yang berubah
+        detailHtml = Object.keys(log.details.changes).map(k=>{
+          const c = log.details.changes[k];
+          const from = String(c.from||'—').substring(0,30);
+          const to = String(c.to||'—').substring(0,30);
+          return `<div style="margin-bottom:3px"><b style="color:var(--text2)">${escapeHtml(k)}:</b> <span style="color:var(--red)">${escapeHtml(from)}</span> → <span style="color:var(--grn)">${escapeHtml(to)}</span></div>`;
+        }).join('');
+      }else if(log.details.file){
+        detailHtml = `📄 ${escapeHtml(log.details.file)}<br><span style="color:var(--text3);font-size:10px">Mode: ${escapeHtml(log.details.mode||'-')}</span>`;
+      }
+    }
+
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:8px 12px;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap">${dtStr}</td>
+      <td style="padding:8px 12px;font-family:var(--mono);font-size:11px;color:var(--text)">${escapeHtml(log.username||'—')}</td>
+      <td style="padding:8px 12px">${actionLabel}</td>
+      <td style="padding:8px 12px;font-size:11px;color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis" title="${escapeHtml(log.target_info||'')}">${escapeHtml(log.target_info||'—')}</td>
+      <td style="padding:8px 12px;font-size:10px;color:var(--text2);max-width:300px">${detailHtml||'<span style="color:var(--text3)">—</span>'}</td>
+      <td style="padding:8px 12px;text-align:right;font-family:var(--mono);font-size:11px;color:var(--accent)">${log.rows_affected||1}</td>
+    </tr>`;
+  }).join('');
+
+  body.innerHTML = rows;
+}
+
+function escapeHtml(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.getElementById('auditBtn').addEventListener('click',openAuditLog);
+document.getElementById('auditCloseBtn').addEventListener('click',closeAuditLog);
+document.getElementById('auditCloseBtn2').addEventListener('click',closeAuditLog);
+document.getElementById('auditRefreshBtn').addEventListener('click',loadAuditLog);
+document.getElementById('auditFilterAction').addEventListener('change',loadAuditLog);
+document.getElementById('auditFilterUser').addEventListener('input',(()=>{
+  let t; return ()=>{clearTimeout(t); t=setTimeout(loadAuditLog,400);};
+})());
+document.getElementById('auditOverlay').addEventListener('click',(e)=>{
+  if(e.target.id==='auditOverlay') closeAuditLog();
+});
+
+// ── AUTH FUNCTIONS ───────────────────────────────────────────────────────────
+function openLogin(){
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPwd').value = '';
+  document.getElementById('loginError').style.display = 'none';
+  document.getElementById('loginOverlay').style.display = 'flex';
+  setTimeout(()=>document.getElementById('loginUser').focus(),100);
+}
+
+async function doLogin(){
+  const user = document.getElementById('loginUser').value.trim().toLowerCase();
+  const pwd = document.getElementById('loginPwd').value;
+  const errEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginSubmitBtn');
+
+  if(!user || !pwd){
+    errEl.textContent = '✗ Username dan password wajib diisi';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  if(!sbDb){
+    // Initialize db if not yet - priority: config.js → localStorage
+    let sbUrl, sbKey;
+    if(typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_ANON_KEY !== 'undefined' 
+       && SUPABASE_URL && SUPABASE_ANON_KEY 
+       && !SUPABASE_URL.includes('xxxxxxxx')){
+      sbUrl = SUPABASE_URL;
+      sbKey = SUPABASE_ANON_KEY;
+    } else {
+      sbUrl = localStorage.getItem('sb_url');
+      sbKey = localStorage.getItem('sb_key');
+    }
+    if(!sbUrl || !sbKey){
+      errEl.textContent = '✗ Setup Supabase dulu (klik ⚙ DB)';
+      errEl.style.display = 'block';
+      return;
+    }
+    sbDb = supabase.createClient(sbUrl, sbKey);
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Login...';
+  errEl.style.display = 'none';
+
+  const email = user + AUTH_DOMAIN;
+  const { data, error } = await sbDb.auth.signInWithPassword({email, password: pwd});
+
+  if(error){
+    errEl.textContent = '✗ '+error.message;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Login';
+    return;
+  }
+
+  currentUser = data.user;
+  document.getElementById('loginOverlay').style.display = 'none';
+  location.reload();
+}
+
+async function loadUserRole(){
+  if(!sbDb || !currentUser){ currentRole = null; return; }
+  try{
+    const { data, error } = await sbDb.from('user_roles')
+      .select('role, username')
+      .eq('user_id', currentUser.id)
+      .single();
+    if(error || !data){
+      currentRole = 'viewer'; // default
+    }else{
+      currentRole = data.role;
+      currentUser._username = data.username;
+    }
+  }catch(e){
+    currentRole = 'viewer';
+  }
+}
+
+function showUserBadge(){
+  const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const userBadge = document.getElementById('userBadge');
+  const uploadBtn = document.getElementById('uploadBtn');
+
+  if(!currentUser){
+    // Guest mode - show Login button only
+    loginBtn.style.display = 'inline-block';
+    logoutBtn.style.display = 'none';
+    userBadge.style.display = 'none';
+    uploadBtn.style.display = 'none';
+    return;
+  }
+
+  // Logged in
+  const username = currentUser._username || currentUser.email.split('@')[0];
+  document.getElementById('userName').textContent = username;
+  const roleEl = document.getElementById('userRole');
+  roleEl.textContent = currentRole || 'viewer';
+  const colors = {
+    admin: 'var(--red)',
+    editor: 'var(--amb)',
+    viewer: 'var(--text3)'
+  };
+  roleEl.style.background = colors[currentRole] || 'var(--text3)';
+  userBadge.style.display = 'flex';
+  logoutBtn.style.display = 'inline-block';
+  loginBtn.style.display = 'none';
+  // Show upload button only for admin
+  if(currentRole === 'admin'){
+    uploadBtn.style.display = 'inline-block';
+    document.getElementById('auditBtn').style.display = 'inline-block';
+  }
+}
+
+async function doLogout(){
+  if(!confirm('Yakin mau logout?')) return;
+  if(sbDb) await sbDb.auth.signOut();
+  currentUser = null;
+  currentRole = null;
+  location.reload();
+}
+
+document.getElementById('loginSubmitBtn').addEventListener('click',doLogin);
+document.getElementById('logoutBtn').addEventListener('click',doLogout);
+document.getElementById('loginBtn').addEventListener('click',openLogin);
+document.getElementById('loginCloseBtn').addEventListener('click',()=>{
+  document.getElementById('loginOverlay').style.display = 'none';
+});
+document.getElementById('loginOverlay').addEventListener('click',(e)=>{
+  if(e.target.id==='loginOverlay') document.getElementById('loginOverlay').style.display = 'none';
+});
+document.getElementById('loginPwd').addEventListener('keydown',(e)=>{
+  if(e.key==='Enter') doLogin();
+});
+document.getElementById('loginUser').addEventListener('keydown',(e)=>{
+  if(e.key==='Enter') document.getElementById('loginPwd').focus();
+});
+
+init().catch(err=>{
+  document.getElementById('ltxt').textContent='Gagal: '+err.message;
+  document.getElementById('lpct').textContent='✗';
+  document.getElementById('lpct').style.color='var(--red)';
+  setTimeout(()=>{
+    if(confirm('Gagal memuat data:\n\n'+err.message+'\n\nBuka pengaturan Supabase?')){
+      document.getElementById('loading').style.display='none';
+      openSbConfig();
+    }
+  },500);
+});
 </script>
 </body>
 </html>
