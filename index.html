@@ -244,25 +244,11 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
         <button class="rtab-btn active" data-rtab="total" style="padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:5px;font-family:var(--mono);font-size:11px;font-weight:500;cursor:pointer">📊 Total</button>
         <button class="rtab-btn" data-rtab="upt" style="padding:6px 12px;background:transparent;color:var(--text2);border:none;border-radius:5px;font-family:var(--mono);font-size:11px;cursor:pointer">🏢 Per UPT</button>
         <button class="rtab-btn" data-rtab="tipe" style="padding:6px 12px;background:transparent;color:var(--text2);border:none;border-radius:5px;font-family:var(--mono);font-size:11px;cursor:pointer">⚙️ Per Tipe</button>
-        <button class="rtab-btn" data-rtab="trend" style="padding:6px 12px;background:transparent;color:var(--text2);border:none;border-radius:5px;font-family:var(--mono);font-size:11px;cursor:pointer">📈 Trend</button>
       </div>
 
       <div class="rtab-content" id="rtab-total"></div>
       <div class="rtab-content" id="rtab-upt" style="display:none"></div>
       <div class="rtab-content" id="rtab-tipe" style="display:none"></div>
-      <div class="rtab-content" id="rtab-trend" style="display:none">
-        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px">
-          <div id="rtrendLoading" style="text-align:center;padding:20px;color:var(--text3);font-family:var(--mono);font-size:11px">Memuat data historis...</div>
-          <div id="rtrendWrap" style="display:none">
-            <canvas id="rtrendChart" height="120"></canvas>
-            <div style="display:flex;gap:14px;justify-content:center;margin-top:8px;font-family:var(--mono);font-size:10px">
-              <span style="color:var(--red)">● Critical</span>
-              <span style="color:var(--amb)">● Poor</span>
-              <span style="color:var(--grn)">● Good+VG</span>
-            </div>
-          </div>
-        </div>
-      </div>
 
     </div>
     <div class="edit-foot">
@@ -448,7 +434,6 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
             <button class="tab-btn" data-tab="upt" style="padding:6px 12px;background:transparent;color:var(--text2);border:none;border-radius:5px;font-family:var(--mono);font-size:11px;cursor:pointer">🏢 Per UPT</button>
             <button class="tab-btn" data-tab="tipe" style="padding:6px 12px;background:transparent;color:var(--text2);border:none;border-radius:5px;font-family:var(--mono);font-size:11px;cursor:pointer">⚙️ Per Tipe</button>
             <button class="tab-btn" data-tab="rows" style="padding:6px 12px;background:transparent;color:var(--text2);border:none;border-radius:5px;font-family:var(--mono);font-size:11px;cursor:pointer">📝 Per Baris</button>
-            <button class="tab-btn" data-tab="trend" style="padding:6px 12px;background:transparent;color:var(--text2);border:none;border-radius:5px;font-family:var(--mono);font-size:11px;cursor:pointer">📈 Trend</button>
           </div>
 
           <!-- TAB CONTENT: TOTAL -->
@@ -485,21 +470,6 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
                 </div>
               </div>
               <div id="diffDetailBox" style="display:none;margin-top:12px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px;max-height:280px;overflow-y:auto;font-size:11px"></div>
-            </div>
-          </div>
-
-          <!-- TAB CONTENT: TREND -->
-          <div class="tab-content" id="tab-trend" style="display:none">
-            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px">
-              <div id="trendLoading" style="text-align:center;padding:20px;color:var(--text3);font-family:var(--mono);font-size:11px">Memuat data historis...</div>
-              <div id="trendChartWrap" style="display:none">
-                <canvas id="diffTrendChart" height="120"></canvas>
-                <div style="display:flex;gap:14px;justify-content:center;margin-top:8px;font-family:var(--mono);font-size:10px">
-                  <span style="color:var(--red)">● Critical</span>
-                  <span style="color:var(--amb)">● Poor</span>
-                  <span style="color:var(--grn)">● Good+VG</span>
-                </div>
-              </div>
             </div>
           </div>
 
