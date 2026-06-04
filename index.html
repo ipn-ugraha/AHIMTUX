@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta http-equiv="refresh" content="3000">
+<meta http-equiv="refresh" content="300">
 <title>Dashboard AHI MTU — UIT JBM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -227,6 +227,54 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
 </head>
 <body>
 
+<!-- HISTORICAL RESUME MODAL -->
+<div class="edit-overlay" id="resumeOverlay">
+  <div class="edit-modal" style="max-width:800px;max-height:90vh">
+    <div class="edit-head">
+      <div>
+        <div class="edit-head-title">📊 Resume Upload</div>
+        <div class="edit-head-sub" id="resumeSubtitle">—</div>
+      </div>
+      <button class="edit-close" id="resumeCloseBtn">✕</button>
+    </div>
+    <div class="edit-body">
+
+      <!-- TAB NAV -->
+      <div style="display:flex;gap:4px;margin-bottom:14px;background:var(--bg3);padding:4px;border-radius:8px;border:1px solid var(--border);width:fit-content;flex-wrap:wrap">
+        <button class="rtab-btn active" data-rtab="total" style="padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:5px;font-family:var(--mono);font-size:11px;font-weight:500;cursor:pointer">📊 Total</button>
+        <button class="rtab-btn" data-rtab="upt" style="padding:6px 12px;background:transparent;color:var(--text2);border:none;border-radius:5px;font-family:var(--mono);font-size:11px;cursor:pointer">🏢 Per UPT</button>
+        <button class="rtab-btn" data-rtab="tipe" style="padding:6px 12px;background:transparent;color:var(--text2);border:none;border-radius:5px;font-family:var(--mono);font-size:11px;cursor:pointer">⚙️ Per Tipe</button>
+        <button class="rtab-btn" data-rtab="trend" style="padding:6px 12px;background:transparent;color:var(--text2);border:none;border-radius:5px;font-family:var(--mono);font-size:11px;cursor:pointer">📈 Trend</button>
+      </div>
+
+      <div class="rtab-content" id="rtab-total"></div>
+      <div class="rtab-content" id="rtab-upt" style="display:none"></div>
+      <div class="rtab-content" id="rtab-tipe" style="display:none"></div>
+      <div class="rtab-content" id="rtab-trend" style="display:none">
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px">
+          <div id="rtrendLoading" style="text-align:center;padding:20px;color:var(--text3);font-family:var(--mono);font-size:11px">Memuat data historis...</div>
+          <div id="rtrendWrap" style="display:none">
+            <canvas id="rtrendChart" height="120"></canvas>
+            <div style="display:flex;gap:14px;justify-content:center;margin-top:8px;font-family:var(--mono);font-size:10px">
+              <span style="color:var(--red)">● Critical</span>
+              <span style="color:var(--amb)">● Poor</span>
+              <span style="color:var(--grn)">● Good+VG</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="edit-foot">
+      <span class="edit-status" id="resumeStatus"></span>
+      <div class="edit-btns">
+        <button class="btn-cancel" id="resumeExportBtn">📥 Export CSV</button>
+        <button class="btn-save" id="resumeCloseBtn2">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- AUDIT LOG MODAL -->
 <div class="edit-overlay" id="auditOverlay">
   <div class="edit-modal" style="max-width:1000px;max-height:90vh">
@@ -383,6 +431,79 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
           <input type="file" id="uploadFile" accept=".csv" style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:8px 10px;border-radius:6px;font-size:12px">
         </div>
         <div id="uploadFileInfo" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text2)"></div>
+      </div>
+
+      <!-- RESUME WITH TABS -->
+      <div id="diffSummary" class="edit-section" style="display:none">
+        <div class="edit-section-title">📊 Resume Perubahan Statistik</div>
+        <div id="diffLoading" style="text-align:center;padding:20px;color:var(--text3);font-family:var(--mono);font-size:11px">
+          <span class="spinner" style="display:inline-block;width:14px;height:14px;border:2px solid rgba(59,130,246,0.2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:8px"></span>
+          Menghitung statistik...
+        </div>
+        <div id="diffContent" style="display:none">
+
+          <!-- TAB NAV -->
+          <div style="display:flex;gap:4px;margin-bottom:12px;background:var(--bg3);padding:4px;border-radius:8px;border:1px solid var(--border);width:fit-content;flex-wrap:wrap">
+            <button class="tab-btn active" data-tab="total" style="padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:5px;font-family:var(--mono);font-size:11px;font-weight:500;cursor:pointer">📊 Total</button>
+            <button class="tab-btn" data-tab="upt" style="padding:6px 12px;background:transparent;color:var(--text2);border:none;border-radius:5px;font-family:var(--mono);font-size:11px;cursor:pointer">🏢 Per UPT</button>
+            <button class="tab-btn" data-tab="tipe" style="padding:6px 12px;background:transparent;color:var(--text2);border:none;border-radius:5px;font-family:var(--mono);font-size:11px;cursor:pointer">⚙️ Per Tipe</button>
+            <button class="tab-btn" data-tab="rows" style="padding:6px 12px;background:transparent;color:var(--text2);border:none;border-radius:5px;font-family:var(--mono);font-size:11px;cursor:pointer">📝 Per Baris</button>
+            <button class="tab-btn" data-tab="trend" style="padding:6px 12px;background:transparent;color:var(--text2);border:none;border-radius:5px;font-family:var(--mono);font-size:11px;cursor:pointer">📈 Trend</button>
+          </div>
+
+          <!-- TAB CONTENT: TOTAL -->
+          <div class="tab-content" id="tab-total"></div>
+
+          <!-- TAB CONTENT: PER UPT -->
+          <div class="tab-content" id="tab-upt" style="display:none"></div>
+
+          <!-- TAB CONTENT: PER TIPE -->
+          <div class="tab-content" id="tab-tipe" style="display:none"></div>
+
+          <!-- TAB CONTENT: PER BARIS (row-level diff) -->
+          <div class="tab-content" id="tab-rows" style="display:none">
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);padding:10px 12px;border-radius:6px">
+                  <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">🟢 Tambah Baru</div>
+                  <div style="font-size:18px;font-weight:600;color:var(--grn);margin-top:4px"><span id="diffAddedCount">0</span> baris</div>
+                  <button id="diffShowAdded" style="display:none;margin-top:6px;background:transparent;border:1px solid rgba(34,197,94,0.4);color:var(--grn);padding:3px 8px;border-radius:4px;font-family:var(--mono);font-size:10px;cursor:pointer">Detail ▾</button>
+                </div>
+                <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);padding:10px 12px;border-radius:6px">
+                  <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">🔴 Akan Dihapus</div>
+                  <div style="font-size:18px;font-weight:600;color:var(--red);margin-top:4px"><span id="diffRemovedCount">0</span> baris</div>
+                  <button id="diffShowRemoved" style="display:none;margin-top:6px;background:transparent;border:1px solid rgba(239,68,68,0.4);color:var(--red);padding:3px 8px;border-radius:4px;font-family:var(--mono);font-size:10px;cursor:pointer">Detail ▾</button>
+                </div>
+                <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);padding:10px 12px;border-radius:6px">
+                  <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">🟡 Diubah</div>
+                  <div style="font-size:18px;font-weight:600;color:var(--amb);margin-top:4px"><span id="diffModifiedCount">0</span> baris</div>
+                  <button id="diffShowModified" style="display:none;margin-top:6px;background:transparent;border:1px solid rgba(245,158,11,0.4);color:var(--amb);padding:3px 8px;border-radius:4px;font-family:var(--mono);font-size:10px;cursor:pointer">Detail ▾</button>
+                </div>
+                <div style="background:var(--bg2);border:1px solid var(--border2);padding:10px 12px;border-radius:6px">
+                  <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">⚪ Sama Persis</div>
+                  <div style="font-size:18px;font-weight:600;color:var(--text2);margin-top:4px"><span id="diffSameCount">0</span> baris</div>
+                </div>
+              </div>
+              <div id="diffDetailBox" style="display:none;margin-top:12px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px;max-height:280px;overflow-y:auto;font-size:11px"></div>
+            </div>
+          </div>
+
+          <!-- TAB CONTENT: TREND -->
+          <div class="tab-content" id="tab-trend" style="display:none">
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px">
+              <div id="trendLoading" style="text-align:center;padding:20px;color:var(--text3);font-family:var(--mono);font-size:11px">Memuat data historis...</div>
+              <div id="trendChartWrap" style="display:none">
+                <canvas id="diffTrendChart" height="120"></canvas>
+                <div style="display:flex;gap:14px;justify-content:center;margin-top:8px;font-family:var(--mono);font-size:10px">
+                  <span style="color:var(--red)">● Critical</span>
+                  <span style="color:var(--amb)">● Poor</span>
+                  <span style="color:var(--grn)">● Good+VG</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
 
       <div class="edit-section">
@@ -1681,7 +1802,10 @@ function openUploadModal(){
   document.getElementById('uploadStatus').className = 'edit-status';
   document.getElementById('uploadSubmitBtn').disabled = false;
   document.getElementById('uploadSubmitBtn').textContent = 'Upload';
+  document.getElementById('diffSummary').style.display = 'none';
+  document.getElementById('diffDetailBox').style.display = 'none';
   uploadedRows = null;
+  diffResult = null;
   document.getElementById('uploadOverlay').classList.add('open');
 }
 function closeUploadModal(){
@@ -1697,7 +1821,12 @@ document.getElementById('uploadOverlay').addEventListener('click',(e)=>{
 
 document.getElementById('uploadFile').addEventListener('change',function(e){
   const file = e.target.files[0];
-  if(!file){ uploadedRows=null; document.getElementById('uploadFileInfo').style.display='none'; return; }
+  if(!file){ 
+    uploadedRows=null; 
+    document.getElementById('uploadFileInfo').style.display='none';
+    document.getElementById('diffSummary').style.display='none';
+    return; 
+  }
 
   Papa.parse(file, {
     header: true,
@@ -1715,11 +1844,561 @@ document.getElementById('uploadFile').addEventListener('change',function(e){
         `📊 ${uploadedRows.length.toLocaleString()} baris × ${cols.length} kolom<br>` +
         `<span style="color:var(--text3);font-size:10px">Kolom: ${cols.slice(0,8).join(', ')}${cols.length>8?'...':''}</span>`;
       info.style.display = 'block';
+
+      // Jalankan diff comparison
+      runDiffCompare(uploadedRows);
     },
     error: function(err){
       showToast('Gagal parsing: '+err.message,'err');
     }
   });
+});
+
+// ── DIFF COMPARISON ──────────────────────────────────────────────────────────
+let diffResult = null;
+let statsResult = null;
+
+function getRowKey(r){
+  return (r.Gi||'').trim() + '|' + (r.Bay||'').trim() + '|' + (r['#']||'').trim() + '|' + (r['Serial Id']||'').trim();
+}
+
+function computeStats(rows){
+  const s = {
+    total: rows.length,
+    critical: 0, poor: 0, fair: 0, good: 0, vgood: 0,
+    uniqueGi: new Set(),
+    uniqueBay: new Set(),
+    sumHi: 0, cntHi: 0, maxHi: 0, maxHiGi: '',
+    sangatTua: 0,
+    perUpt: {},
+    perTipe: {}
+  };
+  const YR = new Date().getFullYear();
+  rows.forEach(r => {
+    const st = (r['Status Hi']||'').toUpperCase().trim();
+    if(st==='CRITICAL') s.critical++;
+    else if(st==='POOR') s.poor++;
+    else if(st==='FAIR') s.fair++;
+    else if(st==='GOOD') s.good++;
+    else if(st==='VERY GOOD'||st==='VERY_GOOD') s.vgood++;
+
+    if(r.Gi) s.uniqueGi.add(r.Gi);
+    if(r.Gi && r.Bay) s.uniqueBay.add(r.Gi+'|'+r.Bay);
+
+    const hi = parseFloat(r['Nilai Hi']);
+    if(!isNaN(hi)){
+      s.sumHi += hi; s.cntHi++;
+      if(hi > s.maxHi){ s.maxHi = hi; s.maxHiGi = r.Gi||''; }
+    }
+
+    const yr = r['Tahun Operasi'] ? new Date(r['Tahun Operasi']).getFullYear() : null;
+    const age = yr ? (YR - yr) : null;
+    if(age !== null && age > 30) s.sangatTua++;
+
+    const upt = (r.Upt||'TANPA UPT').toString().trim().toUpperCase();
+    if(!s.perUpt[upt]) s.perUpt[upt] = {t:0,c:0,p:0,f:0,g:0,vg:0,sh:0,ch:0};
+    s.perUpt[upt].t++;
+    if(st==='CRITICAL') s.perUpt[upt].c++;
+    else if(st==='POOR') s.perUpt[upt].p++;
+    else if(st==='FAIR') s.perUpt[upt].f++;
+    else if(st==='GOOD') s.perUpt[upt].g++;
+    else if(st==='VERY GOOD') s.perUpt[upt].vg++;
+    if(!isNaN(hi)){ s.perUpt[upt].sh += hi; s.perUpt[upt].ch++; }
+
+    const tipe = (r['#']||'LAINNYA').toString().trim().toUpperCase();
+    if(!s.perTipe[tipe]) s.perTipe[tipe] = {t:0,c:0,p:0,f:0,g:0,vg:0};
+    s.perTipe[tipe].t++;
+    if(st==='CRITICAL') s.perTipe[tipe].c++;
+    else if(st==='POOR') s.perTipe[tipe].p++;
+    else if(st==='FAIR') s.perTipe[tipe].f++;
+    else if(st==='GOOD') s.perTipe[tipe].g++;
+    else if(st==='VERY GOOD') s.perTipe[tipe].vg++;
+  });
+
+  s.jumlahGi = s.uniqueGi.size;
+  s.jumlahBay = s.uniqueBay.size;
+  s.avgHi = s.cntHi > 0 ? +(s.sumHi/s.cntHi).toFixed(1) : 0;
+  s.goodvg = s.good + s.vgood;
+  // Cleanup non-serializable
+  delete s.uniqueGi;
+  delete s.uniqueBay;
+  delete s.sumHi;
+  delete s.cntHi;
+  return s;
+}
+
+function delta(neu, old, lowerBetter){
+  const d = (neu||0) - (old||0);
+  if(d === 0) return {txt:'0', color:'var(--text3)', arrow:''};
+  const good = lowerBetter ? (d < 0) : (d > 0);
+  return {
+    txt: (d>0?'+':'') + (Math.abs(d) < 10 ? d.toFixed(1).replace(/\.0$/,'') : d.toLocaleString()),
+    color: good ? 'var(--grn)' : 'var(--red)',
+    arrow: d > 0 ? '↑' : '↓'
+  };
+}
+
+function statCard(label, valNew, valOld, color, lowerBetter, suffix){
+  const d = delta(valNew, valOld, lowerBetter);
+  const v = typeof valNew === 'number' ? valNew.toLocaleString('id-ID') : valNew;
+  return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:9px 11px">
+    <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-family:var(--mono);margin-bottom:3px">${label}</div>
+    <div style="display:flex;align-items:baseline;gap:5px;flex-wrap:wrap"><span style="font-size:16px;font-weight:600;color:${color||'var(--text)'}">${v}${suffix||''}</span><span style="font-size:9px;color:${d.color};font-family:var(--mono)">${d.txt} ${d.arrow}</span></div>
+    <div style="font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:2px">sebelum: ${(valOld||0).toLocaleString('id-ID')}${suffix||''}</div>
+  </div>`;
+}
+
+function renderTabTotal(sNew, sOld){
+  let html = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">`;
+  html += statCard('Total Item', sNew.total, sOld.total, 'var(--text)', false);
+  html += statCard('Jumlah GI', sNew.jumlahGi, sOld.jumlahGi, '#3ecf8e', false);
+  html += statCard('Jumlah Bay', sNew.jumlahBay, sOld.jumlahBay, '#3b82f6', false);
+  html += `</div>`;
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px">`;
+  html += statCard('Critical', sNew.critical, sOld.critical, 'var(--red)', true);
+  html += statCard('Poor', sNew.poor, sOld.poor, '#f59e0b', true);
+  html += statCard('Fair', sNew.fair, sOld.fair, '#eab308', false);
+  html += statCard('Good+VG', sNew.goodvg, sOld.goodvg, 'var(--grn)', false);
+  html += `</div>`;
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">`;
+  html += statCard('Avg Nilai Hi', sNew.avgHi, sOld.avgHi, '#3b82f6', true);
+  html += statCard('Max Nilai Hi', sNew.maxHi, sOld.maxHi, 'var(--red)', true);
+  html += statCard('Sangat Tua', sNew.sangatTua, sOld.sangatTua, '#a855f7', true);
+  html += `</div>`;
+  return html;
+}
+
+function renderTabUpt(sNew, sOld){
+  const upts = Array.from(new Set([...Object.keys(sNew.perUpt||{}), ...Object.keys(sOld.perUpt||{})])).sort();
+  if(upts.length === 0) return '<div style="text-align:center;padding:20px;color:var(--text3);font-family:var(--mono);font-size:11px">Tidak ada data UPT</div>';
+  let html = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;max-height:340px;overflow-y:auto"><table style="width:100%;font-family:var(--mono);font-size:10px;color:var(--text2);border-collapse:collapse">
+    <thead><tr style="background:rgba(0,0,0,0.2);position:sticky;top:0">
+      <th style="text-align:left;padding:7px 10px;font-weight:500;color:var(--text3);font-size:9px">UPT</th>
+      <th style="text-align:right;padding:7px 10px;font-weight:500;color:var(--text3);font-size:9px">TOTAL</th>
+      <th style="text-align:right;padding:7px 10px;font-weight:500;color:var(--text3);font-size:9px">CRITICAL</th>
+      <th style="text-align:right;padding:7px 10px;font-weight:500;color:var(--text3);font-size:9px">POOR</th>
+      <th style="text-align:right;padding:7px 10px;font-weight:500;color:var(--text3);font-size:9px">FAIR</th>
+      <th style="text-align:right;padding:7px 10px;font-weight:500;color:var(--text3);font-size:9px">GOOD+VG</th>
+      <th style="text-align:right;padding:7px 10px;font-weight:500;color:var(--text3);font-size:9px">AVG HI</th>
+    </tr></thead><tbody>`;
+  upts.forEach(u => {
+    const n = sNew.perUpt[u] || {t:0,c:0,p:0,f:0,g:0,vg:0,sh:0,ch:0};
+    const o = sOld.perUpt[u] || {t:0,c:0,p:0,f:0,g:0,vg:0,sh:0,ch:0};
+    const cellDelta = (vn, vo, low) => { const d = delta(vn,vo,low); return `${vn.toLocaleString('id-ID')} <span style="color:${d.color};font-size:9px">${d.txt}</span>`; };
+    const avgN = n.ch>0 ? (n.sh/n.ch).toFixed(1) : '0';
+    const avgO = o.ch>0 ? (o.sh/o.ch).toFixed(1) : '0';
+    html += `<tr style="border-top:1px solid rgba(255,255,255,0.05)">
+      <td style="padding:7px 10px;color:var(--text);font-weight:500">${escapeHtml(u)}</td>
+      <td style="text-align:right;padding:7px 10px">${cellDelta(n.t, o.t, false)}</td>
+      <td style="text-align:right;padding:7px 10px;color:var(--red)">${cellDelta(n.c, o.c, true)}</td>
+      <td style="text-align:right;padding:7px 10px;color:#f59e0b">${cellDelta(n.p, o.p, true)}</td>
+      <td style="text-align:right;padding:7px 10px">${cellDelta(n.f, o.f, false)}</td>
+      <td style="text-align:right;padding:7px 10px;color:var(--grn)">${cellDelta(n.g + n.vg, o.g + o.vg, false)}</td>
+      <td style="text-align:right;padding:7px 10px">${cellDelta(+avgN, +avgO, true)}</td>
+    </tr>`;
+  });
+  html += `</tbody></table></div>`;
+  return html;
+}
+
+function renderTabTipe(sNew, sOld){
+  const tipes = Array.from(new Set([...Object.keys(sNew.perTipe||{}), ...Object.keys(sOld.perTipe||{})])).sort();
+  if(tipes.length === 0) return '<div style="text-align:center;padding:20px;color:var(--text3);font-family:var(--mono);font-size:11px">Tidak ada data Tipe</div>';
+  let html = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px">`;
+  tipes.forEach(t => {
+    const n = sNew.perTipe[t] || {t:0,c:0,p:0,f:0,g:0,vg:0};
+    const o = sOld.perTipe[t] || {t:0,c:0,p:0,f:0,g:0,vg:0};
+    const line = (lbl, vn, vo, low, color) => { const d = delta(vn,vo,low); return `<div style="display:flex;justify-content:space-between"><span>${lbl}: <b style="color:${color}">${vn.toLocaleString('id-ID')}</b></span><span style="color:${d.color}">${d.txt}</span></div>`; };
+    html += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">
+        <span style="font-family:var(--mono);font-size:11px;color:#a5b4fc;font-weight:500">${escapeHtml(t)}</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">${n.t.toLocaleString('id-ID')} unit</span>
+      </div>
+      <div style="font-size:10px;color:var(--text2);line-height:1.7;font-family:var(--mono)">
+        ${line('🔴 Critical', n.c, o.c, true, 'var(--red)')}
+        ${line('🟠 Poor', n.p, o.p, true, '#f59e0b')}
+        ${line('🟡 Fair', n.f, o.f, false, '#eab308')}
+        ${line('🟢 Good+VG', n.g+n.vg, o.g+o.vg, false, 'var(--grn)')}
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+async function renderTabTrend(){
+  const wrap = document.getElementById('trendChartWrap');
+  const loading = document.getElementById('trendLoading');
+  loading.style.display = 'block';
+  wrap.style.display = 'none';
+
+  if(!sbDb || !currentUser){
+    loading.textContent = 'Login sebagai admin untuk lihat trend';
+    return;
+  }
+
+  // Get last 10 upload logs
+  const { data, error } = await sbDb.from('audit_log')
+    .select('created_at, details')
+    .eq('action', 'upload_csv')
+    .order('created_at', {ascending: true})
+    .limit(10);
+
+  if(error || !data || data.length === 0){
+    loading.textContent = data && data.length===0 ? 'Belum ada riwayat upload sebelumnya' : 'Gagal: '+(error?error.message:'unknown');
+    return;
+  }
+
+  const labels = [];
+  const cData = [], pData = [], gData = [];
+  data.forEach(log => {
+    const dt = new Date(log.created_at);
+    labels.push(dt.toLocaleDateString('id-ID',{day:'2-digit',month:'short'}));
+    const after = log.details?.stats_after;
+    if(after){
+      cData.push(after.critical||0);
+      pData.push(after.poor||0);
+      gData.push(after.goodvg||0);
+    } else {
+      cData.push(null); pData.push(null); gData.push(null);
+    }
+  });
+
+  // Tambahkan titik prediksi (upload sekarang)
+  if(statsResult){
+    labels.push('SEKARANG');
+    cData.push(statsResult.after.critical);
+    pData.push(statsResult.after.poor);
+    gData.push(statsResult.after.goodvg);
+  }
+
+  loading.style.display = 'none';
+  wrap.style.display = 'block';
+
+  if(window._diffTrendChart) window._diffTrendChart.destroy();
+  const ctx = document.getElementById('diffTrendChart');
+  window._diffTrendChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [
+      {label:'Critical', data:cData, borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,0.08)', tension:0.3, borderWidth:2, pointRadius:3},
+      {label:'Poor', data:pData, borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,0.08)', tension:0.3, borderWidth:2, pointRadius:3},
+      {label:'Good+VG', data:gData, borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,0.08)', tension:0.3, borderWidth:2, pointRadius:3, yAxisID:'y1'}
+    ]},
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#64748b',font:{size:9}}, grid:{color:'rgba(255,255,255,0.05)'}},
+        y:{ticks:{color:'#64748b',font:{size:9}}, grid:{color:'rgba(255,255,255,0.05)'}, beginAtZero:false},
+        y1:{position:'right', ticks:{color:'#64748b',font:{size:9}}, grid:{display:false}, beginAtZero:false}
+      }
+    }
+  });
+}
+
+function switchDiffTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    if(b.dataset.tab === tab){
+      b.classList.add('active');
+      b.style.background = 'var(--accent)';
+      b.style.color = '#fff';
+    } else {
+      b.classList.remove('active');
+      b.style.background = 'transparent';
+      b.style.color = 'var(--text2)';
+    }
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+  document.getElementById('tab-'+tab).style.display = 'block';
+  if(tab === 'trend') renderTabTrend();
+}
+
+function runDiffCompare(csvRows){
+  document.getElementById('diffSummary').style.display = 'block';
+  document.getElementById('diffLoading').style.display = 'block';
+  document.getElementById('diffContent').style.display = 'none';
+  document.getElementById('diffDetailBox').style.display = 'none';
+
+  setTimeout(()=>{
+    // === Row-level diff ===
+    const oldMap = new Map();
+    raw.forEach(r => oldMap.set(getRowKey(r), r));
+
+    const added = [], modified = [];
+    let sameCount = 0;
+    const fieldsToCheck = ['Status Hi','Nilai Hi','Justifikasi Prioritas','Rencana','Merek','Tipe','Phasa','Tahun Buat','Tahun Operasi','Kritikalitas','Upt'];
+
+    csvRows.forEach(newRow => {
+      const key = getRowKey(newRow);
+      const oldRow = oldMap.get(key);
+      if(!oldRow){ added.push(newRow); }
+      else {
+        const changes = [];
+        fieldsToCheck.forEach(f => {
+          const ov = String(oldRow[f]||'').trim();
+          const nv = String(newRow[f]||'').trim();
+          if(ov !== nv) changes.push({field: f, from: oldRow[f], to: newRow[f]});
+        });
+        if(changes.length > 0) modified.push({old: oldRow, new: newRow, changes, key});
+        else sameCount++;
+        oldMap.delete(key);
+      }
+    });
+    const removed = Array.from(oldMap.values());
+    diffResult = { added, removed, modified, sameCount };
+
+    // === Stats diff ===
+    const statsBefore = computeStats(raw);
+    const statsAfter = computeStats(csvRows);
+    statsResult = { before: statsBefore, after: statsAfter };
+
+    // Update row-level UI
+    document.getElementById('diffAddedCount').textContent = added.length.toLocaleString();
+    document.getElementById('diffRemovedCount').textContent = removed.length.toLocaleString();
+    document.getElementById('diffModifiedCount').textContent = modified.length.toLocaleString();
+    document.getElementById('diffSameCount').textContent = sameCount.toLocaleString();
+    document.getElementById('diffShowAdded').style.display = added.length>0?'inline-block':'none';
+    document.getElementById('diffShowRemoved').style.display = removed.length>0?'inline-block':'none';
+    document.getElementById('diffShowModified').style.display = modified.length>0?'inline-block':'none';
+
+    // Render tabs
+    document.getElementById('tab-total').innerHTML = renderTabTotal(statsAfter, statsBefore);
+    document.getElementById('tab-upt').innerHTML = renderTabUpt(statsAfter, statsBefore);
+    document.getElementById('tab-tipe').innerHTML = renderTabTipe(statsAfter, statsBefore);
+
+    // Default tab = total
+    switchDiffTab('total');
+
+    document.getElementById('diffLoading').style.display = 'none';
+    document.getElementById('diffContent').style.display = 'block';
+  }, 50);
+}
+
+function showDiffDetail(type){
+  const box = document.getElementById('diffDetailBox');
+  if(!diffResult) return;
+
+  let html = '';
+  const MAX = 50;
+
+  if(type === 'added'){
+    const rows = diffResult.added.slice(0, MAX);
+    html = `<div style="font-weight:600;color:var(--grn);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px">🟢 BARIS BARU (${diffResult.added.length}${diffResult.added.length>MAX?', tampil '+MAX:''})</div>`;
+    rows.forEach((r,i) => {
+      html += `<div style="padding:6px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--text2)">
+        <div style="color:var(--text)"><b>${i+1}.</b> ${escapeHtml(r.Gi||'—')} › ${escapeHtml(r.Bay||'—')} › ${escapeHtml(r['#']||'—')}</div>
+        <div style="color:var(--text3);margin-top:2px">SN: ${escapeHtml(r['Serial Id']||'—')} | Status: ${escapeHtml(r['Status Hi']||'—')} | Hi: ${escapeHtml(r['Nilai Hi']||'—')}</div>
+      </div>`;
+    });
+  } else if(type === 'removed'){
+    const rows = diffResult.removed.slice(0, MAX);
+    html = `<div style="font-weight:600;color:var(--red);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px">🔴 AKAN DIHAPUS (${diffResult.removed.length}${diffResult.removed.length>MAX?', tampil '+MAX:''})</div>`;
+    rows.forEach((r,i) => {
+      html += `<div style="padding:6px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--text2)">
+        <div style="color:var(--text)"><b>${i+1}.</b> ${escapeHtml(r.Gi||'—')} › ${escapeHtml(r.Bay||'—')} › ${escapeHtml(r['#']||'—')}</div>
+        <div style="color:var(--text3);margin-top:2px">SN: ${escapeHtml(r['Serial Id']||'—')} | Status: ${escapeHtml(r['Status Hi']||'—')} | Hi: ${escapeHtml(r['Nilai Hi']||'—')}</div>
+      </div>`;
+    });
+  } else if(type === 'modified'){
+    const rows = diffResult.modified.slice(0, MAX);
+    html = `<div style="font-weight:600;color:var(--amb);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px">🟡 DIUBAH (${diffResult.modified.length}${diffResult.modified.length>MAX?', tampil '+MAX:''})</div>`;
+    rows.forEach((m,i) => {
+      const r = m.new;
+      const changesHtml = m.changes.map(c => 
+        `<div style="margin-left:14px;font-size:10px"><b style="color:var(--text2)">${escapeHtml(c.field)}:</b> <span style="color:var(--red)">${escapeHtml(String(c.from||'—').substring(0,40))}</span> → <span style="color:var(--grn)">${escapeHtml(String(c.to||'—').substring(0,40))}</span></div>`
+      ).join('');
+      html += `<div style="padding:6px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--text2)">
+        <div style="color:var(--text)"><b>${i+1}.</b> ${escapeHtml(r.Gi||'—')} › ${escapeHtml(r.Bay||'—')} › ${escapeHtml(r['#']||'—')}</div>
+        ${changesHtml}
+      </div>`;
+    });
+  }
+
+  box.innerHTML = html;
+  box.style.display = 'block';
+}
+
+document.getElementById('diffShowAdded').addEventListener('click',()=>showDiffDetail('added'));
+document.getElementById('diffShowRemoved').addEventListener('click',()=>showDiffDetail('removed'));
+document.getElementById('diffShowModified').addEventListener('click',()=>showDiffDetail('modified'));
+
+// Tab navigation event listeners (delegated)
+document.addEventListener('click', function(e){
+  if(e.target.classList && e.target.classList.contains('tab-btn')){
+    const tab = e.target.dataset.tab;
+    if(tab) switchDiffTab(tab);
+  }
+  if(e.target.classList && e.target.classList.contains('rtab-btn')){
+    const tab = e.target.dataset.rtab;
+    if(tab) switchResumeTab(tab);
+  }
+});
+
+// ── HISTORICAL RESUME ────────────────────────────────────────────────────────
+let currentResumeLog = null;
+
+async function openHistoricalResume(logId){
+  if(!sbDb){ showToast('Database belum terhubung','err'); return; }
+
+  const { data, error } = await sbDb.from('audit_log').select('*').eq('id', logId).single();
+  if(error || !data){ showToast('Gagal load: '+(error?error.message:'tidak ada data'),'err'); return; }
+
+  if(!data.details?.stats_before || !data.details?.stats_after){
+    showToast('Log ini belum punya data statistik lengkap','err');
+    return;
+  }
+
+  currentResumeLog = data;
+  const dt = new Date(data.created_at);
+  const dtStr = dt.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + dt.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('resumeSubtitle').textContent =
+    `${data.details.file} · ${dtStr} · oleh ${data.username||'—'}`;
+
+  const sBefore = data.details.stats_before;
+  const sAfter = data.details.stats_after;
+
+  document.getElementById('rtab-total').innerHTML = renderTabTotal(sAfter, sBefore);
+  document.getElementById('rtab-upt').innerHTML = renderTabUpt(sAfter, sBefore);
+  document.getElementById('rtab-tipe').innerHTML = renderTabTipe(sAfter, sBefore);
+
+  switchResumeTab('total');
+  document.getElementById('resumeOverlay').classList.add('open');
+}
+
+function switchResumeTab(tab){
+  document.querySelectorAll('.rtab-btn').forEach(b => {
+    if(b.dataset.rtab === tab){
+      b.classList.add('active');
+      b.style.background = 'var(--accent)';
+      b.style.color = '#fff';
+    } else {
+      b.classList.remove('active');
+      b.style.background = 'transparent';
+      b.style.color = 'var(--text2)';
+    }
+  });
+  document.querySelectorAll('.rtab-content').forEach(c => c.style.display = 'none');
+  document.getElementById('rtab-'+tab).style.display = 'block';
+  if(tab === 'trend') renderResumeTrend();
+}
+
+async function renderResumeTrend(){
+  const wrap = document.getElementById('rtrendWrap');
+  const loading = document.getElementById('rtrendLoading');
+  loading.style.display = 'block';
+  wrap.style.display = 'none';
+
+  const { data, error } = await sbDb.from('audit_log')
+    .select('created_at, details')
+    .eq('action', 'upload_csv')
+    .order('created_at', {ascending: true})
+    .limit(15);
+
+  if(error || !data || data.length === 0){
+    loading.textContent = 'Belum ada riwayat upload';
+    return;
+  }
+
+  const labels = [], cData = [], pData = [], gData = [];
+  data.forEach(log => {
+    const dt = new Date(log.created_at);
+    labels.push(dt.toLocaleDateString('id-ID',{day:'2-digit',month:'short'}));
+    const after = log.details?.stats_after;
+    if(after){
+      cData.push(after.critical||0);
+      pData.push(after.poor||0);
+      gData.push(after.goodvg||0);
+    }
+  });
+
+  loading.style.display = 'none';
+  wrap.style.display = 'block';
+
+  if(window._rtrendChart) window._rtrendChart.destroy();
+  window._rtrendChart = new Chart(document.getElementById('rtrendChart'), {
+    type: 'line',
+    data: { labels, datasets: [
+      {label:'Critical', data:cData, borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,0.08)', tension:0.3, borderWidth:2, pointRadius:3},
+      {label:'Poor', data:pData, borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,0.08)', tension:0.3, borderWidth:2, pointRadius:3},
+      {label:'Good+VG', data:gData, borderColor:'#22c55e', backgroundColor:'rgba(34,197,94,0.08)', tension:0.3, borderWidth:2, pointRadius:3, yAxisID:'y1'}
+    ]},
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#64748b',font:{size:9}}, grid:{color:'rgba(255,255,255,0.05)'}},
+        y:{ticks:{color:'#64748b',font:{size:9}}, grid:{color:'rgba(255,255,255,0.05)'}, beginAtZero:false},
+        y1:{position:'right', ticks:{color:'#64748b',font:{size:9}}, grid:{display:false}, beginAtZero:false}
+      }
+    }
+  });
+}
+
+function exportResumeCSV(){
+  if(!currentResumeLog) return;
+  const d = currentResumeLog.details;
+  const sb = d.stats_before, sa = d.stats_after;
+  if(!sb || !sa){ showToast('Data tidak lengkap','err'); return; }
+
+  const rows = [];
+  rows.push(['Resume Upload', d.file]);
+  rows.push(['Waktu', currentResumeLog.created_at]);
+  rows.push(['User', currentResumeLog.username]);
+  rows.push([]);
+  rows.push(['== TOTAL =='] );
+  rows.push(['Metric','Sebelum','Sesudah','Delta']);
+  const m = (lbl, b, a) => rows.push([lbl, b, a, (a-b)]);
+  m('Total Item', sb.total, sa.total);
+  m('Jumlah GI', sb.jumlahGi, sa.jumlahGi);
+  m('Jumlah Bay', sb.jumlahBay, sa.jumlahBay);
+  m('Critical', sb.critical, sa.critical);
+  m('Poor', sb.poor, sa.poor);
+  m('Fair', sb.fair, sa.fair);
+  m('Good+VG', sb.goodvg, sa.goodvg);
+  m('Avg Nilai Hi', sb.avgHi, sa.avgHi);
+  m('Max Nilai Hi', sb.maxHi, sa.maxHi);
+  m('Sangat Tua', sb.sangatTua, sa.sangatTua);
+
+  rows.push([]);
+  rows.push(['== PER UPT =='] );
+  rows.push(['UPT','Total Sebelum','Total Sesudah','Critical Sebelum','Critical Sesudah','Poor Sebelum','Poor Sesudah','Good+VG Sebelum','Good+VG Sesudah']);
+  const upts = Array.from(new Set([...Object.keys(sb.perUpt||{}), ...Object.keys(sa.perUpt||{})])).sort();
+  upts.forEach(u => {
+    const b = sb.perUpt[u]||{t:0,c:0,p:0,g:0,vg:0};
+    const a = sa.perUpt[u]||{t:0,c:0,p:0,g:0,vg:0};
+    rows.push([u, b.t, a.t, b.c, a.c, b.p, a.p, (b.g+b.vg), (a.g+a.vg)]);
+  });
+
+  rows.push([]);
+  rows.push(['== PER TIPE =='] );
+  rows.push(['Tipe','Total Sebelum','Total Sesudah','Critical Sebelum','Critical Sesudah','Poor Sebelum','Poor Sesudah','Good+VG Sebelum','Good+VG Sesudah']);
+  const tipes = Array.from(new Set([...Object.keys(sb.perTipe||{}), ...Object.keys(sa.perTipe||{})])).sort();
+  tipes.forEach(t => {
+    const b = sb.perTipe[t]||{t:0,c:0,p:0,g:0,vg:0};
+    const a = sa.perTipe[t]||{t:0,c:0,p:0,g:0,vg:0};
+    rows.push([t, b.t, a.t, b.c, a.c, b.p, a.p, (b.g+b.vg), (a.g+a.vg)]);
+  });
+
+  const csv = Papa.unparse(rows);
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  const ts = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+  a.href = url;
+  a.download = `Resume_Upload_${ts}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✓ Resume di-export','ok');
+}
+
+document.getElementById('resumeCloseBtn').addEventListener('click',()=>document.getElementById('resumeOverlay').classList.remove('open'));
+document.getElementById('resumeCloseBtn2').addEventListener('click',()=>document.getElementById('resumeOverlay').classList.remove('open'));
+document.getElementById('resumeExportBtn').addEventListener('click',exportResumeCSV);
+document.getElementById('resumeOverlay').addEventListener('click',(e)=>{
+  if(e.target.id==='resumeOverlay') document.getElementById('resumeOverlay').classList.remove('open');
 });
 
 function setUploadProgress(pct, text){
@@ -1745,8 +2424,18 @@ async function submitUpload(){
 
   if(!sbDb){ alert('Database belum terhubung'); return; }
 
-  // Konfirmasi sebelum replace all
-  if(!confirm(`⚠️ PERINGATAN!\n\nSemua data lama di tabel AHI_MTU akan DIHAPUS, lalu diganti dengan ${uploadedRows.length} baris dari CSV.\n\nAksi ini TIDAK BISA DIBATALKAN.\n\nLanjutkan?`)){
+  // Konfirmasi sebelum replace all (dengan resume kalau ada)
+  let confirmMsg = `⚠️ PERINGATAN!\n\nSemua data lama di tabel AHI_MTU akan DIHAPUS, lalu diganti dengan ${uploadedRows.length} baris dari CSV.\n`;
+  if(diffResult){
+    confirmMsg += `\n📊 Resume Perubahan:\n`;
+    confirmMsg += `  🟢 Tambah baru: ${diffResult.added.length} baris\n`;
+    confirmMsg += `  🔴 Akan dihapus: ${diffResult.removed.length} baris\n`;
+    confirmMsg += `  🟡 Diubah: ${diffResult.modified.length} baris\n`;
+    confirmMsg += `  ⚪ Tidak berubah: ${diffResult.sameCount} baris\n`;
+  }
+  confirmMsg += `\nAksi ini TIDAK BISA DIBATALKAN.\n\nLanjutkan?`;
+
+  if(!confirm(confirmMsg)){
     return;
   }
 
@@ -1791,11 +2480,24 @@ async function submitUpload(){
 
     // Log audit
     const fileName = document.getElementById('uploadFile').files[0]?.name || 'unknown.csv';
-    logAudit('upload_csv', {
+    const auditDetails = {
       file: fileName,
       rows_inserted: inserted,
       mode: 'replace_all'
-    }, inserted).catch(e=>console.warn('Audit log gagal:',e.message));
+    };
+    if(diffResult){
+      auditDetails.diff = {
+        added: diffResult.added.length,
+        removed: diffResult.removed.length,
+        modified: diffResult.modified.length,
+        same: diffResult.sameCount
+      };
+    }
+    if(statsResult){
+      auditDetails.stats_before = statsResult.before;
+      auditDetails.stats_after = statsResult.after;
+    }
+    logAudit('upload_csv', auditDetails, inserted).catch(e=>console.warn('Audit log gagal:',e.message));
 
     document.getElementById('uploadStatus').textContent = `✓ ${inserted.toLocaleString()} baris berhasil`;
     document.getElementById('uploadStatus').className = 'edit-status ok';
@@ -1897,7 +2599,16 @@ async function loadAuditLog(){
           return `<div style="margin-bottom:3px"><b style="color:var(--text2)">${escapeHtml(k)}:</b> <span style="color:var(--red)">${escapeHtml(from)}</span> → <span style="color:var(--grn)">${escapeHtml(to)}</span></div>`;
         }).join('');
       }else if(log.details.file){
-        detailHtml = `📄 ${escapeHtml(log.details.file)}<br><span style="color:var(--text3);font-size:10px">Mode: ${escapeHtml(log.details.mode||'-')}</span>`;
+        let extra = '';
+        if(log.details.diff){
+          const d = log.details.diff;
+          extra = `<div style="margin-top:4px;font-size:10px;color:var(--text3)">+${d.added||0} 🟢 / -${d.removed||0} 🔴 / ~${d.modified||0} 🟡 / =${d.same||0} ⚪</div>`;
+        }
+        let resumeBtn = '';
+        if(log.details.stats_before && log.details.stats_after){
+          resumeBtn = `<button onclick="openHistoricalResume('${log.id}')" style="margin-top:6px;background:transparent;border:1px solid var(--accent);color:var(--accent);padding:3px 10px;border-radius:4px;font-family:var(--mono);font-size:10px;cursor:pointer">📊 Lihat Resume</button>`;
+        }
+        detailHtml = `📄 ${escapeHtml(log.details.file)}<br><span style="color:var(--text3);font-size:10px">Mode: ${escapeHtml(log.details.mode||'-')}</span>${extra}${resumeBtn}`;
       }
     }
 
