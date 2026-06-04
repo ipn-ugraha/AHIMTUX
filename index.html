@@ -13,6 +13,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="config.js" onerror="console.log('config.js tidak ditemukan, pakai modal setup')"></script>
 <style>
 :root{
@@ -226,6 +227,83 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
 </style>
 </head>
 <body>
+
+<!-- EXPORT EXCEL MODAL -->
+<div class="edit-overlay" id="exportXlsxOverlay">
+  <div class="edit-modal" style="max-width:520px">
+    <div class="edit-head">
+      <div>
+        <div class="edit-head-title">📥 Export ke Excel</div>
+        <div class="edit-head-sub">Pilih format & data yang akan di-export</div>
+      </div>
+      <button class="edit-close" id="exportXlsxCloseBtn">✕</button>
+    </div>
+    <div class="edit-body">
+
+      <div class="edit-section">
+        <div class="edit-section-title">📋 Cakupan Data</div>
+        <div class="edit-field">
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;cursor:pointer;margin-bottom:6px">
+            <input type="radio" name="exportScope" value="filtered" checked style="margin-top:3px">
+            <div>
+              <div style="font-size:12px;color:var(--text);font-weight:500">Data Terfilter (yang tampil)</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:3px" id="exportScopeInfo">Sesuai filter UPT, kV, Status, dll yang aktif</div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;cursor:pointer">
+            <input type="radio" name="exportScope" value="all" style="margin-top:3px">
+            <div>
+              <div style="font-size:12px;color:var(--text);font-weight:500">Semua Data</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:3px" id="exportAllInfo">Tanpa filter, semua MTU dari database</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="edit-section">
+        <div class="edit-section-title">📊 Format Sheet</div>
+        <div class="edit-field">
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;cursor:pointer;margin-bottom:6px">
+            <input type="checkbox" id="sheetMtu" checked style="margin-top:3px">
+            <div>
+              <div style="font-size:12px;color:var(--text);font-weight:500">📄 Sheet "MTU" (data lengkap)</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:3px">Semua kolom MTU: GI, Bay, Tipe, Status, Hi, dll</div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;cursor:pointer;margin-bottom:6px">
+            <input type="checkbox" id="sheetRingkasanGi" checked style="margin-top:3px">
+            <div>
+              <div style="font-size:12px;color:var(--text);font-weight:500">📊 Sheet "Ringkasan GI"</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:3px">Agregat per GI: total bay, total MTU, max Hi, status</div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;cursor:pointer;margin-bottom:6px">
+            <input type="checkbox" id="sheetRingkasanUpt" checked style="margin-top:3px">
+            <div>
+              <div style="font-size:12px;color:var(--text);font-weight:500">🏢 Sheet "Ringkasan UPT"</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:3px">Agregat per UPT: jumlah GI, MTU, Critical, Poor, dll</div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;cursor:pointer">
+            <input type="checkbox" id="sheetStats" checked style="margin-top:3px">
+            <div>
+              <div style="font-size:12px;color:var(--text);font-weight:500">📈 Sheet "Statistik"</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:3px">Total, Critical, Poor, Fair, Good+VG, Avg Hi, dll</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+    </div>
+    <div class="edit-foot">
+      <span class="edit-status" id="exportXlsxStatus"></span>
+      <div class="edit-btns">
+        <button class="btn-cancel" id="exportXlsxCancelBtn">Batal</button>
+        <button class="btn-save" id="exportXlsxSubmitBtn">📥 Download Excel</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- HISTORICAL RESUME MODAL -->
 <div class="edit-overlay" id="resumeOverlay">
@@ -730,6 +808,7 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
         <button class="tab" onclick="expandAll(2)">Buka GI</button>
         <button class="tab" onclick="expandAll(3)">Buka Semua</button>
         <button class="tab" onclick="collapseAll()">Tutup Semua</button>
+        <button class="tab" onclick="openExportXlsx()" title="Export ke Excel" style="background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.3);color:#22c55e">📥 Excel</button>
       </div>
     </div>
     <div class="tw">
@@ -2369,6 +2448,251 @@ document.getElementById('resumeCloseBtn2').addEventListener('click',()=>document
 document.getElementById('resumeExportBtn').addEventListener('click',exportResumeCSV);
 document.getElementById('resumeOverlay').addEventListener('click',(e)=>{
   if(e.target.id==='resumeOverlay') document.getElementById('resumeOverlay').classList.remove('open');
+});
+
+// ── EXPORT TO EXCEL ──────────────────────────────────────────────────────────
+function openExportXlsx(){
+  // Update info berdasarkan filter aktif
+  const filteredCount = filtered.length;
+  const totalCount = raw.length;
+  document.getElementById('exportScopeInfo').textContent = `Sesuai filter aktif (${filteredCount.toLocaleString('id-ID')} MTU)`;
+  document.getElementById('exportAllInfo').textContent = `Semua MTU dari database (${totalCount.toLocaleString('id-ID')} baris)`;
+  document.getElementById('exportXlsxStatus').textContent = '';
+  document.getElementById('exportXlsxStatus').className = 'edit-status';
+  document.getElementById('exportXlsxSubmitBtn').disabled = false;
+  document.getElementById('exportXlsxSubmitBtn').textContent = '📥 Download Excel';
+  document.getElementById('exportXlsxOverlay').classList.add('open');
+}
+
+function closeExportXlsx(){
+  document.getElementById('exportXlsxOverlay').classList.remove('open');
+}
+
+function exportToExcel(){
+  const scope = document.querySelector('input[name="exportScope"]:checked').value;
+  const wantMtu = document.getElementById('sheetMtu').checked;
+  const wantGi = document.getElementById('sheetRingkasanGi').checked;
+  const wantUpt = document.getElementById('sheetRingkasanUpt').checked;
+  const wantStats = document.getElementById('sheetStats').checked;
+
+  if(!wantMtu && !wantGi && !wantUpt && !wantStats){
+    document.getElementById('exportXlsxStatus').textContent = '✗ Pilih minimal 1 sheet';
+    document.getElementById('exportXlsxStatus').className = 'edit-status err';
+    return;
+  }
+
+  if(typeof XLSX === 'undefined'){
+    document.getElementById('exportXlsxStatus').textContent = '✗ Library XLSX belum loaded';
+    document.getElementById('exportXlsxStatus').className = 'edit-status err';
+    return;
+  }
+
+  const btn = document.getElementById('exportXlsxSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Memproses...';
+  document.getElementById('exportXlsxStatus').textContent = '⏳ Membuat file Excel...';
+  document.getElementById('exportXlsxStatus').className = 'edit-status';
+
+  setTimeout(()=>{
+    try{
+      const dataSource = scope === 'all' ? raw : filtered;
+      const wb = XLSX.utils.book_new();
+
+      // === SHEET 1: MTU lengkap ===
+      if(wantMtu){
+        const cleanMtu = dataSource.map(r => {
+          const obj = {};
+          Object.keys(r).forEach(k => {
+            if(!k.startsWith('_')) obj[k] = r[k];
+          });
+          // Tambah kolom turunan
+          obj['Usia (tahun)'] = r._age || '';
+          obj['kV'] = r._kv || '';
+          return obj;
+        });
+        const ws = XLSX.utils.json_to_sheet(cleanMtu);
+        // Auto-width
+        const cols = Object.keys(cleanMtu[0]||{}).map(k => ({wch: Math.min(40, Math.max(10, k.length + 2))}));
+        ws['!cols'] = cols;
+        XLSX.utils.book_append_sheet(wb, ws, 'MTU');
+      }
+
+      // === SHEET 2: Ringkasan GI ===
+      if(wantGi){
+        const giMap = new Map();
+        dataSource.forEach(r => {
+          const gi = r.Gi || 'TANPA GI';
+          if(!giMap.has(gi)) giMap.set(gi, {
+            GI: gi,
+            UPT: r.Upt || '',
+            kV: r._kv || '',
+            Kritikalitas: r.Kritikalitas || '',
+            Tier: giTierMap.get(gi) || '',
+            KTT: giKttMap.get(gi) || '',
+            'GI Kritikal': giKrit.has(gi) ? 'Ya' : 'Tidak',
+            'Jumlah Bay': new Set(), 'Jumlah MTU': 0,
+            Critical: 0, Poor: 0, Fair: 0, 'Good+VG': 0,
+            'Max Hi': 0, 'Sum Hi': 0, 'Count Hi': 0
+          });
+          const g = giMap.get(gi);
+          g['Jumlah Bay'].add(r.Bay || '');
+          g['Jumlah MTU']++;
+          const st = (r['Status Hi']||'').toUpperCase();
+          if(st==='CRITICAL') g.Critical++;
+          else if(st==='POOR') g.Poor++;
+          else if(st==='FAIR') g.Fair++;
+          else if(st==='GOOD'||st==='VERY GOOD') g['Good+VG']++;
+          const hi = parseFloat(r['Nilai Hi']);
+          if(!isNaN(hi)){
+            g['Sum Hi'] += hi; g['Count Hi']++;
+            if(hi > g['Max Hi']) g['Max Hi'] = hi;
+          }
+        });
+        const giData = Array.from(giMap.values()).map(g => ({
+          GI: g.GI,
+          UPT: g.UPT,
+          kV: g.kV,
+          Kritikalitas: g.Kritikalitas,
+          Tier: g.Tier,
+          KTT: g.KTT,
+          'GI Kritikal': g['GI Kritikal'],
+          'Jumlah Bay': g['Jumlah Bay'].size,
+          'Jumlah MTU': g['Jumlah MTU'],
+          Critical: g.Critical,
+          Poor: g.Poor,
+          Fair: g.Fair,
+          'Good+VG': g['Good+VG'],
+          'Max Hi': g['Max Hi'],
+          'Avg Hi': g['Count Hi'] > 0 ? +(g['Sum Hi']/g['Count Hi']).toFixed(1) : 0
+        })).sort((a,b)=>(b['Max Hi']||0)-(a['Max Hi']||0));
+        const ws = XLSX.utils.json_to_sheet(giData);
+        ws['!cols'] = [{wch:30},{wch:18},{wch:8},{wch:14},{wch:8},{wch:14},{wch:12},{wch:12},{wch:12},{wch:10},{wch:8},{wch:8},{wch:10},{wch:10},{wch:10}];
+        XLSX.utils.book_append_sheet(wb, ws, 'Ringkasan GI');
+      }
+
+      // === SHEET 3: Ringkasan UPT ===
+      if(wantUpt){
+        const uptMap = new Map();
+        dataSource.forEach(r => {
+          const upt = r.Upt || 'TANPA UPT';
+          if(!uptMap.has(upt)) uptMap.set(upt, {
+            UPT: upt,
+            'Jumlah GI': new Set(),
+            'Jumlah Bay': new Set(),
+            'Jumlah MTU': 0,
+            Critical: 0, Poor: 0, Fair: 0, 'Good+VG': 0,
+            'Sum Hi': 0, 'Count Hi': 0, 'Max Hi': 0
+          });
+          const u = uptMap.get(upt);
+          u['Jumlah GI'].add(r.Gi||'');
+          u['Jumlah Bay'].add((r.Gi||'')+'|'+(r.Bay||''));
+          u['Jumlah MTU']++;
+          const st = (r['Status Hi']||'').toUpperCase();
+          if(st==='CRITICAL') u.Critical++;
+          else if(st==='POOR') u.Poor++;
+          else if(st==='FAIR') u.Fair++;
+          else if(st==='GOOD'||st==='VERY GOOD') u['Good+VG']++;
+          const hi = parseFloat(r['Nilai Hi']);
+          if(!isNaN(hi)){
+            u['Sum Hi'] += hi; u['Count Hi']++;
+            if(hi > u['Max Hi']) u['Max Hi'] = hi;
+          }
+        });
+        const uptData = Array.from(uptMap.values()).map(u => ({
+          UPT: u.UPT,
+          'Jumlah GI': u['Jumlah GI'].size,
+          'Jumlah Bay': u['Jumlah Bay'].size,
+          'Jumlah MTU': u['Jumlah MTU'],
+          Critical: u.Critical,
+          Poor: u.Poor,
+          Fair: u.Fair,
+          'Good+VG': u['Good+VG'],
+          'Avg Hi': u['Count Hi']>0 ? +(u['Sum Hi']/u['Count Hi']).toFixed(1) : 0,
+          'Max Hi': u['Max Hi']
+        })).sort((a,b)=>b['Jumlah MTU']-a['Jumlah MTU']);
+        const ws = XLSX.utils.json_to_sheet(uptData);
+        ws['!cols'] = [{wch:18},{wch:10},{wch:12},{wch:12},{wch:10},{wch:8},{wch:8},{wch:10},{wch:10},{wch:10}];
+        XLSX.utils.book_append_sheet(wb, ws, 'Ringkasan UPT');
+      }
+
+      // === SHEET 4: Statistik ===
+      if(wantStats){
+        const s = computeStats(dataSource);
+        const statRows = [
+          ['Metric', 'Value'],
+          ['Total Item', s.total],
+          ['Jumlah GI', s.jumlahGi],
+          ['Jumlah Bay', s.jumlahBay],
+          [],
+          ['== Status Hi =='],
+          ['Critical', s.critical],
+          ['Poor', s.poor],
+          ['Fair', s.fair],
+          ['Good', s.good],
+          ['Very Good', s.vgood],
+          ['Good + Very Good', s.goodvg],
+          [],
+          ['== Nilai Hi =='],
+          ['Average Hi', s.avgHi],
+          ['Max Hi', s.maxHi],
+          ['Max Hi (GI)', s.maxHiGi],
+          [],
+          ['== Lainnya =='],
+          ['Sangat Tua (>30th)', s.sangatTua],
+          [],
+          ['== Per UPT =='],
+          ['UPT', 'Total', 'Critical', 'Poor', 'Fair', 'Good+VG', 'Avg Hi']
+        ];
+        Object.keys(s.perUpt||{}).sort().forEach(u => {
+          const x = s.perUpt[u];
+          statRows.push([u, x.t, x.c, x.p, x.f, x.g+x.vg, x.ch>0?+(x.sh/x.ch).toFixed(1):0]);
+        });
+        statRows.push([]);
+        statRows.push(['== Per Tipe ==']);
+        statRows.push(['Tipe', 'Total', 'Critical', 'Poor', 'Fair', 'Good+VG']);
+        Object.keys(s.perTipe||{}).sort().forEach(t => {
+          const x = s.perTipe[t];
+          statRows.push([t, x.t, x.c, x.p, x.f, x.g+x.vg]);
+        });
+        statRows.push([]);
+        statRows.push(['Generated at', new Date().toLocaleString('id-ID')]);
+        statRows.push(['User', currentUser ? (currentUser._username||currentUser.email) : 'Guest']);
+        statRows.push(['Scope', scope === 'all' ? 'Semua Data' : 'Data Terfilter']);
+        const ws = XLSX.utils.aoa_to_sheet(statRows);
+        ws['!cols'] = [{wch:24},{wch:14},{wch:12},{wch:10},{wch:10},{wch:12},{wch:10}];
+        XLSX.utils.book_append_sheet(wb, ws, 'Statistik');
+      }
+
+      // Generate filename
+      const now = new Date();
+      const pad = n => String(n).padStart(2,'0');
+      const ts = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+      const scopeStr = scope === 'all' ? 'All' : 'Filtered';
+      const filename = `AHI_MTU_${scopeStr}_${ts}.xlsx`;
+
+      XLSX.writeFile(wb, filename);
+
+      const sheetCount = (wantMtu?1:0)+(wantGi?1:0)+(wantUpt?1:0)+(wantStats?1:0);
+      document.getElementById('exportXlsxStatus').textContent = `✓ ${sheetCount} sheet, ${dataSource.length.toLocaleString('id-ID')} baris`;
+      document.getElementById('exportXlsxStatus').className = 'edit-status ok';
+      showToast(`✓ Excel berhasil di-download (${dataSource.length.toLocaleString('id-ID')} baris)`,'ok');
+
+      setTimeout(closeExportXlsx, 1500);
+    }catch(err){
+      document.getElementById('exportXlsxStatus').textContent = '✗ '+err.message;
+      document.getElementById('exportXlsxStatus').className = 'edit-status err';
+      btn.disabled = false;
+      btn.textContent = '📥 Download Excel';
+      console.error(err);
+    }
+  }, 50);
+}
+
+document.getElementById('exportXlsxCloseBtn').addEventListener('click', closeExportXlsx);
+document.getElementById('exportXlsxCancelBtn').addEventListener('click', closeExportXlsx);
+document.getElementById('exportXlsxSubmitBtn').addEventListener('click', exportToExcel);
+document.getElementById('exportXlsxOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='exportXlsxOverlay') closeExportXlsx();
 });
 
 function setUploadProgress(pct, text){
