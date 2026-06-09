@@ -1214,6 +1214,17 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
           <option value="0">Tidak Kritikal</option>
         </select>
       </div>
+      <div class="fg">
+        <span class="fl">Status AHI</span>
+        <select id="semuaAhiFilter" class="fs" onchange="renderSemuaRencana()">
+          <option value="">Semua</option>
+          <option value="CRITICAL">CRITICAL</option>
+          <option value="POOR">POOR</option>
+          <option value="FAIR">FAIR</option>
+          <option value="GOOD">GOOD</option>
+          <option value="VERY GOOD">VERY GOOD</option>
+        </select>
+      </div>
       <div class="fcnt" id="semuaCount">—</div>
     </div>
     <div class="tsec">
@@ -1226,6 +1237,7 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
               <th>Jenis MTU</th>
               <th onclick="semuaSortBy('upt')" data-col="upt" style="cursor:pointer">UPT</th>
               <th onclick="semuaSortBy('sid')" data-col="sid" style="cursor:pointer">Serial Id</th>
+              <th onclick="semuaSortBy('ahi')" data-col="ahi" style="cursor:pointer">Status AHI</th>
               <th onclick="semuaSortBy('jenis')" data-col="jenis" style="cursor:pointer">Jenis Kegiatan</th>
               <th onclick="semuaSortBy('status')" data-col="status" style="cursor:pointer">Status</th>
               <th onclick="semuaSortBy('target')" data-col="target" style="cursor:pointer">Target</th>
@@ -4761,6 +4773,7 @@ function renderSemuaRencana(){
   const tahun  = document.getElementById('semuaTahunFilter').value;
   const od     = document.getElementById('semuaOverdueFilter').value;
   const krit   = document.getElementById('semuaKritFilter').value;
+  const ahi    = document.getElementById('semuaAhiFilter').value;
   const canEdit = ['admin','editor'].includes(currentRole);
 
   const rows = [];
@@ -4777,6 +4790,7 @@ function renderSemuaRencana(){
       const isKrit = giKrit.has((mtu?.Gi||'').trim());
       if(krit==='1' && !isKrit) return;
       if(krit==='0' && isKrit) return;
+      if(ahi && (mtu?._se||'').toUpperCase()!==ahi) return;
       rows.push({...rk, _sid:sid, _mtu:mtu});
     });
   });
@@ -4793,6 +4807,7 @@ function renderSemuaRencana(){
     if(col==='gi')      return (a._mtu?.Gi||'').localeCompare(b._mtu?.Gi||'')*m;
     if(col==='bay')     return (a._mtu?.Bay||'').localeCompare(b._mtu?.Bay||'')*m;
     if(col==='upt')     return (a._mtu?.Upt||'').localeCompare(b._mtu?.Upt||'')*m;
+    if(col==='ahi')     { const oa=ST_ORD[a._mtu?._se||'']??9, ob=ST_ORD[b._mtu?._se||'']??9; return (oa-ob)*m; }
     if(col==='sid')     return (a._sid||'').localeCompare(b._sid||'')*m;
     if(col==='jenis')   return (a.jenis_kegiatan||'').localeCompare(b.jenis_kegiatan||'')*m;
     if(col==='status')  return (a.status||'').localeCompare(b.status||'')*m;
@@ -4828,6 +4843,7 @@ function renderSemuaTable(rows, canEdit){
         <td><span class="badge" style="background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.2);font-size:9px">${e(mtu?.['#']||'—')}</span></td>
         <td style="font-size:10px;color:var(--text3)">${e((mtu?.Upt||'').replace('UPT ',''))}</td>
         <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${e(rk._sid||'—')}</td>
+        <td>${mtu?._se ? stH(mtu._se) : '<span style="color:var(--text3);font-size:10px">—</span>'}</td>
         <td><span style="font-size:10px;font-family:var(--mono);color:${col}">${e(rk.jenis_kegiatan||'—')}</span></td>
         <td><span style="font-size:10px;font-family:var(--mono);color:${sc}">${rk.status}</span></td>
         <td style="font-family:var(--mono);font-size:10px;${od?'color:var(--red);font-weight:600':''}">${od?'⚠ ':''}${e(tgt)}</td>
