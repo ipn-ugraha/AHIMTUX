@@ -224,6 +224,57 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
   .toggle-bar{padding:8px 12px}
   .ttitle{display:none}
 }
+
+/* ── MAIN NAV TABS ─────────────────────────────────────────────────────────── */
+.main-tabs{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:2px}
+.main-tab{padding:10px 16px;font-size:12px;font-family:var(--mono);color:var(--text3);border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.main-tab:hover{color:var(--text2)}
+.main-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.main-panel{display:none}
+.main-panel.active{display:block}
+
+/* ── RENCANA PAGE ──────────────────────────────────────────────────────────── */
+.renc-tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--bg3);padding:4px;border-radius:var(--rl);border:1px solid var(--border);width:fit-content}
+.renc-tab{padding:6px 14px;background:transparent;color:var(--text2);border:none;border-radius:var(--r);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s}
+.renc-tab.active{background:var(--accent);color:#fff}
+.renc-panel{display:none}
+.renc-panel.active{display:block}
+
+/* Alert cards */
+.alert-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px}
+.alert-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;cursor:pointer;transition:border-color .15s}
+.alert-card:hover{border-color:var(--border2)}
+.alert-card.cr{border-left:3px solid var(--red)}
+.alert-card.po{border-left:3px solid var(--amb)}
+.alert-card-val{font-size:28px;font-weight:600;line-height:1;margin-bottom:4px}
+.alert-card-lbl{font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em}
+.alert-card-sub{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:4px}
+
+/* Kalender */
+.cal-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.cal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.cal-title{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--text)}
+.cal-nav{background:transparent;border:1px solid var(--border2);color:var(--text2);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.cal-nav:hover{background:var(--bg3);color:var(--text)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-dow{padding:8px 4px;text-align:center;font-size:9px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;background:var(--bg3)}
+.cal-day{min-height:80px;padding:6px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);position:relative;vertical-align:top}
+.cal-day:nth-child(7n){border-right:none}
+.cal-day-num{font-size:11px;font-family:var(--mono);color:var(--text3);margin-bottom:4px}
+.cal-day.today .cal-day-num{background:var(--accent);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px}
+.cal-day.other-month{background:rgba(0,0,0,.1)}
+.cal-day.other-month .cal-day-num{color:var(--text3);opacity:.4}
+.cal-event{font-size:9px;font-family:var(--mono);padding:2px 5px;border-radius:3px;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.cal-event:hover{filter:brightness(1.2)}
+.cal-day.has-overdue{background:rgba(239,68,68,.04)}
+
+/* Warning row highlight */
+.row-mtu.rk-overdue td{background:rgba(239,68,68,.05) !important}
+.row-mtu.rk-overdue:hover td{background:rgba(239,68,68,.09) !important}
+
+/* Tabel tanpa rencana */
+.no-rencana-tbl table{font-size:11px}
+.no-rencana-tbl thead th{font-size:9px}
 </style>
 </head>
 <body>
@@ -809,7 +860,14 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
   </div>
 </div>
 
+<!-- MAIN NAV TABS -->
+<div class="main-tabs">
+  <button class="main-tab active" onclick="switchMainTab('dashboard',this)">📊 Dashboard</button>
+  <button class="main-tab" onclick="switchMainTab('rencana',this)" id="rencanaTabBtn">📋 Rencana <span id="rencanaAlertBadge" style="display:none;background:var(--red);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px">0</span></button>
+</div>
+
 <main class="main">
+<div id="panel-dashboard" class="main-panel active">
 
   <div class="fbar">
     <div class="fg">
@@ -997,6 +1055,177 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
       <div class="pag-btns" id="pb"></div>
     </div>
   </div>
+
+</div><!-- end panel-dashboard -->
+
+<!-- PANEL RENCANA -->
+<div id="panel-rencana" class="main-panel">
+
+  <!-- Sub-tab nav -->
+  <div class="renc-tabs">
+    <button class="renc-tab active" onclick="switchRencTab('alert',this)">⚠ Alert</button>
+    <button class="renc-tab" onclick="switchRencTab('kalender',this)">📅 Kalender</button>
+    <button class="renc-tab" onclick="switchRencTab('semua',this)">📋 Semua Rencana</button>
+  </div>
+
+  <!-- SUB-TAB: ALERT -->
+  <div id="renc-alert" class="renc-panel active">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <span style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em">Filter UPT:</span>
+      <select id="alertUptFilter" class="fs" onchange="renderAlertPanel()" style="min-width:160px">
+        <option value="">Semua UPT</option>
+      </select>
+      <span id="alertSummaryText" style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-left:auto"></span>
+    </div>
+
+    <div class="alert-cards" id="alertCards"></div>
+
+    <div class="tsec no-rencana-tbl">
+      <div class="thead">
+        <div class="thead-l" id="alertTableTitle">MTU Critical/Poor Tanpa Rencana</div>
+        <div class="thead-r">
+          <select id="alertStatusFilter" class="fs" onchange="renderAlertPanel()" style="font-size:11px;padding:3px 8px">
+            <option value="both">Critical + Poor</option>
+            <option value="CRITICAL">Critical Only</option>
+            <option value="POOR">Poor Only</option>
+          </select>
+        </div>
+      </div>
+      <div class="tw">
+        <table>
+          <thead>
+            <tr>
+              <th>GI</th>
+              <th>Bay</th>
+              <th>Jenis MTU</th>
+              <th>Status Hi</th>
+              <th>Nilai Hi</th>
+              <th>UPT</th>
+              <th>Serial Id</th>
+              <th style="width:100px">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="alertTableBody"></tbody>
+        </table>
+      </div>
+      <div class="pag">
+        <div class="pag-info" id="alertPagInfo">—</div>
+        <div class="pag-btns" id="alertPagBtns"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUB-TAB: KALENDER -->
+  <div id="renc-kalender" class="renc-panel">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <select id="kalUptFilter" class="fs" onchange="renderKalender()" style="min-width:160px">
+        <option value="">Semua UPT</option>
+      </select>
+      <select id="kalStatusFilter" class="fs" onchange="renderKalender()">
+        <option value="">Semua Status</option>
+        <option value="DRAFT">DRAFT</option>
+        <option value="DIAJUKAN">DIAJUKAN</option>
+        <option value="SELESAI">SELESAI</option>
+        <option value="BATAL">BATAL</option>
+      </select>
+    </div>
+    <div class="cal-wrap">
+      <div class="cal-header">
+        <button class="cal-nav" onclick="calPrev()">‹</button>
+        <span class="cal-title" id="calTitle">—</span>
+        <button class="cal-nav" onclick="calNext()">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+    <!-- Popup detail kalender -->
+    <div id="calPopup" style="display:none;position:fixed;z-index:500;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rl);padding:14px;min-width:280px;max-width:360px;box-shadow:0 8px 24px rgba(0,0,0,.5)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-family:var(--mono);font-size:11px;font-weight:500;color:var(--text)" id="calPopupTitle">—</span>
+        <button onclick="document.getElementById('calPopup').style.display='none'" style="background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0;width:20px;height:20px">✕</button>
+      </div>
+      <div id="calPopupBody"></div>
+    </div>
+  </div>
+
+  <!-- SUB-TAB: SEMUA RENCANA -->
+  <div id="renc-semua" class="renc-panel">
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-end">
+      <div class="fg">
+        <span class="fl">UPT</span>
+        <select id="semuaUptFilter" class="fs" onchange="renderSemuaRencana()" style="min-width:150px"><option value="">Semua UPT</option></select>
+      </div>
+      <div class="fg">
+        <span class="fl">Status</span>
+        <select id="semuaStatusFilter" class="fs" onchange="renderSemuaRencana()">
+          <option value="">Semua Status</option>
+          <option value="DRAFT">DRAFT</option>
+          <option value="DIAJUKAN">DIAJUKAN</option>
+          <option value="SELESAI">SELESAI</option>
+          <option value="BATAL">BATAL</option>
+        </select>
+      </div>
+      <div class="fg">
+        <span class="fl">Jenis</span>
+        <select id="semuaJenisFilter" class="fs" onchange="renderSemuaRencana()">
+          <option value="">Semua Jenis</option>
+          <option value="PEMELIHARAAN">PEMELIHARAAN</option>
+          <option value="PENGGANTIAN">PENGGANTIAN</option>
+          <option value="MONITORING">MONITORING</option>
+          <option value="VERIFIKASI">VERIFIKASI</option>
+          <option value="MENUNGGU PADAM">MENUNGGU PADAM</option>
+          <option value="PENGADAAN MATERIAL">PENGADAAN MATERIAL</option>
+          <option value="CLOSE">CLOSE</option>
+          <option value="LAINNYA">LAINNYA</option>
+        </select>
+      </div>
+      <div class="fg">
+        <span class="fl">Tahun</span>
+        <select id="semuaTahunFilter" class="fs" onchange="renderSemuaRencana()">
+          <option value="">Semua Tahun</option>
+          <option value="2024">2024</option>
+          <option value="2025">2025</option>
+          <option value="2026">2026</option>
+          <option value="2027">2027</option>
+        </select>
+      </div>
+      <div class="fg">
+        <span class="fl">Lewat Target</span>
+        <select id="semuaOverdueFilter" class="fs" onchange="renderSemuaRencana()">
+          <option value="">Semua</option>
+          <option value="1">Lewat Target</option>
+          <option value="0">Belum Lewat</option>
+        </select>
+      </div>
+      <div class="fcnt" id="semuaCount">—</div>
+    </div>
+    <div class="tsec">
+      <div class="tw">
+        <table>
+          <thead>
+            <tr>
+              <th>GI</th>
+              <th>Bay</th>
+              <th>Jenis MTU</th>
+              <th>Serial Id</th>
+              <th>Jenis Kegiatan</th>
+              <th>Status</th>
+              <th>Target</th>
+              <th>Uraian</th>
+              <th>Dibuat Oleh</th>
+              <th style="width:80px">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="semuaTableBody"></tbody>
+        </table>
+      </div>
+      <div class="pag">
+        <div class="pag-info" id="semuaPagInfo">—</div>
+        <div class="pag-btns" id="semuaPagBtns"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end panel-rencana -->
 
 </main>
 
@@ -1252,9 +1481,9 @@ async function init(){
   buildFilters();
 
   setP(99,'Rendering...');
-  // Defer heavy render to next frame so progress hits 99% visibly
   await new Promise(r=>setTimeout(r,30));
   applyFilters();
+  updateAlertBadge();
 
   setP(100,'Selesai');
   await new Promise(r=>setTimeout(r,200));
@@ -1766,15 +1995,22 @@ function rkBadge(serialId){
     waktuStr = `${latest.tahun_rencana}`;
   }
 
-  const tooltip = `${latest.jenis_kegiatan||''} ${waktuStr}\n${latest.uraian||''}`.trim();
+  const od = isOverdue(latest);
+  const tooltip = `${latest.jenis_kegiatan||''} ${waktuStr}${od?' ⚠ LEWAT TARGET':''}\n${latest.uraian||''}`.trim();
   const countBadge = aktif.length>1
     ? `<span style="font-size:9px;color:var(--text3);font-family:var(--mono);margin-left:3px">+${aktif.length-1}</span>`
     : '';
   const waktuBadge = waktuStr
-    ? `<span style="font-size:9px;font-family:var(--mono);color:var(--text3);margin-left:4px">${e(waktuStr)}</span>`
+    ? `<span style="font-size:9px;font-family:var(--mono);color:${od?'var(--red)':'var(--text3)'};margin-left:4px">${od?'⚠ ':''}${e(waktuStr)}</span>`
     : '';
-  return `<span class="badge" style="background:${sc.bg};color:${sc.color};border:1px solid ${sc.bdr};cursor:pointer"
-    title="${e(tooltip)}" onclick="openRencana('${e(serialId)}')">${latest.status}</span>${countBadge}${waktuBadge}${uraian
+
+  // Override warna badge kalau overdue
+  const scFinal = od
+    ? {bg:'rgba(239,68,68,.15)',color:'#f87171',bdr:'rgba(239,68,68,.4)'}
+    : sc;
+
+  return `<span class="badge" style="background:${scFinal.bg};color:${scFinal.color};border:1px solid ${scFinal.bdr};cursor:pointer"
+    title="${e(tooltip)}" onclick="openRencana('${e(serialId)}')">${od?'⚠ ':''}${latest.status}</span>${countBadge}${waktuBadge}${uraian
     ? `<span style="font-size:10px;color:var(--text3);margin-left:5px;max-width:140px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle">${e(uraian)}</span>`
     : ''}`;
 }
@@ -1785,7 +2021,10 @@ function mtuH(r){
   const rowIdx = raw.indexOf(r);
   const canEdit = ['admin','editor'].includes(currentRole);
   const sid = r['Serial Id']||'';
-  return `<tr class="row-mtu">
+  const rkList = rencanaMap.get((sid||'').trim())||[];
+  const rkAktif = rkList.filter(rk=>rk.status!=='BATAL');
+  const hasOverdue = rkAktif.some(rk=>isOverdue(rk));
+  return `<tr class="row-mtu${hasOverdue?' rk-overdue':''}">
     <td style="text-align:center;padding:6px 6px">
       ${canEdit ? `<button class="edit-btn" onclick="openEditMtu(${rowIdx})" title="Edit data MTU">✎</button>` : ''}
     </td>
@@ -4073,6 +4312,451 @@ document.getElementById('rkAddBtn').addEventListener('click',()=>showRkForm('add
 document.getElementById('rkFormCancelBtn').addEventListener('click',()=>{document.getElementById('rkFormSection').style.display='none';});
 document.getElementById('rkFormSaveBtn').addEventListener('click',saveRkForm);
 
+
+// ── MAIN TAB NAVIGATION ──────────────────────────────────────────────────────
+function switchMainTab(name, btn){
+  document.querySelectorAll('.main-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.main-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  if(name==='rencana') initRencanaPage();
+}
+
+function switchRencTab(name, btn){
+  document.querySelectorAll('.renc-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.renc-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('renc-'+name).classList.add('active');
+  if(name==='kalender') renderKalender();
+  if(name==='semua') renderSemuaRencana();
+  if(name==='alert') renderAlertPanel();
+}
+
+let rencanaPageInit = false;
+function initRencanaPage(){
+  if(rencanaPageInit) return;
+  rencanaPageInit = true;
+  // Isi filter UPT
+  const upts = [...new Set(raw.map(r=>r.Upt).filter(v=>v&&v!=='-'))].sort();
+  ['alertUptFilter','kalUptFilter','semuaUptFilter'].forEach(id=>{
+    const sel = document.getElementById(id);
+    upts.forEach(u=>{
+      const o = document.createElement('option');
+      o.value=u; o.textContent=u.replace('UPT ','');
+      sel.appendChild(o);
+    });
+  });
+  renderAlertPanel();
+  calYear = new Date().getFullYear();
+  calMonth = new Date().getMonth();
+  renderKalender();
+}
+
+// ── HELPER: cek apakah rencana sudah lewat target ─────────────────────────────
+function isOverdue(rk){
+  if(!rk || rk.status==='SELESAI' || rk.status==='BATAL') return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  if(rk.tanggal_target){
+    return new Date(rk.tanggal_target) < today;
+  }
+  if(rk.bulan_target && rk.tahun_rencana){
+    const lastDay = new Date(rk.tahun_rencana, rk.bulan_target, 0);
+    return lastDay < today;
+  }
+  if(rk.tahun_rencana){
+    return new Date(rk.tahun_rencana, 11, 31) < today;
+  }
+  return false;
+}
+
+function formatTarget(rk){
+  const NAMA_BULAN = ['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+  if(rk.tanggal_target){
+    const d = new Date(rk.tanggal_target);
+    return `${d.getDate()} ${NAMA_BULAN[d.getMonth()+1]} ${d.getFullYear()}`;
+  }
+  if(rk.bulan_target) return `${NAMA_BULAN[rk.bulan_target]} ${rk.tahun_rencana||''}`;
+  if(rk.tahun_rencana) return `${rk.tahun_rencana}`;
+  return '—';
+}
+
+// ── ALERT PANEL ───────────────────────────────────────────────────────────────
+let alertPage = 1;
+const ALERT_PAGE = 50;
+
+function renderAlertPanel(){
+  alertPage = 1;
+  const upt = document.getElementById('alertUptFilter').value;
+  const stf = document.getElementById('alertStatusFilter').value;
+
+  // MTU Critical/Poor yang tidak punya rencana aktif
+  let rows = raw.filter(r=>{
+    const st = r._se;
+    if(st!=='CRITICAL' && st!=='POOR') return false;
+    if(upt && r.Upt!==upt) return false;
+    if(stf==='CRITICAL' && st!=='CRITICAL') return false;
+    if(stf==='POOR' && st!=='POOR') return false;
+    const sid = (r['Serial Id']||'').trim();
+    if(!sid || sid==='NO DATA') return false;
+    const list = rencanaMap.get(sid)||[];
+    const aktif = list.filter(rk=>rk.status!=='BATAL'&&rk.status!=='SELESAI');
+    return aktif.length === 0;
+  });
+
+  // Cards
+  const cr = rows.filter(r=>r._se==='CRITICAL').length;
+  const po = rows.filter(r=>r._se==='POOR').length;
+  document.getElementById('alertCards').innerHTML = `
+    <div class="alert-card cr">
+      <div class="alert-card-val" style="color:var(--red)">${cr}</div>
+      <div class="alert-card-lbl">Critical Tanpa Rencana</div>
+      <div class="alert-card-sub">${upt?upt.replace('UPT ',''):'Semua UPT'}</div>
+    </div>
+    <div class="alert-card po">
+      <div class="alert-card-val" style="color:var(--amb)">${po}</div>
+      <div class="alert-card-lbl">Poor Tanpa Rencana</div>
+      <div class="alert-card-sub">${upt?upt.replace('UPT ',''):'Semua UPT'}</div>
+    </div>
+    <div class="alert-card">
+      <div class="alert-card-val" style="color:var(--text)">${cr+po}</div>
+      <div class="alert-card-lbl">Total Perlu Rencana</div>
+      <div class="alert-card-sub">${rows.length} MTU</div>
+    </div>`;
+
+  // Update badge di navbar
+  const badge = document.getElementById('rencanaAlertBadge');
+  if(cr+po > 0){
+    badge.style.display='inline';
+    badge.textContent = cr+po;
+  } else {
+    badge.style.display='none';
+  }
+
+  document.getElementById('alertSummaryText').textContent =
+    `${rows.length.toLocaleString('id-ID')} MTU perlu rencana`;
+  document.getElementById('alertTableTitle').textContent =
+    `MTU ${stf==='CRITICAL'?'Critical':stf==='POOR'?'Poor':'Critical/Poor'} Tanpa Rencana`;
+
+  renderAlertTable(rows);
+}
+
+function renderAlertTable(rows){
+  const tot = rows.length;
+  const pages = Math.max(1,Math.ceil(tot/ALERT_PAGE));
+  const sl = rows.slice((alertPage-1)*ALERT_PAGE, alertPage*ALERT_PAGE);
+  const canEdit = ['admin','editor'].includes(currentRole);
+  const tbody = document.getElementById('alertTableBody');
+
+  if(!sl.length){
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">Tidak ada MTU Critical/Poor tanpa rencana 🎉</td></tr>';
+  } else {
+    tbody.innerHTML = sl.map(r=>{
+      const sid = (r['Serial Id']||'').trim();
+      const rowIdx = raw.indexOf(r);
+      const addBtn = canEdit
+        ? `<button onclick="openRencana('${e(sid)}')" style="background:var(--accent);border:none;color:#fff;padding:3px 8px;border-radius:4px;font-family:var(--mono);font-size:10px;cursor:pointer">➕ Tambah</button>`
+        : '—';
+      return `<tr>
+        <td style="color:var(--text);font-weight:500">${e(r.Gi||'—')}</td>
+        <td>${e(r.Bay||'—')}</td>
+        <td><span class="badge" style="background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.2);font-size:9px">${e(r['#']||'—')}</span></td>
+        <td>${stH(r._se)}</td>
+        <td><div class="hiwrap"><span class="hival">${r['Nilai Hi']||'—'}</span></div></td>
+        <td style="font-size:10px;color:var(--text3)">${e((r.Upt||'').replace('UPT ',''))}</td>
+        <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${e(sid||'—')}</td>
+        <td>${addBtn}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  document.getElementById('alertPagInfo').textContent =
+    `${((alertPage-1)*ALERT_PAGE+1).toLocaleString('id-ID')}–${Math.min(alertPage*ALERT_PAGE,tot).toLocaleString('id-ID')} dari ${tot.toLocaleString('id-ID')}`;
+
+  // Pagination
+  const pb = document.getElementById('alertPagBtns'); pb.innerHTML='';
+  const addPb=(lbl,pg,dis,act)=>{
+    const b=document.createElement('button');
+    b.className='pb'+(act?' on':'');b.textContent=lbl;b.disabled=dis;
+    b.onclick=()=>{alertPage=pg;renderAlertTable(rows);};pb.appendChild(b);
+  };
+  addPb('‹',alertPage-1,alertPage===1);
+  pgRange(alertPage,pages).forEach(p=>{
+    if(p==='...'){const s=document.createElement('span');s.textContent='…';s.style.cssText='color:var(--text3);padding:0 3px;align-self:center;font-size:11px';pb.appendChild(s);}
+    else addPb(p,p,false,p===alertPage);
+  });
+  addPb('›',alertPage+1,alertPage===pages);
+}
+
+// ── KALENDER ──────────────────────────────────────────────────────────────────
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth(); // 0-indexed
+
+const JENIS_CAL_COLOR = {
+  'PEMELIHARAAN':      '#3b82f6',
+  'PENGGANTIAN':       '#ef4444',
+  'MONITORING':        '#22c55e',
+  'VERIFIKASI':        '#a78bfa',
+  'MENUNGGU PADAM':    '#f59e0b',
+  'PENGADAAN MATERIAL':'#f97316',
+  'CLOSE':             '#14b8a6',
+  'LAINNYA':           '#6b7585',
+};
+
+function calPrev(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderKalender(); }
+function calNext(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderKalender(); }
+
+function renderKalender(){
+  const upt = document.getElementById('kalUptFilter')?.value||'';
+  const stf = document.getElementById('kalStatusFilter')?.value||'';
+  const NAMA_BULAN_FULL = ['Januari','Februari','Maret','April','Mei','Juni',
+                           'Juli','Agustus','September','Oktober','November','Desember'];
+  document.getElementById('calTitle').textContent =
+    `${NAMA_BULAN_FULL[calMonth]} ${calYear}`;
+
+  // Kumpulkan semua rencana di bulan ini
+  const today = new Date(); today.setHours(0,0,0,0);
+  const eventsByDay = {};
+
+  rencanaMap.forEach((list, sid)=>{
+    list.forEach(rk=>{
+      if(stf && rk.status!==stf) return;
+      // Filter UPT lewat MTU
+      if(upt){
+        const mtu = raw.find(r=>(r['Serial Id']||'').trim()===sid);
+        if(!mtu || mtu.Upt!==upt) return;
+      }
+
+      let day = null;
+      if(rk.tanggal_target){
+        const d = new Date(rk.tanggal_target);
+        if(d.getFullYear()===calYear && d.getMonth()===calMonth) day=d.getDate();
+      } else if(rk.bulan_target && rk.tahun_rencana){
+        if(rk.tahun_rencana===calYear && (rk.bulan_target-1)===calMonth){
+          // Tampilkan di hari terakhir bulan
+          day = new Date(calYear, calMonth+1, 0).getDate();
+        }
+      }
+      if(day){
+        if(!eventsByDay[day]) eventsByDay[day] = [];
+        eventsByDay[day].push(rk);
+      }
+    });
+  });
+
+  // Render grid
+  const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+  const todayDate = today.getFullYear()===calYear && today.getMonth()===calMonth ? today.getDate() : -1;
+
+  let html = ['Min','Sen','Sel','Rab','Kam','Jum','Sab']
+    .map(d=>`<div class="cal-dow">${d}</div>`).join('');
+
+  // Padding hari sebelumnya
+  for(let i=0; i<firstDay; i++){
+    const d = daysInPrev - firstDay + 1 + i;
+    html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
+  }
+
+  // Hari bulan ini
+  for(let d=1; d<=daysInMonth; d++){
+    const events = eventsByDay[d]||[];
+    const hasOverdue = events.some(rk=>isOverdue(rk));
+    const isToday = d===todayDate;
+    html += `<div class="cal-day${hasOverdue?' has-overdue':''}${isToday?' today':''}" onclick="showCalPopup(${d},event)">
+      <div class="cal-day-num">${d}</div>
+      ${events.slice(0,3).map(rk=>{
+        const col = JENIS_CAL_COLOR[rk.jenis_kegiatan]||'#6b7585';
+        const od = isOverdue(rk);
+        const mtu = raw.find(r=>(r['Serial Id']||'').trim()===rk.serial_id);
+        const label = mtu ? `${(mtu.Bay||'').substring(0,12)}` : rk.serial_id||'—';
+        return `<div class="cal-event" style="background:${col}22;color:${col};border-left:2px solid ${col}${od?';outline:1px solid var(--red)':''}" title="${e(rk.uraian||'')}">
+          ${od?'⚠ ':''}${e(label)}
+        </div>`;
+      }).join('')}
+      ${events.length>3?`<div style="font-size:9px;color:var(--text3);font-family:var(--mono)">+${events.length-3} lagi</div>`:''}
+    </div>`;
+  }
+
+  // Padding hari berikutnya
+  const totalCells = firstDay + daysInMonth;
+  const remaining = totalCells%7 === 0 ? 0 : 7-(totalCells%7);
+  for(let i=1; i<=remaining; i++){
+    html += `<div class="cal-day other-month"><div class="cal-day-num">${i}</div></div>`;
+  }
+
+  document.getElementById('calGrid').innerHTML = html;
+}
+
+function showCalPopup(day, evt){
+  const upt = document.getElementById('kalUptFilter')?.value||'';
+  const stf = document.getElementById('kalStatusFilter')?.value||'';
+  const NAMA_BULAN_FULL = ['Januari','Februari','Maret','April','Mei','Juni',
+                           'Juli','Agustus','September','Oktober','November','Desember'];
+  const events = [];
+  rencanaMap.forEach((list, sid)=>{
+    list.forEach(rk=>{
+      if(stf && rk.status!==stf) return;
+      if(upt){
+        const mtu = raw.find(r=>(r['Serial Id']||'').trim()===sid);
+        if(!mtu || mtu.Upt!==upt) return;
+      }
+      let match = false;
+      if(rk.tanggal_target){
+        const d = new Date(rk.tanggal_target);
+        if(d.getFullYear()===calYear && d.getMonth()===calMonth && d.getDate()===day) match=true;
+      } else if(rk.bulan_target && rk.tahun_rencana){
+        const lastDay = new Date(calYear, calMonth+1, 0).getDate();
+        if(rk.tahun_rencana===calYear && (rk.bulan_target-1)===calMonth && day===lastDay) match=true;
+      }
+      if(match) events.push({...rk, _sid:sid});
+    });
+  });
+
+  if(!events.length) return;
+
+  const popup = document.getElementById('calPopup');
+  document.getElementById('calPopupTitle').textContent =
+    `${day} ${NAMA_BULAN_FULL[calMonth]} ${calYear} — ${events.length} rencana`;
+
+  const stColors = {
+    DRAFT:'#9ca3af',DIAJUKAN:'#60a5fa',SELESAI:'#4ade80',BATAL:'#f87171'
+  };
+
+  document.getElementById('calPopupBody').innerHTML = events.map(rk=>{
+    const mtu = raw.find(r=>(r['Serial Id']||'').trim()===rk._sid);
+    const od = isOverdue(rk);
+    const col = JENIS_CAL_COLOR[rk.jenis_kegiatan]||'#6b7585';
+    return `<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer"
+      onclick="openRencana('${e(rk._sid)}')">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap">
+        <span style="font-size:9px;font-family:var(--mono);color:${col};background:${col}22;padding:1px 5px;border-radius:3px">${e(rk.jenis_kegiatan||'')}</span>
+        <span style="font-size:9px;font-family:var(--mono);color:${stColors[rk.status]||'#9ca3af'}">${rk.status}</span>
+        ${od?'<span style="color:var(--red);font-size:10px">⚠ Lewat Target</span>':''}
+      </div>
+      <div style="font-size:11px;color:var(--text2)">${e(mtu?`${mtu.Gi||'—'} › ${mtu.Bay||'—'}`:rk._sid)}</div>
+      <div style="font-size:10px;color:var(--text3);margin-top:2px">${e((rk.uraian||'').substring(0,60)+(rk.uraian&&rk.uraian.length>60?'…':''))}</div>
+    </div>`;
+  }).join('');
+
+  // Posisi popup dekat klik
+  const rect = evt.currentTarget.getBoundingClientRect();
+  popup.style.display='block';
+  popup.style.top = (rect.bottom + window.scrollY + 4)+'px';
+  popup.style.left = Math.min(rect.left, window.innerWidth-370)+'px';
+}
+
+// Tutup popup kalau klik di luar
+document.addEventListener('click', e=>{
+  const popup = document.getElementById('calPopup');
+  if(popup && popup.style.display!=='none' && !popup.contains(e.target) && !e.target.closest('.cal-day')) {
+    popup.style.display='none';
+  }
+});
+
+// ── SEMUA RENCANA ─────────────────────────────────────────────────────────────
+let semuaPage = 1;
+const SEMUA_PAGE = 50;
+
+function renderSemuaRencana(){
+  semuaPage = 1;
+  const upt    = document.getElementById('semuaUptFilter').value;
+  const stf    = document.getElementById('semuaStatusFilter').value;
+  const jenis  = document.getElementById('semuaJenisFilter').value;
+  const tahun  = document.getElementById('semuaTahunFilter').value;
+  const od     = document.getElementById('semuaOverdueFilter').value;
+  const canEdit = ['admin','editor'].includes(currentRole);
+
+  const rows = [];
+  rencanaMap.forEach((list, sid)=>{
+    const mtu = raw.find(r=>(r['Serial Id']||'').trim()===sid);
+    list.forEach(rk=>{
+      if(stf && rk.status!==stf) return;
+      if(jenis && rk.jenis_kegiatan!==jenis) return;
+      if(tahun && String(rk.tahun_rencana)!==tahun) return;
+      if(upt && (!mtu || mtu.Upt!==upt)) return;
+      if(od==='1' && !isOverdue(rk)) return;
+      if(od==='0' && isOverdue(rk)) return;
+      rows.push({...rk, _sid:sid, _mtu:mtu});
+    });
+  });
+
+  // Sort by tanggal target asc
+  rows.sort((a,b)=>{
+    const ta = a.tanggal_target||`${a.tahun_rencana||9999}-${String(a.bulan_target||12).padStart(2,'0')}-28`;
+    const tb = b.tanggal_target||`${b.tahun_rencana||9999}-${String(b.bulan_target||12).padStart(2,'0')}-28`;
+    return ta.localeCompare(tb);
+  });
+
+  document.getElementById('semuaCount').innerHTML =
+    `Menampilkan <span style="color:var(--accent)">${rows.length.toLocaleString('id-ID')}</span> rencana`;
+
+  renderSemuaTable(rows, canEdit);
+}
+
+function renderSemuaTable(rows, canEdit){
+  const tot = rows.length;
+  const pages = Math.max(1,Math.ceil(tot/SEMUA_PAGE));
+  const sl = rows.slice((semuaPage-1)*SEMUA_PAGE, semuaPage*SEMUA_PAGE);
+  const tbody = document.getElementById('semuaTableBody');
+  const stColors = {DRAFT:'#9ca3af',DIAJUKAN:'#60a5fa',SELESAI:'#4ade80',BATAL:'#f87171'};
+
+  if(!sl.length){
+    tbody.innerHTML='<tr><td colspan="10" class="empty">Tidak ada rencana</td></tr>';
+  } else {
+    tbody.innerHTML = sl.map(rk=>{
+      const mtu = rk._mtu;
+      const od = isOverdue(rk);
+      const col = JENIS_CAL_COLOR[rk.jenis_kegiatan]||'#6b7585';
+      const sc  = stColors[rk.status]||'#9ca3af';
+      const tgt = formatTarget(rk);
+      return `<tr style="${od?'background:rgba(239,68,68,.04)':''}">
+        <td style="color:var(--text);font-size:11px">${e(mtu?.Gi||'—')}</td>
+        <td style="font-size:11px">${e(mtu?.Bay||'—')}</td>
+        <td><span class="badge" style="background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.2);font-size:9px">${e(mtu?.['#']||'—')}</span></td>
+        <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${e(rk._sid||'—')}</td>
+        <td><span style="font-size:10px;font-family:var(--mono);color:${col}">${e(rk.jenis_kegiatan||'—')}</span></td>
+        <td><span style="font-size:10px;font-family:var(--mono);color:${sc}">${rk.status}</span></td>
+        <td style="font-family:var(--mono);font-size:10px;${od?'color:var(--red);font-weight:600':''}">${od?'⚠ ':''}${e(tgt)}</td>
+        <td style="font-size:10px;color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis" title="${e(rk.uraian||'')}">${e((rk.uraian||'').substring(0,50)+(rk.uraian&&rk.uraian.length>50?'…':''))}</td>
+        <td style="font-size:10px;color:var(--text3)">${e(rk.created_by_name||'—')}</td>
+        <td>
+          ${canEdit?`<button onclick="openRencana('${e(rk._sid)}')" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;font-family:var(--mono);font-size:10px;cursor:pointer">✎</button>`:''}
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  document.getElementById('semuaPagInfo').textContent =
+    `${((semuaPage-1)*SEMUA_PAGE+1).toLocaleString('id-ID')}–${Math.min(semuaPage*SEMUA_PAGE,tot).toLocaleString('id-ID')} dari ${tot.toLocaleString('id-ID')}`;
+
+  const pb = document.getElementById('semuaPagBtns'); pb.innerHTML='';
+  const addPb=(lbl,pg,dis,act)=>{
+    const b=document.createElement('button');
+    b.className='pb'+(act?' on':'');b.textContent=lbl;b.disabled=dis;
+    b.onclick=()=>{semuaPage=pg;renderSemuaTable(rows,canEdit);};pb.appendChild(b);
+  };
+  addPb('‹',semuaPage-1,semuaPage===1);
+  pgRange(semuaPage,pages).forEach(p=>{
+    if(p==='...'){const s=document.createElement('span');s.textContent='…';s.style.cssText='color:var(--text3);padding:0 3px;align-self:center;font-size:11px';pb.appendChild(s);}
+    else addPb(p,p,false,p===semuaPage);
+  });
+  addPb('›',semuaPage+1,semuaPage===pages);
+}
+
+// ── UPDATE BADGE ALERT DI NAVBAR SETELAH DATA LOAD ───────────────────────────
+function updateAlertBadge(){
+  const count = raw.filter(r=>{
+    if(r._se!=='CRITICAL' && r._se!=='POOR') return false;
+    const sid = (r['Serial Id']||'').trim();
+    if(!sid || sid==='NO DATA') return false;
+    const list = rencanaMap.get(sid)||[];
+    return list.filter(rk=>rk.status!=='BATAL'&&rk.status!=='SELESAI').length === 0;
+  }).length;
+  const badge = document.getElementById('rencanaAlertBadge');
+  if(count>0){ badge.style.display='inline'; badge.textContent=count; }
+  else badge.style.display='none';
+}
 
 init().catch(err=>{
   document.getElementById('ltxt').textContent='Gagal: '+err.message;
