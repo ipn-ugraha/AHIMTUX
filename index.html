@@ -3769,11 +3769,12 @@ async function parseBatchWithClaude(items){
     return (data.result||[]).map(r=>({...r, _method:'claude'}));
 
   }catch(err){
-    // Network error atau auth error → fallback regex
+    // Semua error dari Edge Function → fallback regex
     if(err.message.includes('fetch') || err.message.includes('network') ||
        err.message.includes('Failed to fetch') || err.message.includes('401') ||
-       err.message.includes('UNAUTHORIZED')){
-      appendParseLog(`⚠ Edge Function tidak tersedia (${err.message.substring(0,50)}), pakai regex`, 'var(--amb)');
+       err.message.includes('UNAUTHORIZED') || err.message.includes('500') ||
+       err.message.includes('ANTHROPIC_API_KEY')){
+      appendParseLog(`⚠ Pakai regex parser (${err.message.substring(0,60)})`, 'var(--amb)');
       return parseRencanaWithRegex(items);
     }
     throw err; // error lain tetap di-throw
