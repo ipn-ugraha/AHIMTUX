@@ -3829,11 +3829,15 @@ async function runParseRencana(scope){
 
     try{
       const parsed = await parseBatchWithClaude(items);
+      // DEBUG: lihat isi parsed di console browser
+      console.log('Batch', i+1, 'parsed:', JSON.stringify(parsed.slice(0,2)));
 
       // Upsert ke Supabase
       for(const p of parsed){
         if(!parseRunning) break;
         const sid = p.id;
+        // DEBUG
+        if(!sid){ console.warn('Skip: p.id kosong', p); continue; }
         const mtu = raw.find(r=>(r['Serial Id']||'').trim()===sid);
         const srcText = items.find(x=>x.serial_id===sid)?.rencana_text || '';
 
