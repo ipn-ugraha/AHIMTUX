@@ -3973,7 +3973,7 @@ function parseRencanaWithRegex(items){
       .replace(/jadwal[:\-]?\s*/gi, '')
       .replace(/\s+/g, ' ')
       .trim();
-    if(uraian.length > 100) uraian = uraian.substring(0, 97) + '…';
+    if(uraian.length > 500) uraian = uraian.substring(0, 497) + '…';
 
     return {
       id:           item.serial_id,
@@ -4127,7 +4127,7 @@ async function runParseRencana(scope){
           bay:             mtu?.Bay  || '',
           jenis_mtu:       mtu?.['#']|| '',
           jenis_kegiatan:  p.jenis_kegiatan || 'LAINNYA',
-          uraian:          p.uraian || srcText.substring(0,100),
+          uraian:          p.uraian || srcText.substring(0,500),
           tahun_rencana:   p.tahun_rencana || new Date().getFullYear(),
           bulan_target:    p.bulan_target || null,
           tanggal_target:  p.tanggal_target || null,
@@ -4257,7 +4257,7 @@ async function runParseRencanaSilent(scope){
         const payload = {
           serial_id:sid, gi:mtu?.Gi||'', bay:mtu?.Bay||'', jenis_mtu:mtu?.['#']||'',
           jenis_kegiatan:p.jenis_kegiatan||'LAINNYA',
-          uraian:p.uraian||srcText.substring(0,100),
+          uraian:p.uraian||srcText.substring(0,500),
           tahun_rencana:p.tahun_rencana||new Date().getFullYear(),
           bulan_target:p.bulan_target||null,
           tanggal_target:p.tanggal_target||null,
