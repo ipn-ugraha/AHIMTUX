@@ -3731,11 +3731,21 @@ async function parseBatchWithClaude(items){
     (typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '');
 
   try{
+    // Ambil JWT dari session user yang sedang login
+    // Kalau tidak ada session, pakai anon key
+    let authToken = anonKey;
+    if(sbDb){
+      const { data: sessionData } = await sbDb.auth.getSession();
+      if(sessionData?.session?.access_token){
+        authToken = sessionData.session.access_token;
+      }
+    }
+
     const response = await fetch(edgeFnUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${anonKey}`,
+        'Authorization': `Bearer ${authToken}`,
         'apikey': anonKey,
       },
       body: JSON.stringify({ items })
@@ -3758,10 +3768,11 @@ async function parseBatchWithClaude(items){
     return (data.result||[]).map(r=>({...r, _method:'claude'}));
 
   }catch(err){
-    // Network error (CORS, offline, dll) → fallback regex
+    // Network error atau auth error → fallback regex
     if(err.message.includes('fetch') || err.message.includes('network') ||
-       err.message.includes('Failed to fetch')){
-      appendParseLog(`⚠ Edge Function tidak tersedia (${err.message.substring(0,40)}), pakai regex`, 'var(--amb)');
+       err.message.includes('Failed to fetch') || err.message.includes('401') ||
+       err.message.includes('UNAUTHORIZED')){
+      appendParseLog(`⚠ Edge Function tidak tersedia (${err.message.substring(0,50)}), pakai regex`, 'var(--amb)');
       return parseRencanaWithRegex(items);
     }
     throw err; // error lain tetap di-throw
