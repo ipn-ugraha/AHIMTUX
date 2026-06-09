@@ -3860,34 +3860,43 @@ async function runParseRencana(scope){
         };
 
         let result;
-        if(existingAuto){
-          // UPDATE baris auto yang sudah ada
-          result = await sbDb.from(SB_TABLE_RK)
-            .update(payload)
-            .eq('id', existingAuto.id)
-            .select();
-        } else {
-          // INSERT baru
-          payload.created_by = currentUser.id;
-          payload.created_by_name = username;
-          result = await sbDb.from(SB_TABLE_RK).insert(payload).select();
-        }
-
-        if(result.error) throw result.error;
-
-        // Update local map
-        const savedRow = result.data?.[0];
-        if(savedRow){
-          if(!rencanaMap.has(sid)) rencanaMap.set(sid,[]);
-          const localList = rencanaMap.get(sid);
+        try{
           if(existingAuto){
-            const idx = localList.findIndex(rk=>rk.id===existingAuto.id);
-            if(idx>=0) localList[idx] = savedRow;
+            result = await sbDb.from(SB_TABLE_RK)
+              .update(payload)
+              .eq('id', existingAuto.id)
+              .select();
           } else {
-            localList.push(savedRow);
+            payload.created_by = currentUser.id;
+            payload.created_by_name = username;
+            result = await sbDb.from(SB_TABLE_RK).insert(payload).select();
           }
+
+          if(result.error){
+            appendParseLog(`  ⚠ Skip SN:${sid} — ${result.error.message}`, 'var(--red)');
+            console.error('Upsert error:', sid, result.error);
+            continue; // skip item ini, lanjut ke berikutnya
+          }
+
+          // Update local map
+          const savedRow = result.data?.[0];
+          if(savedRow){
+            if(!rencanaMap.has(sid)) rencanaMap.set(sid,[]);
+            const localList = rencanaMap.get(sid);
+            if(existingAuto){
+              const idx = localList.findIndex(rk=>rk.id===existingAuto.id);
+              if(idx>=0) localList[idx] = savedRow;
+              else localList.push(savedRow);
+            } else {
+              localList.push(savedRow);
+            }
+          }
+          doneCount++;
+
+        }catch(itemErr){
+          appendParseLog(`  ⚠ Error SN:${sid} — ${itemErr.message}`, 'var(--red)');
+          console.error('Item error:', sid, itemErr);
         }
-        doneCount++;
       }
 
       appendParseLog(
@@ -3991,6 +4000,8 @@ async function runParseRencanaSilent(scope){
             const idx = localList.findIndex(rk=>rk.id===existingAuto.id);
             if(idx>=0) localList[idx]=savedRow; else localList.push(savedRow);
           } else { localList.push(savedRow); }
+        } else if(result.error){
+          console.warn('Silent upsert error:', sid, result.error.message);
         }
       }
     }catch(e){ console.warn('Silent parse batch error:',e.message); }
