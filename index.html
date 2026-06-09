@@ -4349,7 +4349,7 @@ function initRencanaPage(){
   });
   renderAlertPanel();
   calYear = new Date().getFullYear();
-  calMonth = new Date().getMonth(); // tampilkan bulan ini s.d. +5
+  calMonth = 0; // mulai dari Januari
   renderKalender();
 }
 
@@ -4658,6 +4658,8 @@ document.addEventListener('click', e=>{
 
 // ── SEMUA RENCANA ─────────────────────────────────────────────────────────────
 let semuaSort = {col:'target', dir:'asc'};
+let semuaPage = 1;
+const SEMUA_PAGE = 50;
 
 function semuaSortBy(col){
   if(semuaSort.col===col) semuaSort.dir = semuaSort.dir==='asc'?'desc':'asc';
@@ -4741,7 +4743,7 @@ function renderSemuaTable(rows, canEdit){
         <td><span style="font-size:10px;font-family:var(--mono);color:${col}">${e(rk.jenis_kegiatan||'—')}</span></td>
         <td><span style="font-size:10px;font-family:var(--mono);color:${sc}">${rk.status}</span></td>
         <td style="font-family:var(--mono);font-size:10px;${od?'color:var(--red);font-weight:600':''}">${od?'⚠ ':''}${e(tgt)}</td>
-        <td style="font-size:10px;color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis" title="${e(rk.uraian||'')}">${e((rk.uraian||'').substring(0,50)+(rk.uraian&&rk.uraian.length>50?'…':''))}</td>
+        <td style="font-size:10px;color:var(--text2);max-width:280px;white-space:normal;line-height:1.4">${e(rk.uraian||'—')}</td>
         <td style="font-size:10px;color:var(--text3)">${e(rk.created_by_name||'—')}</td>
         <td>
           ${canEdit?`<button onclick="openRencana('${e(rk._sid)}')" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;font-family:var(--mono);font-size:10px;cursor:pointer">✎</button>`:''}
