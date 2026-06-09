@@ -1206,6 +1206,14 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
           <option value="0">Belum Lewat</option>
         </select>
       </div>
+      <div class="fg">
+        <span class="fl">GI Kritikal</span>
+        <select id="semuaKritFilter" class="fs" onchange="renderSemuaRencana()">
+          <option value="">Semua</option>
+          <option value="1">★ Kritikal</option>
+          <option value="0">Tidak Kritikal</option>
+        </select>
+      </div>
       <div class="fcnt" id="semuaCount">—</div>
     </div>
     <div class="tsec">
@@ -4752,6 +4760,7 @@ function renderSemuaRencana(){
   const jenis  = document.getElementById('semuaJenisFilter').value;
   const tahun  = document.getElementById('semuaTahunFilter').value;
   const od     = document.getElementById('semuaOverdueFilter').value;
+  const krit   = document.getElementById('semuaKritFilter').value;
   const canEdit = ['admin','editor'].includes(currentRole);
 
   const rows = [];
@@ -4765,6 +4774,9 @@ function renderSemuaRencana(){
       if(gi  && (!mtu || mtu.Gi!==gi)) return;
       if(od==='1' && !isOverdue(rk)) return;
       if(od==='0' && isOverdue(rk)) return;
+      const isKrit = giKrit.has((mtu?.Gi||'').trim());
+      if(krit==='1' && !isKrit) return;
+      if(krit==='0' && isKrit) return;
       rows.push({...rk, _sid:sid, _mtu:mtu});
     });
   });
