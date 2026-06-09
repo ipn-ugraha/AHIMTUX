@@ -1154,7 +1154,11 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-end">
       <div class="fg">
         <span class="fl">UPT</span>
-        <select id="semuaUptFilter" class="fs" onchange="renderSemuaRencana()" style="min-width:150px"><option value="">Semua UPT</option></select>
+        <select id="semuaUptFilter" class="fs" onchange="onSemuaUptChange()" style="min-width:150px"><option value="">Semua UPT</option></select>
+      </div>
+      <div class="fg">
+        <span class="fl">GI</span>
+        <select id="semuaGiFilter" class="fs" onchange="renderSemuaRencana()" style="min-width:180px"><option value="">Semua GI</option></select>
       </div>
       <div class="fg">
         <span class="fl">Status</span>
@@ -4350,6 +4354,10 @@ function initRencanaPage(){
       sel.appendChild(o);
     });
   });
+  // Isi filter GI semua rencana (semua GI)
+  const gis = [...new Set(raw.map(r=>r.Gi).filter(Boolean))].sort();
+  const giSel = document.getElementById('semuaGiFilter');
+  gis.forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent=g; giSel.appendChild(o); });
   renderAlertPanel();
   calYear = new Date().getFullYear();
   calMonth = 0; // mulai dari Januari
@@ -4410,6 +4418,17 @@ function renderAlertPanel(){
   // Cards
   const cr = rows.filter(r=>r._se==='CRITICAL').length;
   const po = rows.filter(r=>r._se==='POOR').length;
+  // Hitung rencana yang lewat target (aktif, bukan SELESAI/BATAL)
+  let odCount = 0;
+  raw.forEach(r=>{
+    if(upt && r.Upt!==upt) return;
+    const sid = (r['Serial Id']||'').trim();
+    if(!sid || sid==='NO DATA') return;
+    const list = rencanaMap.get(sid)||[];
+    const aktif = list.filter(rk=>rk.status!=='BATAL'&&rk.status!=='SELESAI');
+    if(aktif.some(rk=>isOverdue(rk))) odCount++;
+  });
+
   document.getElementById('alertCards').innerHTML = `
     <div class="alert-card cr">
       <div class="alert-card-val" style="color:var(--red)">${cr}</div>
@@ -4425,6 +4444,11 @@ function renderAlertPanel(){
       <div class="alert-card-val" style="color:var(--text)">${cr+po}</div>
       <div class="alert-card-lbl">Total Perlu Rencana</div>
       <div class="alert-card-sub">${rows.length} MTU</div>
+    </div>
+    <div class="alert-card" style="border-left:3px solid var(--red)">
+      <div class="alert-card-val" style="color:var(--red)">${odCount}</div>
+      <div class="alert-card-lbl">⚠ Lewat Target</div>
+      <div class="alert-card-sub">rencana aktif melewati target</div>
     </div>`;
 
   // Update badge di navbar
@@ -4676,9 +4700,22 @@ function semuaSortBy(col){
   renderSemuaRencana();
 }
 
+function onSemuaUptChange(){
+  const upt = document.getElementById('semuaUptFilter').value;
+  const giSel = document.getElementById('semuaGiFilter');
+  const cur = giSel.value;
+  while(giSel.options.length>1) giSel.remove(1);
+  const gis = [...new Set(
+    (upt ? raw.filter(r=>r.Upt===upt) : raw).map(r=>r.Gi).filter(Boolean)
+  )].sort();
+  gis.forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent=g; giSel.appendChild(o); });
+  giSel.value = gis.includes(cur)?cur:'';
+  renderSemuaRencana();
+}
+
 function renderSemuaRencana(){
-  semuaPage = 1;
   const upt    = document.getElementById('semuaUptFilter').value;
+  const gi     = document.getElementById('semuaGiFilter').value;
   const stf    = document.getElementById('semuaStatusFilter').value;
   const jenis  = document.getElementById('semuaJenisFilter').value;
   const tahun  = document.getElementById('semuaTahunFilter').value;
@@ -4693,6 +4730,7 @@ function renderSemuaRencana(){
       if(jenis && rk.jenis_kegiatan!==jenis) return;
       if(tahun && String(rk.tahun_rencana)!==tahun) return;
       if(upt && (!mtu || mtu.Upt!==upt)) return;
+      if(gi  && (!mtu || mtu.Gi!==gi)) return;
       if(od==='1' && !isOverdue(rk)) return;
       if(od==='0' && isOverdue(rk)) return;
       rows.push({...rk, _sid:sid, _mtu:mtu});
