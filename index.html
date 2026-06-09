@@ -2375,7 +2375,10 @@ document.getElementById('uploadFile').addEventListener('change',function(e){
         showToast('Error parsing CSV: '+results.errors[0].message,'err');
         return;
       }
-      uploadedRows = results.data;
+      uploadedRows = results.data.map(r=>{
+        if(r['Serial Id']) r['Serial Id'] = normalizeSerialId(r['Serial Id']);
+        return r;
+      });
       const info = document.getElementById('uploadFileInfo');
       const cols = uploadedRows.length>0 ? Object.keys(uploadedRows[0]) : [];
       info.innerHTML = `📄 <b>${file.name}</b><br>` +
@@ -2395,6 +2398,17 @@ document.getElementById('uploadFile').addEventListener('change',function(e){
 // ── DIFF COMPARISON ──────────────────────────────────────────────────────────
 let diffResult = null;
 let statsResult = null;
+
+// Normalisasi Serial Id yang rusak akibat Excel scientific notation
+// "2,73E+11" atau "2.73E+11" → tidak bisa diperbaiki tanpa nilai asli
+// Tandai sebagai INVALID agar tidak di-proses
+function normalizeSerialId(val){
+  if(!val) return val;
+  const v = val.trim();
+  // Deteksi scientific notation: angka + E+/e+ angka, dengan koma atau titik
+  if(/^[\d,\.]+[Ee][+\-]\d+$/.test(v)) return '__INVALID_SCI__' + v;
+  return v;
+}
 
 function getRowKey(r){
   return (r.Gi||'').trim() + '|' + (r.Bay||'').trim() + '|' + (r['#']||'').trim() + '|' + (r['Serial Id']||'').trim();
@@ -4086,7 +4100,7 @@ async function runParseRencana(scope){
     const txt = (r.Rencana||'').trim();
     if(!txt || txt==='nan' || txt==='#N/A' || txt==='-') return false;
     const sid = (r['Serial Id']||'').trim();
-    if(!sid || sid==='NO DATA' || sid==='-') return false; // skip baris tanpa serial id
+    if(!sid || sid==='NO DATA' || sid.startsWith('__INVALID_SCI__') || sid==='-') return false; // skip baris tanpa serial id
 
     if(scope === 'all') return true;
 
@@ -4134,7 +4148,7 @@ async function runParseRencana(scope){
         if(!parseRunning) break;
         const sid = p.id;
         // Skip kalau serial_id kosong atau placeholder
-        if(!sid || sid==='NO DATA' || sid==='-' || sid.trim()===''){
+        if(!sid || sid==='NO DATA' || sid.startsWith('__INVALID_SCI__') || sid==='-' || sid.trim()===''){
           console.log('Skip: serial_id tidak valid:', sid);
           continue;
         }
@@ -4251,7 +4265,7 @@ async function runParseRencanaSilent(scope){
     const txt = (r.Rencana||'').trim();
     if(!txt || txt==='nan' || txt==='#N/A' || txt==='-') return false;
     const sid = (r['Serial Id']||'').trim();
-    if(!sid || sid==='NO DATA' || sid==='-') return false;
+    if(!sid || sid==='NO DATA' || sid.startsWith('__INVALID_SCI__') || sid==='-') return false;
     if(scope==='all') return true;
     const existing = (rencanaMap.get(sid)||[]).find(rk=>rk.is_auto_parsed);
     if(!existing) return true;
@@ -4442,7 +4456,7 @@ function renderAlertPanel(){
     if(stf==='CRITICAL' && st!=='CRITICAL') return false;
     if(stf==='POOR' && st!=='POOR') return false;
     const sid = (r['Serial Id']||'').trim();
-    if(!sid || sid==='NO DATA') return false;
+    if(!sid || sid==='NO DATA' || sid.startsWith('__INVALID_SCI__')) return false;
     const list = rencanaMap.get(sid)||[];
     const aktif = list.filter(rk=>rk.status!=='BATAL'&&rk.status!=='SELESAI');
     return aktif.length === 0;
@@ -4456,7 +4470,7 @@ function renderAlertPanel(){
   raw.forEach(r=>{
     if(upt && r.Upt!==upt) return;
     const sid = (r['Serial Id']||'').trim();
-    if(!sid || sid==='NO DATA') return;
+    if(!sid || sid==='NO DATA' || sid.startsWith('__INVALID_SCI__')) return;
     const list = rencanaMap.get(sid)||[];
     const aktif = list.filter(rk=>rk.status!=='BATAL'&&rk.status!=='SELESAI');
     if(aktif.some(rk=>isOverdue(rk))) odCount++;
@@ -4838,8 +4852,8 @@ function renderSemuaTable(rows, canEdit){
       const sc  = stColors[rk.status]||'#9ca3af';
       const tgt = formatTarget(rk);
       return `<tr style="${od?'background:rgba(239,68,68,.04)':''}">
-        <td style="color:var(--text);font-size:11px">${e(mtu?.Gi||'—')}</td>
-        <td style="font-size:11px">${e(mtu?.Bay||'—')}</td>
+        <td style="color:var(--text);font-size:11px">${mtu ? e(mtu.Gi||'—') : `<span style="color:var(--text3);font-size:10px;font-family:var(--mono)" title="MTU tidak ditemukan di data CSV">⚠ ${e(rk.gi||'—')}</span>`}</td>
+        <td style="font-size:11px">${mtu ? e(mtu.Bay||'—') : `<span style="color:var(--text3);font-size:10px">${e(rk.bay||'—')}</span>`}</td>
         <td><span class="badge" style="background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.2);font-size:9px">${e(mtu?.['#']||'—')}</span></td>
         <td style="font-size:10px;color:var(--text3)">${e((mtu?.Upt||'').replace('UPT ',''))}</td>
         <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${e(rk._sid||'—')}</td>
@@ -4879,7 +4893,7 @@ function updateAlertBadge(){
   const count = raw.filter(r=>{
     if(r._se!=='CRITICAL' && r._se!=='POOR') return false;
     const sid = (r['Serial Id']||'').trim();
-    if(!sid || sid==='NO DATA') return false;
+    if(!sid || sid==='NO DATA' || sid.startsWith('__INVALID_SCI__')) return false;
     const list = rencanaMap.get(sid)||[];
     return list.filter(rk=>rk.status!=='BATAL'&&rk.status!=='SELESAI').length === 0;
   }).length;
