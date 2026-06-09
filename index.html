@@ -291,6 +291,13 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
               <div style="font-size:10px;color:var(--text3);margin-top:3px">Total, Critical, Poor, Fair, Good+VG, Avg Hi, dll</div>
             </div>
           </label>
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;cursor:pointer;margin-top:6px">
+            <input type="checkbox" id="sheetRencana" checked style="margin-top:3px">
+            <div>
+              <div style="font-size:12px;color:var(--text);font-weight:500">📋 Sheet "Rencana Kerja"</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:3px">Semua rencana kerja: GI, Bay, Serial, Jenis, Status, Tahun, Semester</div>
+            </div>
+          </label>
         </div>
       </div>
 
@@ -474,6 +481,151 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
   </div>
 </div>
 
+<!-- PARSE RENCANA MODAL -->
+<div class="edit-overlay" id="parseRencanaOverlay">
+  <div class="edit-modal" style="max-width:560px">
+    <div class="edit-head">
+      <div>
+        <div class="edit-head-title">✦ Parse Rencana Otomatis</div>
+        <div class="edit-head-sub">Parsing teks kolom Rencana → rencana_kerja via Claude AI</div>
+      </div>
+      <button class="edit-close" id="parseRencanaCloseBtn">✕</button>
+    </div>
+    <div class="edit-body">
+
+      <div class="edit-section">
+        <div class="edit-section-title">Cakupan</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer">
+            <input type="radio" name="parseScope" value="changed" checked> Hanya yang berubah / belum di-parse
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);cursor:pointer">
+            <input type="radio" name="parseScope" value="all"> Semua MTU yang punya teks Rencana (re-parse ulang)
+          </label>
+        </div>
+      </div>
+
+      <div class="edit-section">
+        <div class="edit-section-title">Progress</div>
+        <div id="parseProgress" style="display:none">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span style="font-family:var(--mono);font-size:11px;color:var(--text2)" id="parseProgressText">Memproses...</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--accent)" id="parseProgressPct">0%</span>
+          </div>
+          <div style="height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin-bottom:10px">
+            <div id="parseProgressBar" style="height:100%;background:#a78bfa;width:0%;transition:width .3s"></div>
+          </div>
+          <div id="parseLog" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;max-height:200px;overflow-y:auto;font-family:var(--mono);font-size:10px;color:var(--text2);line-height:1.7"></div>
+        </div>
+        <div id="parseIdle" style="font-size:12px;color:var(--text3);font-family:var(--mono)">
+          Siap. Klik "Mulai Parse" untuk memulai.
+        </div>
+      </div>
+
+    </div>
+    <div class="edit-foot">
+      <span class="edit-status" id="parseRencanaStatus"></span>
+      <div class="edit-btns">
+        <button class="btn-cancel" id="parseRencanaCancelBtn">Tutup</button>
+        <button class="btn-save" id="parseRencanaStartBtn">✦ Mulai Parse</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RENCANA KERJA MODAL -->
+<div class="edit-overlay" id="rkOverlay">
+  <div class="edit-modal" style="max-width:620px">
+    <div class="edit-head">
+      <div>
+        <div class="edit-head-title">📋 Rencana Kerja</div>
+        <div class="edit-head-sub" id="rkSubtitle">—</div>
+      </div>
+      <button class="edit-close" id="rkCloseBtn">✕</button>
+    </div>
+    <div class="edit-body">
+
+      <!-- LIST RENCANA EXISTING -->
+      <div class="edit-section" id="rkListSection">
+        <div class="edit-section-title" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Daftar Rencana</span>
+          <span id="rkListCount" style="font-size:10px;color:var(--text3)">—</span>
+        </div>
+        <div id="rkList" style="max-height:240px;overflow-y:auto"></div>
+      </div>
+
+      <!-- FORM TAMBAH / EDIT RENCANA -->
+      <div class="edit-section" id="rkFormSection" style="display:none">
+        <div class="edit-section-title" id="rkFormTitle">➕ Tambah Rencana Baru</div>
+        <input type="hidden" id="rkEditId">
+        <div class="edit-grid">
+          <div class="edit-field">
+            <label class="edit-label">Jenis Kegiatan</label>
+            <select class="edit-select" id="rkJenis">
+              <option value="PEMELIHARAAN">PEMELIHARAAN</option>
+              <option value="PENGGANTIAN">PENGGANTIAN</option>
+              <option value="MONITORING">MONITORING</option>
+              <option value="LAINNYA">LAINNYA</option>
+            </select>
+          </div>
+          <div class="edit-field">
+            <label class="edit-label">Status</label>
+            <select class="edit-select" id="rkStatus">
+              <option value="DRAFT">DRAFT</option>
+              <option value="DIAJUKAN">DIAJUKAN</option>
+              <option value="SELESAI">SELESAI</option>
+              <option value="BATAL">BATAL</option>
+            </select>
+          </div>
+          <div class="edit-field">
+            <label class="edit-label">Tahun Rencana</label>
+            <input type="number" class="edit-input" id="rkTahun" min="2020" max="2035" placeholder="2026">
+          </div>
+          <div class="edit-field">
+            <label class="edit-label">Bulan Target <span style="color:var(--red)">*</span></label>
+            <select class="edit-select" id="rkBulan">
+              <option value="">— Pilih Bulan —</option>
+              <option value="1">Januari</option>
+              <option value="2">Februari</option>
+              <option value="3">Maret</option>
+              <option value="4">April</option>
+              <option value="5">Mei</option>
+              <option value="6">Juni</option>
+              <option value="7">Juli</option>
+              <option value="8">Agustus</option>
+              <option value="9">September</option>
+              <option value="10">Oktober</option>
+              <option value="11">November</option>
+              <option value="12">Desember</option>
+            </select>
+          </div>
+          <div class="edit-field full">
+            <label class="edit-label">Tanggal Target <span style="color:var(--text3);font-weight:normal">(opsional, jika sudah spesifik)</span></label>
+            <input type="date" class="edit-input" id="rkTanggal">
+          </div>
+          <div class="edit-field full">
+            <label class="edit-label">Uraian Rencana</label>
+            <textarea class="edit-textarea" id="rkUraian" rows="3" placeholder="Deskripsi singkat rencana pekerjaan..."></textarea>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn-cancel" id="rkFormCancelBtn" style="font-size:11px;padding:6px 12px">Batal</button>
+          <button class="btn-save" id="rkFormSaveBtn" style="font-size:11px;padding:6px 14px">Simpan</button>
+        </div>
+        <div id="rkFormStatus" style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:8px"></div>
+      </div>
+
+    </div>
+    <div class="edit-foot">
+      <span class="edit-status" id="rkStatus"></span>
+      <div class="edit-btns">
+        <button class="btn-cancel" id="rkAddBtn" style="color:var(--accent);border-color:rgba(59,130,246,.4)">➕ Tambah Rencana</button>
+        <button class="btn-cancel" id="rkCloseBtn2">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- UPLOAD CSV MODAL -->
@@ -629,6 +781,7 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
     <button id="downloadBtn" title="Download data CSV" style="background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">↓ CSV</button>
     <button id="uploadBtn" title="Upload CSV (admin only)" style="display:none;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">↑ Upload</button>
     <button id="auditBtn" title="Audit Log (admin only)" style="display:none;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">📜 Log</button>
+    <button id="parseRencanaBtn" title="Parse teks Rencana dari CSV ke tabel rencana_kerja (admin only)" style="display:none;background:transparent;border:1px solid rgba(167,139,250,.4);color:#a78bfa;padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">✦ Parse Rencana</button>
     <button id="sbSettingBtn" title="Pengaturan Supabase" style="background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">⚙ DB</button>
     <button id="loginBtn" title="Login untuk edit data" style="background:var(--accent);border:1px solid var(--accent);color:#fff;padding:5px 14px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer;font-weight:500">🔐 Login</button>
     <button id="logoutBtn" title="Logout" style="display:none;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">🚪 Logout</button>
@@ -841,7 +994,9 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
 </main>
 
 <script>
-const SB_TABLE_AHI='AHI_MTU', SB_TABLE_REF='gi_referensi';
+const SB_TABLE_AHI='AHI_MTU', SB_TABLE_REF='gi_referensi', SB_TABLE_RK='rencana_kerja';
+// Map serial_id → array rencana_kerja (diisi saat init)
+let rencanaMap = new Map();
 const PAGE=40, YR=new Date().getFullYear();
 const VALID_PFX=['GI ','GIS ','GITET ','GISTET '];
 const ST_ORD={'CRITICAL':0,'POOR':1,'FAIR':2,'GOOD':3,'VERY GOOD':4};
@@ -1003,6 +1158,21 @@ async function init(){
   }catch(e){
     console.warn('gi_referensi error:',e.message);
   }
+
+  // Load rencana_kerja (semua, join di client)
+  setP(8,'Memuat rencana kerja...');
+  try{
+    const rkRes = await db.from(SB_TABLE_RK).select('*');
+    if(!rkRes.error){
+      rencanaMap.clear();
+      (rkRes.data||[]).forEach(rk=>{
+        const sid=(rk.serial_id||'').trim();
+        if(!sid) return;
+        if(!rencanaMap.has(sid)) rencanaMap.set(sid,[]);
+        rencanaMap.get(sid).push(rk);
+      });
+    }
+  }catch(e){ console.warn('rencana_kerja load error:',e.message); }
 
   // Load AHI_MTU with chunking (handles >1000 rows)
   setP(10,'Menghitung jumlah data MTU...');
@@ -1560,13 +1730,51 @@ function bayHtml(g,b){
 }
 
 // ── MTU ROW (level 3) ────────────────────────────────────────────────────────
+function rkBadge(serialId){
+  const list = rencanaMap.get((serialId||'').trim()) || [];
+  const aktif = list.filter(rk=>rk.status!=='BATAL');
+  if(!aktif.length) return '<span style="color:var(--text3);font-size:10px">—</span>';
+  const latest = aktif.sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at))[0];
+  const stColors = {
+    DRAFT:     {bg:'rgba(107,114,128,.15)',color:'#9ca3af',bdr:'rgba(107,114,128,.3)'},
+    DIAJUKAN:  {bg:'rgba(59,130,246,.12)', color:'#60a5fa',bdr:'rgba(59,130,246,.3)'},
+    SELESAI:   {bg:'rgba(34,197,94,.12)',  color:'#4ade80',bdr:'rgba(34,197,94,.3)'},
+    BATAL:     {bg:'rgba(239,68,68,.08)',  color:'#f87171',bdr:'rgba(239,68,68,.2)'},
+  };
+  const NAMA_BULAN = ['','Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+  const sc = stColors[latest.status] || stColors.DRAFT;
+  const uraian = (latest.uraian||'').substring(0,50)+(latest.uraian&&latest.uraian.length>50?'…':'');
+
+  // Format waktu: tanggal spesifik > bulan+tahun > tahun saja
+  let waktuStr = '';
+  if(latest.tanggal_target){
+    const d = new Date(latest.tanggal_target);
+    waktuStr = `${d.getDate()} ${NAMA_BULAN[d.getMonth()+1]} ${d.getFullYear()}`;
+  } else if(latest.bulan_target){
+    waktuStr = `${NAMA_BULAN[latest.bulan_target]} ${latest.tahun_rencana||''}`;
+  } else if(latest.tahun_rencana){
+    waktuStr = `${latest.tahun_rencana}`;
+  }
+
+  const tooltip = `${latest.jenis_kegiatan||''} ${waktuStr}\n${latest.uraian||''}`.trim();
+  const countBadge = aktif.length>1
+    ? `<span style="font-size:9px;color:var(--text3);font-family:var(--mono);margin-left:3px">+${aktif.length-1}</span>`
+    : '';
+  const waktuBadge = waktuStr
+    ? `<span style="font-size:9px;font-family:var(--mono);color:var(--text3);margin-left:4px">${e(waktuStr)}</span>`
+    : '';
+  return `<span class="badge" style="background:${sc.bg};color:${sc.color};border:1px solid ${sc.bdr};cursor:pointer"
+    title="${e(tooltip)}" onclick="openRencana('${e(serialId)}')">${latest.status}</span>${countBadge}${waktuBadge}${uraian
+    ? `<span style="font-size:10px;color:var(--text3);margin-left:5px;max-width:140px;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:middle">${e(uraian)}</span>`
+    : ''}`;
+}
+
 function mtuH(r){
   const hi=+r['Nilai Hi']||0, bw=Math.min(40,hi/300*40);
   const bc=hi>=150?'#ef4444':hi>=100?'#f59e0b':hi>=50?'#eab308':'#22c55e';
-  const ren=(r.Rencana||'').trim();
-  const renClean=(ren==='nan'||ren==='#N/A')?'':ren;
   const rowIdx = raw.indexOf(r);
   const canEdit = ['admin','editor'].includes(currentRole);
+  const sid = r['Serial Id']||'';
   return `<tr class="row-mtu">
     <td style="text-align:center;padding:6px 6px">
       ${canEdit ? `<button class="edit-btn" onclick="openEditMtu(${rowIdx})" title="Edit data MTU">✎</button>` : ''}
@@ -1577,10 +1785,10 @@ function mtuH(r){
     <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${r['Tahun Buat']||'—'}${r._age!=null?` <span style="color:var(--text3)">(${r._age}th)</span>`:''}</td>
     <td>${stH(r._se)}${r._adj?'<span class="badge b-adj">adj</span>':''}</td>
     <td style="font-size:10px;color:var(--text3);max-width:180px;overflow:hidden;text-overflow:ellipsis" title="${e(r['Justifikasi Prioritas']||'')}">${e(r['Justifikasi Prioritas']||'—')}</td>
-    <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${e(r['Serial Id']||'—')}</td>
+    <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${e(sid||'—')}</td>
     <td><div class="hiwrap"><div class="hibar" style="width:${bw}px;background:${bc}"></div><span class="hival">${hi||'—'}</span></div></td>
     <td colspan="2"></td>
-    <td style="font-size:10px;color:var(--text2);max-width:220px;overflow:hidden;text-overflow:ellipsis" title="${e(renClean)}">${e(renClean.substring(0,80)+(renClean.length>80?'…':''))||'—'}</td>
+    <td style="max-width:240px;white-space:normal">${rkBadge(sid)}</td>
   </tr>`;
 }
 
@@ -2474,8 +2682,9 @@ function exportToExcel(){
   const wantGi = document.getElementById('sheetRingkasanGi').checked;
   const wantUpt = document.getElementById('sheetRingkasanUpt').checked;
   const wantStats = document.getElementById('sheetStats').checked;
+  const wantRencana = document.getElementById('sheetRencana') ? document.getElementById('sheetRencana').checked : false;
 
-  if(!wantMtu && !wantGi && !wantUpt && !wantStats){
+  if(!wantMtu && !wantGi && !wantUpt && !wantStats && !wantRencana){
     document.getElementById('exportXlsxStatus').textContent = '✗ Pilih minimal 1 sheet';
     document.getElementById('exportXlsxStatus').className = 'edit-status err';
     return;
@@ -2663,6 +2872,36 @@ function exportToExcel(){
         XLSX.utils.book_append_sheet(wb, ws, 'Statistik');
       }
 
+      // === SHEET 5: Rencana Kerja ===
+      if(wantRencana){
+        const rkAll = [];
+        rencanaMap.forEach((list, sid)=>{
+          list.forEach(rk=>{
+            rkAll.push({
+              'Serial Id':       rk.serial_id||'',
+              'GI':              rk.gi||'',
+              'Bay':             rk.bay||'',
+              'Jenis MTU':       rk.jenis_mtu||'',
+              'Jenis Kegiatan':  rk.jenis_kegiatan||'',
+              'Status':          rk.status||'',
+              'Tahun Rencana':   rk.tahun_rencana||'',
+              'Semester':        rk.semester||'',
+              'Uraian':          rk.uraian||'',
+              'Dibuat Oleh':     rk.created_by_name||'',
+              'Dibuat Pada':     rk.created_at ? new Date(rk.created_at).toLocaleDateString('id-ID') : '',
+              'Diupdate Oleh':   rk.updated_by_name||'',
+              'Diupdate Pada':   rk.updated_at ? new Date(rk.updated_at).toLocaleDateString('id-ID') : '',
+            });
+          });
+        });
+        rkAll.sort((a,b)=>(a['GI']||'').localeCompare(b['GI']||'')||(a['Bay']||'').localeCompare(b['Bay']||''));
+        if(rkAll.length){
+          const ws = XLSX.utils.json_to_sheet(rkAll);
+          ws['!cols'] = [{wch:16},{wch:28},{wch:20},{wch:10},{wch:16},{wch:12},{wch:14},{wch:10},{wch:50},{wch:16},{wch:14},{wch:16},{wch:14}];
+          XLSX.utils.book_append_sheet(wb, ws, 'Rencana Kerja');
+        }
+      }
+
       // Generate filename
       const now = new Date();
       const pad = n => String(n).padStart(2,'0');
@@ -2672,7 +2911,7 @@ function exportToExcel(){
 
       XLSX.writeFile(wb, filename);
 
-      const sheetCount = (wantMtu?1:0)+(wantGi?1:0)+(wantUpt?1:0)+(wantStats?1:0);
+      const sheetCount = (wantMtu?1:0)+(wantGi?1:0)+(wantUpt?1:0)+(wantStats?1:0)+(wantRencana?1:0);
       document.getElementById('exportXlsxStatus').textContent = `✓ ${sheetCount} sheet, ${dataSource.length.toLocaleString('id-ID')} baris`;
       document.getElementById('exportXlsxStatus').className = 'edit-status ok';
       showToast(`✓ Excel berhasil di-download (${dataSource.length.toLocaleString('id-ID')} baris)`,'ok');
@@ -2796,9 +3035,33 @@ async function submitUpload(){
     document.getElementById('uploadStatus').textContent = `✓ ${inserted.toLocaleString()} baris berhasil`;
     document.getElementById('uploadStatus').className = 'edit-status ok';
 
-    setTimeout(()=>{
+    setTimeout(async ()=>{
       closeUploadModal();
-      if(confirm('Upload berhasil! Reload halaman untuk melihat data terbaru?')){
+      // Reload raw data dari Supabase supaya auto-parse baca data terbaru
+      try{
+        const reloadRes = await sbDb.from(SB_TABLE_AHI).select('*');
+        if(!reloadRes.error){
+          raw = (reloadRes.data||[]).filter(row=>{
+            const gi=(row.Gi||'').trim();
+            return gi && VALID_PFX.some(px=>gi.startsWith(px));
+          });
+          raw.forEach(row=>{
+            const yr=row['Tahun Operasi']?new Date(row['Tahun Operasi']).getFullYear():null;
+            row._age=yr?YR-yr:null;
+            row._so=(row['Status Hi']||'').toUpperCase().trim();
+            row._se=row._so; row._adj=false;
+            const m=(row.Gi||'').match(/(\d+)KV/i);
+            row._kv=m?+m[1]:null;
+            row._bayKat=katBay(row.Bay||'');
+          });
+          applyFilters();
+          // Auto-parse rencana dari CSV baru (hanya yang berubah)
+          showToast('⏳ Auto-parsing rencana kerja...','ok');
+          await autoParseAfterUpload();
+          showToast('✓ Auto-parse selesai — badge rencana diperbarui','ok');
+        }
+      }catch(e){ console.warn('Reload/auto-parse error:',e.message); }
+      if(confirm('Upload & parse selesai! Reload halaman untuk sinkronisasi penuh?')){
         location.reload();
       }
     }, 1200);
@@ -3047,6 +3310,7 @@ function showUserBadge(){
   if(currentRole === 'admin'){
     uploadBtn.style.display = 'inline-block';
     document.getElementById('auditBtn').style.display = 'inline-block';
+    document.getElementById('parseRencanaBtn').style.display = 'inline-block';
   }
 }
 
@@ -3074,7 +3338,576 @@ document.getElementById('loginUser').addEventListener('keydown',(e)=>{
   if(e.key==='Enter') document.getElementById('loginPwd').focus();
 });
 
-init().catch(err=>{
+// ── RENCANA KERJA ────────────────────────────────────────────────────────────
+let rkCurrentSerialId = '';
+
+function openRencana(serialId){
+  rkCurrentSerialId = serialId;
+  // Cari data MTU untuk subtitle
+  const mtu = raw.find(r=>(r['Serial Id']||'').trim()===serialId.trim());
+  const subtitle = mtu ? `${mtu.Gi||'—'} › ${mtu.Bay||'—'} › ${mtu['#']||'—'} | SN: ${serialId}` : serialId;
+  document.getElementById('rkSubtitle').textContent = subtitle;
+  document.getElementById('rkFormSection').style.display = 'none';
+  document.getElementById('rkAddBtn').style.display =
+    ['admin','editor'].includes(currentRole) ? 'inline-block' : 'none';
+  renderRkList(serialId);
+  document.getElementById('rkOverlay').classList.add('open');
+}
+
+function renderRkList(serialId){
+  const list = rencanaMap.get((serialId||'').trim()) || [];
+  const countEl = document.getElementById('rkListCount');
+  const listEl  = document.getElementById('rkList');
+  const canEdit  = ['admin','editor'].includes(currentRole);
+
+  countEl.textContent = `${list.length} rencana`;
+
+  if(!list.length){
+    listEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-family:var(--mono);font-size:11px">Belum ada rencana kerja</div>';
+    return;
+  }
+
+  const stColors = {
+    DRAFT:    {bg:'rgba(107,114,128,.15)',color:'#9ca3af',bdr:'rgba(107,114,128,.3)'},
+    DIAJUKAN: {bg:'rgba(59,130,246,.12)', color:'#60a5fa',bdr:'rgba(59,130,246,.3)'},
+    SELESAI:  {bg:'rgba(34,197,94,.12)',  color:'#4ade80',bdr:'rgba(34,197,94,.3)'},
+    BATAL:    {bg:'rgba(239,68,68,.08)',  color:'#f87171',bdr:'rgba(239,68,68,.2)'},
+  };
+
+  const NAMA_BULAN = ['','Januari','Februari','Maret','April','Mei','Juni',
+                      'Juli','Agustus','September','Oktober','November','Desember'];
+  const sorted = [...list].sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at));
+  listEl.innerHTML = sorted.map(rk=>{
+    const sc = stColors[rk.status] || stColors.DRAFT;
+    const dt = new Date(rk.updated_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'2-digit'});
+
+    // Format waktu target
+    let waktuStr = '—';
+    if(rk.tanggal_target){
+      const d = new Date(rk.tanggal_target);
+      waktuStr = `${d.getDate()} ${NAMA_BULAN[d.getMonth()+1]} ${d.getFullYear()}`;
+    } else if(rk.bulan_target){
+      waktuStr = `${NAMA_BULAN[rk.bulan_target]} ${rk.tahun_rencana||''}`;
+    } else if(rk.tahun_rencana){
+      waktuStr = `${rk.tahun_rencana}`;
+    }
+
+    const autoBadge = rk.is_auto_parsed
+      ? `<span style="font-size:9px;font-family:var(--mono);color:#a78bfa;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);padding:1px 5px;border-radius:3px;margin-left:4px">auto</span>`
+      : '';
+    const editBtns = canEdit ? `
+      <button onclick="editRkItem('${rk.id}')" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;font-family:var(--mono);font-size:10px;cursor:pointer;margin-left:4px">✎</button>
+      <button onclick="deleteRkItem('${rk.id}')" style="background:transparent;border:1px solid rgba(239,68,68,.3);color:var(--red);padding:2px 7px;border-radius:4px;font-family:var(--mono);font-size:10px;cursor:pointer;margin-left:2px">✕</button>` : '';
+    return `<div style="padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+          <span class="badge" style="background:${sc.bg};color:${sc.color};border:1px solid ${sc.bdr}">${rk.status}</span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--accent)">${e(rk.jenis_kegiatan||'')}</span>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--text2);font-weight:500">🗓 ${e(waktuStr)}</span>
+          ${autoBadge}
+        </div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.5">${e(rk.uraian||'—')}</div>
+        <div style="font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:4px">
+          oleh ${e(rk.created_by_name||'—')} · diupdate ${dt}
+        </div>
+      </div>
+      <div style="flex-shrink:0;display:flex;align-items:center">${editBtns}</div>
+    </div>`;
+  }).join('');
+}
+
+function showRkForm(mode, rkId){
+  document.getElementById('rkFormSection').style.display = 'block';
+  document.getElementById('rkFormTitle').textContent = mode==='edit' ? '✎ Edit Rencana' : '➕ Tambah Rencana Baru';
+  document.getElementById('rkFormStatus').textContent = '';
+  document.getElementById('rkEditId').value = rkId || '';
+  document.getElementById('rkFormSaveBtn').disabled = false;
+
+  if(mode==='edit' && rkId){
+    const list = rencanaMap.get((rkCurrentSerialId||'').trim()) || [];
+    const rk = list.find(x=>x.id===rkId);
+    if(rk){
+      document.getElementById('rkJenis').value    = rk.jenis_kegiatan || 'PEMELIHARAAN';
+      document.getElementById('rkStatus').value   = rk.status || 'DRAFT';
+      document.getElementById('rkTahun').value    = rk.tahun_rencana || new Date().getFullYear();
+      document.getElementById('rkBulan').value    = rk.bulan_target || '';
+      document.getElementById('rkTanggal').value  = rk.tanggal_target || '';
+      document.getElementById('rkUraian').value   = rk.uraian || '';
+    }
+  } else {
+    document.getElementById('rkJenis').value    = 'PEMELIHARAAN';
+    document.getElementById('rkStatus').value   = 'DRAFT';
+    document.getElementById('rkTahun').value    = new Date().getFullYear();
+    document.getElementById('rkBulan').value    = '';
+    document.getElementById('rkTanggal').value  = '';
+    document.getElementById('rkUraian').value   = '';
+  }
+  document.getElementById('rkUraian').focus();
+}
+
+function editRkItem(rkId){ showRkForm('edit', rkId); }
+
+async function deleteRkItem(rkId){
+  if(!confirm('Hapus rencana ini?')) return;
+  if(!sbDb){ alert('Database belum terhubung'); return; }
+  try{
+    const {error} = await sbDb.from(SB_TABLE_RK).delete().eq('id', rkId);
+    if(error) throw error;
+    // Update local map
+    const sid = (rkCurrentSerialId||'').trim();
+    if(rencanaMap.has(sid)){
+      rencanaMap.set(sid, rencanaMap.get(sid).filter(x=>x.id!==rkId));
+    }
+    renderRkList(rkCurrentSerialId);
+    applyFilters();
+    showToast('✓ Rencana dihapus','ok');
+  }catch(err){
+    showToast('✗ Gagal hapus: '+err.message,'err');
+  }
+}
+
+async function saveRkForm(){
+  if(!sbDb){ alert('Database belum terhubung'); return; }
+  if(!['admin','editor'].includes(currentRole)){
+    document.getElementById('rkFormStatus').textContent = '✗ Akses ditolak';
+    document.getElementById('rkFormStatus').style.color = 'var(--red)';
+    return;
+  }
+  const jenis    = document.getElementById('rkJenis').value;
+  const status   = document.getElementById('rkStatus').value;
+  const tahun    = parseInt(document.getElementById('rkTahun').value) || new Date().getFullYear();
+  const bulan    = parseInt(document.getElementById('rkBulan').value) || null;
+  const tanggal  = document.getElementById('rkTanggal').value || null;
+  const uraian   = document.getElementById('rkUraian').value.trim();
+  const editId   = document.getElementById('rkEditId').value;
+  const sid      = (rkCurrentSerialId||'').trim();
+
+  if(!jenis){
+    document.getElementById('rkFormStatus').textContent='✗ Pilih jenis kegiatan';
+    return;
+  }
+  if(!bulan){
+    document.getElementById('rkFormStatus').textContent='✗ Bulan target wajib diisi';
+    document.getElementById('rkFormStatus').style.color='var(--red)';
+    return;
+  }
+
+  const mtu = raw.find(r=>(r['Serial Id']||'').trim()===sid);
+  const username = currentUser._username || currentUser.email.split('@')[0];
+
+  const saveBtn = document.getElementById('rkFormSaveBtn');
+  saveBtn.disabled = true;
+  document.getElementById('rkFormStatus').textContent = '⏳ Menyimpan...';
+  document.getElementById('rkFormStatus').style.color = 'var(--text3)';
+
+  try{
+    let result, savedRow;
+    if(editId){
+      // UPDATE
+      result = await sbDb.from(SB_TABLE_RK)
+        .update({jenis_kegiatan:jenis, status, tahun_rencana:tahun,
+                 bulan_target:bulan, tanggal_target:tanggal, uraian,
+                 updated_by:currentUser.id, updated_by_name:username})
+        .eq('id', editId)
+        .select();
+    } else {
+      // INSERT
+      const payload = {
+        serial_id: sid,
+        gi:   mtu?.Gi   || '',
+        bay:  mtu?.Bay  || '',
+        jenis_mtu: mtu?.['#'] || '',
+        jenis_kegiatan: jenis,
+        uraian, tahun_rencana: tahun,
+        bulan_target: bulan, tanggal_target: tanggal, status,
+        created_by: currentUser.id,
+        created_by_name: username,
+        updated_by: currentUser.id,
+        updated_by_name: username,
+      };
+      result = await sbDb.from(SB_TABLE_RK).insert(payload).select();
+    }
+    if(result.error) throw result.error;
+    savedRow = result.data?.[0];
+
+    // Update local map
+    if(editId){
+      if(rencanaMap.has(sid)){
+        const idx = rencanaMap.get(sid).findIndex(x=>x.id===editId);
+        if(idx>=0) rencanaMap.get(sid)[idx] = savedRow ||
+          {...rencanaMap.get(sid)[idx], jenis_kegiatan:jenis, status,
+           tahun_rencana:tahun, bulan_target:bulan, tanggal_target:tanggal, uraian};
+      }
+    } else {
+      if(!rencanaMap.has(sid)) rencanaMap.set(sid,[]);
+      if(savedRow) rencanaMap.get(sid).push(savedRow);
+    }
+
+    document.getElementById('rkFormStatus').textContent = '✓ Tersimpan';
+    document.getElementById('rkFormStatus').style.color = 'var(--grn)';
+    document.getElementById('rkFormSection').style.display = 'none';
+    renderRkList(sid);
+    applyFilters();
+    showToast('✓ Rencana kerja disimpan','ok');
+
+    // Log audit
+    logAudit(editId?'edit_rencana':'add_rencana', {
+      target: `${mtu?.Gi||'—'} › ${mtu?.Bay||'—'} | SN: ${sid}`,
+      jenis_kegiatan: jenis, status, tahun_rencana: tahun,
+      bulan_target: bulan, tanggal_target: tanggal
+    }).catch(()=>{});
+  }catch(err){
+    document.getElementById('rkFormStatus').textContent = '✗ '+err.message;
+    document.getElementById('rkFormStatus').style.color = 'var(--red)';
+    saveBtn.disabled = false;
+  }
+}
+
+// ── PARSE RENCANA VIA CLAUDE API ────────────────────────────────────────────
+const PARSE_BATCH = 20; // kirim 20 teks sekaligus per API call
+let parseRunning = false;
+
+function openParseRencana(){
+  if(currentRole !== 'admin'){ showToast('Hanya admin','err'); return; }
+  document.getElementById('parseRencanaStatus').textContent = '';
+  document.getElementById('parseProgress').style.display = 'none';
+  document.getElementById('parseIdle').style.display = 'block';
+  document.getElementById('parseLog').innerHTML = '';
+  document.getElementById('parseRencanaStartBtn').disabled = false;
+  document.getElementById('parseRencanaStartBtn').textContent = '✦ Mulai Parse';
+  parseRunning = false;
+  document.getElementById('parseRencanaOverlay').classList.add('open');
+}
+
+function closeParseRencana(){
+  parseRunning = false;
+  document.getElementById('parseRencanaOverlay').classList.remove('open');
+}
+
+function appendParseLog(msg, color){
+  const el = document.getElementById('parseLog');
+  const line = document.createElement('div');
+  line.style.color = color || 'var(--text2)';
+  line.textContent = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function setParseProgress(pct, text){
+  document.getElementById('parseProgressBar').style.width = pct+'%';
+  document.getElementById('parseProgressPct').textContent = pct+'%';
+  document.getElementById('parseProgressText').textContent = text;
+}
+
+// Parse satu batch teks menggunakan Claude API
+async function parseBatchWithClaude(items){
+  // items: [{serial_id, rencana_text}, ...]
+  const BULAN_ID = ['januari','februari','maret','april','mei','juni',
+                    'juli','agustus','september','oktober','november','desember'];
+  const prompt = `Kamu adalah parser data rencana kerja peralatan listrik PLN Indonesia.
+Tugasmu: ekstrak informasi terstruktur dari teks rencana kerja berikut.
+
+Untuk setiap item, kembalikan JSON dengan field:
+- jenis_kegiatan: salah satu dari ["PEMELIHARAAN","PENGGANTIAN","MONITORING","LAINNYA"]
+- tahun_rencana: angka tahun 4 digit (misal 2026), atau null
+- bulan_target: angka bulan 1-12, atau null jika tidak disebutkan
+- tanggal_target: string "YYYY-MM-DD" jika tanggal spesifik ada, atau null
+- uraian: teks ringkas bersih maksimal 100 karakter
+
+Aturan ekstraksi:
+JENIS:
+- "ganti","penggantian","replace","overhaul besar" → PENGGANTIAN
+- "harmon","pelihara","PM","overhaul","servis","pemeliharaan" → PEMELIHARAAN
+- "pantau","monitor","observasi","cek rutin" → MONITORING
+- tidak jelas → LAINNYA
+
+WAKTU:
+- Nama bulan Indonesia (januari-desember) → bulan_target 1-12
+- "Jan","Feb","Mar","Apr","Mei/May","Jun","Jul","Agt/Aug","Sep","Okt/Oct","Nov","Des/Dec" → bulan_target
+- Semester 1 / S1 / TW1-TW2 → bulan_target 6
+- Semester 2 / S2 / TW3-TW4 → bulan_target 12
+- Kuartal 1/Q1 → bulan 3, Q2 → bulan 6, Q3 → bulan 9, Q4 → bulan 12
+- Tahun 2 digit: 25→2025, 26→2026, 27→2027
+- Tanggal spesifik (misal "15 Maret 2026", "20/03/2026") → tanggal_target "2026-03-15"
+- Jika ada tanggal, isi juga tahun_rencana dan bulan_target dari tanggal tsb
+
+URAIAN:
+- Ringkas teks asli, hilangkan kata target/jadwal/rencana, max 100 karakter
+
+Input JSON:
+${JSON.stringify(items.map(x=>({id:x.serial_id, text:x.rencana_text})))}
+
+Kembalikan HANYA array JSON tanpa penjelasan, tanpa markdown:
+[{"id":"...","jenis_kegiatan":"...","tahun_rencana":...,"bulan_target":...,"tanggal_target":...,"uraian":"..."},...]`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  if(!response.ok) throw new Error(`API error: ${response.status}`);
+  const data = await response.json();
+  const text = (data.content||[]).map(c=>c.text||'').join('');
+  const clean = text.replace(/```json|```/g,'').trim();
+  return JSON.parse(clean);
+}
+
+// Fungsi utama: kumpulkan MTU yang perlu di-parse, kirim ke Claude, simpan ke Supabase
+async function runParseRencana(scope){
+  if(!sbDb || !currentUser) return;
+  parseRunning = true;
+
+  // Kumpulkan kandidat
+  const candidates = raw.filter(r=>{
+    const txt = (r.Rencana||'').trim();
+    if(!txt || txt==='nan' || txt==='#N/A' || txt==='-') return false;
+    const sid = (r['Serial Id']||'').trim();
+    if(!sid) return false;
+
+    if(scope === 'all') return true;
+
+    // scope === 'changed': skip kalau source_text sama dengan yang tersimpan
+    const existing = (rencanaMap.get(sid)||[]).find(rk=>rk.is_auto_parsed);
+    if(!existing) return true; // belum ada → parse
+    return (existing.source_text||'').trim() !== txt; // teks berubah → parse ulang
+  });
+
+  if(!candidates.length){
+    appendParseLog('Tidak ada teks baru yang perlu di-parse.', 'var(--grn)');
+    setParseProgress(100, 'Selesai');
+    document.getElementById('parseRencanaStatus').textContent = '✓ Tidak ada yang perlu diproses';
+    document.getElementById('parseRencanaStatus').className = 'edit-status ok';
+    document.getElementById('parseRencanaStartBtn').disabled = false;
+    document.getElementById('parseRencanaStartBtn').textContent = '✦ Mulai Parse';
+    return;
+  }
+
+  appendParseLog(`Ditemukan ${candidates.length} MTU yang perlu di-parse...`);
+
+  const totalBatches = Math.ceil(candidates.length / PARSE_BATCH);
+  let doneCount = 0, errorCount = 0;
+  const username = currentUser._username || currentUser.email.split('@')[0];
+
+  for(let i = 0; i < totalBatches; i++){
+    if(!parseRunning) break;
+
+    const batch = candidates.slice(i * PARSE_BATCH, (i+1) * PARSE_BATCH);
+    const pct = Math.round(((i) / totalBatches) * 90);
+    setParseProgress(pct, `Batch ${i+1}/${totalBatches} (${doneCount} selesai)`);
+
+    const items = batch.map(r=>({
+      serial_id: (r['Serial Id']||'').trim(),
+      rencana_text: (r.Rencana||'').trim()
+    }));
+
+    try{
+      const parsed = await parseBatchWithClaude(items);
+
+      // Upsert ke Supabase
+      for(const p of parsed){
+        if(!parseRunning) break;
+        const sid = p.id;
+        const mtu = raw.find(r=>(r['Serial Id']||'').trim()===sid);
+        const srcText = items.find(x=>x.serial_id===sid)?.rencana_text || '';
+
+        // Cek apakah sudah ada baris auto-parsed untuk serial_id ini
+        const existingList = rencanaMap.get(sid)||[];
+        const existingAuto = existingList.find(rk=>rk.is_auto_parsed);
+
+        const payload = {
+          serial_id:       sid,
+          gi:              mtu?.Gi   || '',
+          bay:             mtu?.Bay  || '',
+          jenis_mtu:       mtu?.['#']|| '',
+          jenis_kegiatan:  p.jenis_kegiatan || 'LAINNYA',
+          uraian:          p.uraian || srcText.substring(0,100),
+          tahun_rencana:   p.tahun_rencana || new Date().getFullYear(),
+          bulan_target:    p.bulan_target || null,
+          tanggal_target:  p.tanggal_target || null,
+          status:          'DRAFT',
+          source_text:     srcText,
+          is_auto_parsed:  true,
+          parsed_by:       'auto:'+username,
+          updated_by:      currentUser.id,
+          updated_by_name: username,
+        };
+
+        let result;
+        if(existingAuto){
+          // UPDATE baris auto yang sudah ada
+          result = await sbDb.from(SB_TABLE_RK)
+            .update(payload)
+            .eq('id', existingAuto.id)
+            .select();
+        } else {
+          // INSERT baru
+          payload.created_by = currentUser.id;
+          payload.created_by_name = username;
+          result = await sbDb.from(SB_TABLE_RK).insert(payload).select();
+        }
+
+        if(result.error) throw result.error;
+
+        // Update local map
+        const savedRow = result.data?.[0];
+        if(savedRow){
+          if(!rencanaMap.has(sid)) rencanaMap.set(sid,[]);
+          const localList = rencanaMap.get(sid);
+          if(existingAuto){
+            const idx = localList.findIndex(rk=>rk.id===existingAuto.id);
+            if(idx>=0) localList[idx] = savedRow;
+          } else {
+            localList.push(savedRow);
+          }
+        }
+        doneCount++;
+      }
+
+      appendParseLog(
+        `✓ Batch ${i+1}: ${batch.length} item → `+
+        parsed.map(p=>`${p.jenis_kegiatan||'?'}${p.tahun_rencana?'/'+p.tahun_rencana:''}`).join(', '),
+        'var(--grn)'
+      );
+
+    }catch(err){
+      errorCount++;
+      appendParseLog(`✗ Batch ${i+1} gagal: ${err.message}`, 'var(--red)');
+      console.error('Parse batch error:', err);
+    }
+
+    // Jeda kecil supaya tidak spam API
+    await new Promise(r=>setTimeout(r,300));
+  }
+
+  setParseProgress(100, 'Selesai');
+  const statusMsg = `✓ ${doneCount} di-parse${errorCount>0?' | '+errorCount+' gagal':''}`;
+  document.getElementById('parseRencanaStatus').textContent = statusMsg;
+  document.getElementById('parseRencanaStatus').className = errorCount>0 ? 'edit-status err' : 'edit-status ok';
+  document.getElementById('parseRencanaStartBtn').disabled = false;
+  document.getElementById('parseRencanaStartBtn').textContent = '✦ Mulai Parse';
+  appendParseLog('─────────────────────────────');
+  appendParseLog(statusMsg, errorCount>0?'var(--amb)':'var(--grn)');
+
+  showToast(statusMsg, errorCount>0?'err':'ok');
+  applyFilters(); // refresh tampilan badge
+}
+
+// Auto-parse setelah upload CSV selesai
+async function autoParseAfterUpload(){
+  if(currentRole !== 'admin') return;
+  if(!sbDb || !currentUser) return;
+  try{
+    appendParseLog('Auto-parse rencana kerja...', 'var(--pur)');
+    await runParseRencanaSilent('changed');
+  }catch(e){
+    console.warn('Auto-parse error:', e.message);
+  }
+}
+
+// Versi silent (tanpa modal) untuk auto-parse
+async function runParseRencanaSilent(scope){
+  parseRunning = true;
+  const candidates = raw.filter(r=>{
+    const txt = (r.Rencana||'').trim();
+    if(!txt || txt==='nan' || txt==='#N/A' || txt==='-') return false;
+    const sid = (r['Serial Id']||'').trim();
+    if(!sid) return false;
+    if(scope==='all') return true;
+    const existing = (rencanaMap.get(sid)||[]).find(rk=>rk.is_auto_parsed);
+    if(!existing) return true;
+    return (existing.source_text||'').trim() !== txt;
+  });
+
+  if(!candidates.length){ parseRunning=false; return; }
+
+  const username = currentUser._username || currentUser.email.split('@')[0];
+  const totalBatches = Math.ceil(candidates.length / PARSE_BATCH);
+
+  for(let i=0; i<totalBatches; i++){
+    if(!parseRunning) break;
+    const batch = candidates.slice(i*PARSE_BATCH,(i+1)*PARSE_BATCH);
+    const items = batch.map(r=>({
+      serial_id:(r['Serial Id']||'').trim(),
+      rencana_text:(r.Rencana||'').trim()
+    }));
+    try{
+      const parsed = await parseBatchWithClaude(items);
+      for(const p of parsed){
+        const sid = p.id;
+        const mtu = raw.find(r=>(r['Serial Id']||'').trim()===sid);
+        const srcText = items.find(x=>x.serial_id===sid)?.rencana_text||'';
+        const existingList = rencanaMap.get(sid)||[];
+        const existingAuto = existingList.find(rk=>rk.is_auto_parsed);
+        const payload = {
+          serial_id:sid, gi:mtu?.Gi||'', bay:mtu?.Bay||'', jenis_mtu:mtu?.['#']||'',
+          jenis_kegiatan:p.jenis_kegiatan||'LAINNYA',
+          uraian:p.uraian||srcText.substring(0,100),
+          tahun_rencana:p.tahun_rencana||new Date().getFullYear(),
+          bulan_target:p.bulan_target||null,
+          tanggal_target:p.tanggal_target||null,
+          status:'DRAFT', source_text:srcText, is_auto_parsed:true,
+          parsed_by:'auto:'+username,
+          updated_by:currentUser.id, updated_by_name:username,
+        };
+        let result;
+        if(existingAuto){
+          result = await sbDb.from(SB_TABLE_RK).update(payload).eq('id',existingAuto.id).select();
+        } else {
+          payload.created_by=currentUser.id; payload.created_by_name=username;
+          result = await sbDb.from(SB_TABLE_RK).insert(payload).select();
+        }
+        if(!result.error && result.data?.[0]){
+          const savedRow = result.data[0];
+          if(!rencanaMap.has(sid)) rencanaMap.set(sid,[]);
+          const localList = rencanaMap.get(sid);
+          if(existingAuto){
+            const idx = localList.findIndex(rk=>rk.id===existingAuto.id);
+            if(idx>=0) localList[idx]=savedRow; else localList.push(savedRow);
+          } else { localList.push(savedRow); }
+        }
+      }
+    }catch(e){ console.warn('Silent parse batch error:',e.message); }
+    await new Promise(r=>setTimeout(r,300));
+  }
+  parseRunning = false;
+  applyFilters();
+}
+
+// Event listeners parse rencana
+document.getElementById('parseRencanaBtn').addEventListener('click', openParseRencana);
+document.getElementById('parseRencanaCloseBtn').addEventListener('click', closeParseRencana);
+document.getElementById('parseRencanaCancelBtn').addEventListener('click', closeParseRencana);
+document.getElementById('parseRencanaOverlay').addEventListener('click',(e)=>{
+  if(e.target.id==='parseRencanaOverlay') closeParseRencana();
+});
+document.getElementById('parseRencanaStartBtn').addEventListener('click',()=>{
+  const scope = document.querySelector('input[name="parseScope"]:checked').value;
+  document.getElementById('parseProgress').style.display = 'block';
+  document.getElementById('parseIdle').style.display = 'none';
+  document.getElementById('parseRencanaStartBtn').disabled = true;
+  document.getElementById('parseRencanaStartBtn').textContent = 'Memproses...';
+  document.getElementById('parseLog').innerHTML = '';
+  runParseRencana(scope).catch(err=>{
+    appendParseLog('✗ Error: '+err.message,'var(--red)');
+    document.getElementById('parseRencanaStartBtn').disabled = false;
+    document.getElementById('parseRencanaStartBtn').textContent = '✦ Mulai Parse';
+  });
+});
+
+
+document.getElementById('rkCloseBtn').addEventListener('click',()=>document.getElementById('rkOverlay').classList.remove('open'));
+document.getElementById('rkCloseBtn2').addEventListener('click',()=>document.getElementById('rkOverlay').classList.remove('open'));
+document.getElementById('rkOverlay').addEventListener('click',(e)=>{if(e.target.id==='rkOverlay') document.getElementById('rkOverlay').classList.remove('open');});
+document.getElementById('rkAddBtn').addEventListener('click',()=>showRkForm('add'));
+document.getElementById('rkFormCancelBtn').addEventListener('click',()=>{document.getElementById('rkFormSection').style.display='none';});
+document.getElementById('rkFormSaveBtn').addEventListener('click',saveRkForm);
+
+
   document.getElementById('ltxt').textContent='Gagal: '+err.message;
   document.getElementById('lpct').textContent='✗';
   document.getElementById('lpct').style.color='var(--red)';
