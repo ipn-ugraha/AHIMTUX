@@ -568,6 +568,10 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
               <option value="PEMELIHARAAN">PEMELIHARAAN</option>
               <option value="PENGGANTIAN">PENGGANTIAN</option>
               <option value="MONITORING">MONITORING</option>
+              <option value="VERIFIKASI">VERIFIKASI</option>
+              <option value="MENUNGGU PADAM">MENUNGGU PADAM</option>
+              <option value="PENGADAAN MATERIAL">PENGADAAN MATERIAL</option>
+              <option value="CLOSE">CLOSE</option>
               <option value="LAINNYA">LAINNYA</option>
             </select>
           </div>
@@ -3344,7 +3348,19 @@ document.getElementById('loginUser').addEventListener('keydown',(e)=>{
   if(e.key==='Enter') document.getElementById('loginPwd').focus();
 });
 
-// ── RENCANA KERJA ────────────────────────────────────────────────────────────
+function jenisColor(jenis){
+  const map = {
+    'PEMELIHARAAN':      '#60a5fa',
+    'PENGGANTIAN':       '#f87171',
+    'MONITORING':        '#34d399',
+    'VERIFIKASI':        '#a78bfa',
+    'MENUNGGU PADAM':    '#fbbf24',
+    'PENGADAAN MATERIAL':'#fb923c',
+    'CLOSE':             '#4ade80',
+    'LAINNYA':           '#9ca3af',
+  };
+  return map[jenis] || '#9ca3af';
+}
 let rkCurrentSerialId = '';
 
 function openRencana(serialId){
@@ -3408,7 +3424,7 @@ function renderRkList(serialId){
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
           <span class="badge" style="background:${sc.bg};color:${sc.color};border:1px solid ${sc.bdr}">${rk.status}</span>
-          <span style="font-family:var(--mono);font-size:10px;color:var(--accent)">${e(rk.jenis_kegiatan||'')}</span>
+          <span style="font-family:var(--mono);font-size:10px;color:${jenisColor(rk.jenis_kegiatan||'')}">${e(rk.jenis_kegiatan||'')}</span>
           <span style="font-family:var(--mono);font-size:11px;color:var(--text2);font-weight:500">🗓 ${e(waktuStr)}</span>
           ${autoBadge}
         </div>
@@ -3628,11 +3644,19 @@ function parseRencanaWithRegex(items){
 
     // ── JENIS KEGIATAN ─────────────────────────────────────────────────────
     let jenis = 'LAINNYA';
-    if(/ganti|penggantian|replace|diganti|pergantian|pengadaan baru/.test(txt))
+    if(/\bclose\b|sudah close|already close|sudah selesai|telah selesai|sudah close|closed/.test(txt))
+      jenis = 'CLOSE';
+    else if(/ba verifikasi|ba mitigasi|mitigasi.*verifikasi|verifikasi.*ba|ba validasi|berita acara verif/.test(txt))
+      jenis = 'VERIFIKASI';
+    else if(/menunggu padam|material.*onsite|material.*on site|material siap.*padam|onsite.*padam/.test(txt))
+      jenis = 'MENUNGGU PADAM';
+    else if(/perlu material|pengadaan material|pencarian material|\brfq\b|procurement|proses pengadaan|material pengganti/.test(txt))
+      jenis = 'PENGADAAN MATERIAL';
+    else if(/ganti|penggantian|replace|diganti|pergantian/.test(txt))
       jenis = 'PENGGANTIAN';
     else if(/pelihara|pemeliharaan|harmon|overhaul|servis|pm\b|p\.m\b|rekondisi|rehabilitasi/.test(txt))
       jenis = 'PEMELIHARAAN';
-    else if(/monitor|pantau|observasi|cek rutin|pengujian|inspeksi|surveillance/.test(txt))
+    else if(/monitor|pantau|observasi|cek rutin|pengujian|inspeksi|surveillance|uji ulang|uji kembali/.test(txt))
       jenis = 'MONITORING';
 
     // ── TAHUN ──────────────────────────────────────────────────────────────
