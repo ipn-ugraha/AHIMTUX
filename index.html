@@ -3908,6 +3908,7 @@ document.getElementById('rkFormCancelBtn').addEventListener('click',()=>{documen
 document.getElementById('rkFormSaveBtn').addEventListener('click',saveRkForm);
 
 
+init().catch(err=>{
   document.getElementById('ltxt').textContent='Gagal: '+err.message;
   document.getElementById('lpct').textContent='✗';
   document.getElementById('lpct').style.color='var(--red)';
