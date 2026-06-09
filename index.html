@@ -3791,7 +3791,7 @@ async function runParseRencana(scope){
     const txt = (r.Rencana||'').trim();
     if(!txt || txt==='nan' || txt==='#N/A' || txt==='-') return false;
     const sid = (r['Serial Id']||'').trim();
-    if(!sid) return false;
+    if(!sid || sid==='NO DATA' || sid==='-') return false; // skip baris tanpa serial id
 
     if(scope === 'all') return true;
 
@@ -3838,8 +3838,11 @@ async function runParseRencana(scope){
       for(const p of parsed){
         if(!parseRunning) break;
         const sid = p.id;
-        // DEBUG
-        if(!sid){ console.warn('Skip: p.id kosong', p); continue; }
+        // Skip kalau serial_id kosong atau placeholder
+        if(!sid || sid==='NO DATA' || sid==='-' || sid.trim()===''){
+          console.log('Skip: serial_id tidak valid:', sid);
+          continue;
+        }
         const mtu = raw.find(r=>(r['Serial Id']||'').trim()===sid);
         const srcText = items.find(x=>x.serial_id===sid)?.rencana_text || '';
 
@@ -3953,7 +3956,7 @@ async function runParseRencanaSilent(scope){
     const txt = (r.Rencana||'').trim();
     if(!txt || txt==='nan' || txt==='#N/A' || txt==='-') return false;
     const sid = (r['Serial Id']||'').trim();
-    if(!sid) return false;
+    if(!sid || sid==='NO DATA' || sid==='-') return false;
     if(scope==='all') return true;
     const existing = (rencanaMap.get(sid)||[]).find(rk=>rk.is_auto_parsed);
     if(!existing) return true;
