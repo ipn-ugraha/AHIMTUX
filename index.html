@@ -1074,9 +1074,12 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
   <!-- SUB-TAB: ALERT -->
   <div id="renc-alert" class="renc-panel active">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
-      <span style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em">Filter UPT:</span>
-      <select id="alertUptFilter" class="fs" onchange="renderAlertPanel()" style="min-width:160px">
+      <span style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em">Filter:</span>
+      <select id="alertUptFilter" class="fs" onchange="onAlertUptChange()" style="min-width:140px">
         <option value="">Semua UPT</option>
+      </select>
+      <select id="alertGiFilter" class="fs" onchange="renderAlertPanel()" style="min-width:180px">
+        <option value="">Semua GI</option>
       </select>
       <span id="alertSummaryText" style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-left:auto"></span>
     </div>
@@ -1099,6 +1102,7 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
           <thead>
             <tr>
               <th>GI</th>
+              <th>GI Kritikal</th>
               <th>Bay</th>
               <th>Jenis MTU</th>
               <th>Status Hi</th>
@@ -4358,6 +4362,13 @@ function initRencanaPage(){
   const gis = [...new Set(raw.map(r=>r.Gi).filter(Boolean))].sort();
   const giSel = document.getElementById('semuaGiFilter');
   gis.forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent=g; giSel.appendChild(o); });
+
+  // Isi filter GI alert (hanya GI yang punya Critical/Poor)
+  const giAlertSel = document.getElementById('alertGiFilter');
+  const gisAlert = [...new Set(
+    raw.filter(r=>r._se==='CRITICAL'||r._se==='POOR').map(r=>r.Gi).filter(Boolean)
+  )].sort();
+  gisAlert.forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent=g; giAlertSel.appendChild(o); });
   renderAlertPanel();
   calYear = new Date().getFullYear();
   calMonth = 0; // mulai dari Januari
@@ -4399,6 +4410,7 @@ const ALERT_PAGE = 50;
 function renderAlertPanel(){
   alertPage = 1;
   const upt = document.getElementById('alertUptFilter').value;
+  const gi  = document.getElementById('alertGiFilter').value;
   const stf = document.getElementById('alertStatusFilter').value;
 
   // MTU Critical/Poor yang tidak punya rencana aktif
@@ -4406,6 +4418,7 @@ function renderAlertPanel(){
     const st = r._se;
     if(st!=='CRITICAL' && st!=='POOR') return false;
     if(upt && r.Upt!==upt) return false;
+    if(gi  && r.Gi!==gi) return false;
     if(stf==='CRITICAL' && st!=='CRITICAL') return false;
     if(stf==='POOR' && st!=='POOR') return false;
     const sid = (r['Serial Id']||'').trim();
@@ -4481,11 +4494,15 @@ function renderAlertTable(rows){
     tbody.innerHTML = sl.map(r=>{
       const sid = (r['Serial Id']||'').trim();
       const rowIdx = raw.indexOf(r);
+      const isKrit = giKrit.has((r.Gi||'').trim());
       const addBtn = canEdit
         ? `<button onclick="openRencana('${e(sid)}')" style="background:var(--accent);border:none;color:#fff;padding:3px 8px;border-radius:4px;font-family:var(--mono);font-size:10px;cursor:pointer">➕ Tambah</button>`
         : '—';
       return `<tr>
-        <td style="color:var(--text);font-weight:500">${e(r.Gi||'—')}</td>
+        <td style="color:var(--text);font-weight:500">${isKrit?'<span class="gkd"></span>':''}${e(r.Gi||'—')}</td>
+        <td style="text-align:center">${isKrit
+          ? `<span class="badge b-cr" style="font-size:9px">★ Kritikal</span>`
+          : `<span style="font-size:10px;color:var(--text3)">—</span>`}</td>
         <td>${e(r.Bay||'—')}</td>
         <td><span class="badge" style="background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.2);font-size:9px">${e(r['#']||'—')}</span></td>
         <td>${stH(r._se)}</td>
@@ -4698,6 +4715,21 @@ function semuaSortBy(col){
     if(th.dataset.col===col) th.classList.add(semuaSort.dir==='asc'?'sa':'sd');
   });
   renderSemuaRencana();
+}
+
+function onAlertUptChange(){
+  const upt = document.getElementById('alertUptFilter').value;
+  const giSel = document.getElementById('alertGiFilter');
+  const cur = giSel.value;
+  while(giSel.options.length>1) giSel.remove(1);
+  // Hanya GI yang punya MTU Critical/Poor
+  const gis = [...new Set(
+    raw.filter(r=>(r._se==='CRITICAL'||r._se==='POOR')&&(!upt||r.Upt===upt))
+       .map(r=>r.Gi).filter(Boolean)
+  )].sort();
+  gis.forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent=g; giSel.appendChild(o); });
+  giSel.value = gis.includes(cur)?cur:'';
+  renderAlertPanel();
 }
 
 function onSemuaUptChange(){
