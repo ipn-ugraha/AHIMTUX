@@ -518,7 +518,10 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
           <div id="parseLog" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;max-height:200px;overflow-y:auto;font-family:var(--mono);font-size:10px;color:var(--text2);line-height:1.7"></div>
         </div>
         <div id="parseIdle" style="font-size:12px;color:var(--text3);font-family:var(--mono)">
-          Siap. Klik "Mulai Parse" untuk memulai.
+          Siap. Klik "Mulai Parse" untuk memulai.<br>
+          <span style="font-size:10px;color:var(--text3);margin-top:6px;display:block">
+            ✦ Pakai Claude AI (Edge Function) jika tersedia, otomatis fallback ke regex parser jika belum di-setup.
+          </span>
         </div>
       </div>
 
@@ -997,6 +1000,8 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
 const SB_TABLE_AHI='AHI_MTU', SB_TABLE_REF='gi_referensi', SB_TABLE_RK='rencana_kerja';
 // Map serial_id → array rencana_kerja (diisi saat init)
 let rencanaMap = new Map();
+// Supabase project URL (diisi saat init, dipakai untuk Edge Function URL)
+let activeSupabaseUrl = '';
 const PAGE=40, YR=new Date().getFullYear();
 const VALID_PFX=['GI ','GIS ','GITET ','GISTET '];
 const ST_ORD={'CRITICAL':0,'POOR':1,'FAIR':2,'GOOD':3,'VERY GOOD':4};
@@ -1123,6 +1128,7 @@ async function init(){
   try{
     db = supabase.createClient(sbUrl, sbKey);
     sbDb = db;
+    activeSupabaseUrl = sbUrl; // simpan untuk Edge Function URL
   }catch(e){
     setP(0,'URL Supabase tidak valid');
     throw new Error('URL Supabase tidak valid: '+e.message);
@@ -3599,62 +3605,167 @@ function setParseProgress(pct, text){
   document.getElementById('parseProgressText').textContent = text;
 }
 
-// Parse satu batch teks menggunakan Claude API
-async function parseBatchWithClaude(items){
-  // items: [{serial_id, rencana_text}, ...]
-  const BULAN_ID = ['januari','februari','maret','april','mei','juni',
-                    'juli','agustus','september','oktober','november','desember'];
-  const prompt = `Kamu adalah parser data rencana kerja peralatan listrik PLN Indonesia.
-Tugasmu: ekstrak informasi terstruktur dari teks rencana kerja berikut.
+// ── REGEX PARSER (fallback tanpa API) ────────────────────────────────────────
+function parseRencanaWithRegex(items){
+  const BULAN_MAP = {
+    'januari':1,'jan':1,
+    'februari':2,'feb':2,
+    'maret':3,'mar':3,'mrt':3,
+    'april':4,'apr':4,
+    'mei':5,'may':5,
+    'juni':6,'jun':6,
+    'juli':7,'jul':7,
+    'agustus':8,'agu':8,'agt':8,'aug':8,
+    'september':9,'sep':9,'sept':9,
+    'oktober':10,'okt':10,'oct':10,
+    'november':11,'nov':11,
+    'desember':12,'des':12,'dec':12,
+  };
 
-Untuk setiap item, kembalikan JSON dengan field:
-- jenis_kegiatan: salah satu dari ["PEMELIHARAAN","PENGGANTIAN","MONITORING","LAINNYA"]
-- tahun_rencana: angka tahun 4 digit (misal 2026), atau null
-- bulan_target: angka bulan 1-12, atau null jika tidak disebutkan
-- tanggal_target: string "YYYY-MM-DD" jika tanggal spesifik ada, atau null
-- uraian: teks ringkas bersih maksimal 100 karakter
+  return items.map(item=>{
+    const txt = (item.rencana_text||'').toLowerCase().trim();
+    const rawTxt = item.rencana_text||'';
 
-Aturan ekstraksi:
-JENIS:
-- "ganti","penggantian","replace","overhaul besar" → PENGGANTIAN
-- "harmon","pelihara","PM","overhaul","servis","pemeliharaan" → PEMELIHARAAN
-- "pantau","monitor","observasi","cek rutin" → MONITORING
-- tidak jelas → LAINNYA
+    // ── JENIS KEGIATAN ─────────────────────────────────────────────────────
+    let jenis = 'LAINNYA';
+    if(/ganti|penggantian|replace|diganti|pergantian|pengadaan baru/.test(txt))
+      jenis = 'PENGGANTIAN';
+    else if(/pelihara|pemeliharaan|harmon|overhaul|servis|pm\b|p\.m\b|rekondisi|rehabilitasi/.test(txt))
+      jenis = 'PEMELIHARAAN';
+    else if(/monitor|pantau|observasi|cek rutin|pengujian|inspeksi|surveillance/.test(txt))
+      jenis = 'MONITORING';
 
-WAKTU:
-- Nama bulan Indonesia (januari-desember) → bulan_target 1-12
-- "Jan","Feb","Mar","Apr","Mei/May","Jun","Jul","Agt/Aug","Sep","Okt/Oct","Nov","Des/Dec" → bulan_target
-- Semester 1 / S1 / TW1-TW2 → bulan_target 6
-- Semester 2 / S2 / TW3-TW4 → bulan_target 12
-- Kuartal 1/Q1 → bulan 3, Q2 → bulan 6, Q3 → bulan 9, Q4 → bulan 12
-- Tahun 2 digit: 25→2025, 26→2026, 27→2027
-- Tanggal spesifik (misal "15 Maret 2026", "20/03/2026") → tanggal_target "2026-03-15"
-- Jika ada tanggal, isi juga tahun_rencana dan bulan_target dari tanggal tsb
+    // ── TAHUN ──────────────────────────────────────────────────────────────
+    let tahun = null;
+    // Tahun 4 digit (2024-2030)
+    const tahun4 = txt.match(/20(2[4-9]|30)/);
+    if(tahun4) tahun = parseInt(tahun4[0]);
+    else {
+      // Tahun 2 digit (24-30 → 2024-2030)
+      const tahun2 = txt.match(/\b(2[4-9]|30)\b/);
+      if(tahun2) tahun = 2000 + parseInt(tahun2[0]);
+    }
 
-URAIAN:
-- Ringkas teks asli, hilangkan kata target/jadwal/rencana, max 100 karakter
+    // ── TANGGAL SPESIFIK ───────────────────────────────────────────────────
+    let tanggal = null;
+    let bulan = null;
 
-Input JSON:
-${JSON.stringify(items.map(x=>({id:x.serial_id, text:x.rencana_text})))}
+    // Format: "15 maret 2026" atau "15-03-2026" atau "15/03/2026"
+    const tglPola1 = txt.match(/(\d{1,2})\s+(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\s+(20\d{2})/);
+    if(tglPola1){
+      const tgl = tglPola1[1].padStart(2,'0');
+      bulan = BULAN_MAP[tglPola1[2]];
+      const thn = tglPola1[3];
+      tanggal = `${thn}-${String(bulan).padStart(2,'0')}-${tgl}`;
+      tahun = parseInt(thn);
+    }
 
-Kembalikan HANYA array JSON tanpa penjelasan, tanpa markdown:
-[{"id":"...","jenis_kegiatan":"...","tahun_rencana":...,"bulan_target":...,"tanggal_target":...,"uraian":"..."},...]`;
+    // Format: "20/03/2026" atau "20-03-2026"
+    if(!tanggal){
+      const tglPola2 = txt.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](20\d{2})/);
+      if(tglPola2){
+        const tgl = tglPola2[1].padStart(2,'0');
+        bulan = parseInt(tglPola2[2]);
+        tahun = parseInt(tglPola2[3]);
+        tanggal = `${tahun}-${String(bulan).padStart(2,'0')}-${tgl}`;
+      }
+    }
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      messages: [{ role: 'user', content: prompt }]
-    })
+    // ── BULAN (kalau belum dapat dari tanggal) ─────────────────────────────
+    if(!bulan){
+      // Cek nama bulan
+      for(const [nama, num] of Object.entries(BULAN_MAP)){
+        const re = new RegExp('\\b'+nama+'\\b');
+        if(re.test(txt)){ bulan = num; break; }
+      }
+
+      // Semester / TW
+      if(!bulan){
+        if(/\bs[- ]?1\b|semester\s*1|tw[- ]?[12]\b/.test(txt)) bulan = 6;
+        else if(/\bs[- ]?2\b|semester\s*2|tw[- ]?[34]\b/.test(txt)) bulan = 12;
+      }
+
+      // Kuartal / Triwulan
+      if(!bulan){
+        if(/\bq1\b|tw[- ]?1\b|triwulan\s*1/.test(txt)) bulan = 3;
+        else if(/\bq2\b|tw[- ]?2\b|triwulan\s*2/.test(txt)) bulan = 6;
+        else if(/\bq3\b|tw[- ]?3\b|triwulan\s*3/.test(txt)) bulan = 9;
+        else if(/\bq4\b|tw[- ]?4\b|triwulan\s*4/.test(txt)) bulan = 12;
+      }
+    }
+
+    // ── URAIAN ─────────────────────────────────────────────────────────────
+    // Bersihkan kata-kata boilerplate, ambil max 100 karakter
+    let uraian = rawTxt
+      .replace(/target\s*(waktu|penyelesaian)?[:\-]?\s*/gi, '')
+      .replace(/rencana\s*(kerja|tindak lanjut)?[:\-]?\s*/gi, '')
+      .replace(/jadwal[:\-]?\s*/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if(uraian.length > 100) uraian = uraian.substring(0, 97) + '…';
+
+    return {
+      id:           item.serial_id,
+      jenis_kegiatan: jenis,
+      tahun_rencana:  tahun,
+      bulan_target:   bulan,
+      tanggal_target: tanggal,
+      uraian:         uraian,
+      _method:        'regex', // marker internal
+    };
   });
+}
 
-  if(!response.ok) throw new Error(`API error: ${response.status}`);
-  const data = await response.json();
-  const text = (data.content||[]).map(c=>c.text||'').join('');
-  const clean = text.replace(/```json|```/g,'').trim();
-  return JSON.parse(clean);
+// ── WRAPPER: coba Edge Function dulu, fallback ke regex ──────────────────────
+async function parseBatchWithClaude(items){
+  const baseUrl = activeSupabaseUrl || localStorage.getItem('sb_url') || '';
+
+  // Kalau tidak ada Supabase URL, langsung pakai regex
+  if(!baseUrl){
+    appendParseLog('⚠ Supabase URL tidak diset, pakai regex parser', 'var(--amb)');
+    return parseRencanaWithRegex(items);
+  }
+
+  const edgeFnUrl = baseUrl.replace(/\/$/, '') + '/functions/v1/parse-rencana';
+  const anonKey = localStorage.getItem('sb_key') ||
+    (typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '');
+
+  try{
+    const response = await fetch(edgeFnUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${anonKey}`,
+        'apikey': anonKey,
+      },
+      body: JSON.stringify({ items })
+    });
+
+    if(!response.ok){
+      const errText = await response.text();
+      // Kalau 404 → Edge Function belum di-deploy → fallback regex
+      if(response.status === 404){
+        appendParseLog('⚠ Edge Function belum aktif, pakai regex parser', 'var(--amb)');
+        return parseRencanaWithRegex(items);
+      }
+      throw new Error(`Edge Function error ${response.status}: ${errText}`);
+    }
+
+    const data = await response.json();
+    if(data.error) throw new Error(data.error);
+
+    // Tandai hasil sebagai 'claude'
+    return (data.result||[]).map(r=>({...r, _method:'claude'}));
+
+  }catch(err){
+    // Network error (CORS, offline, dll) → fallback regex
+    if(err.message.includes('fetch') || err.message.includes('network') ||
+       err.message.includes('Failed to fetch')){
+      appendParseLog(`⚠ Edge Function tidak tersedia (${err.message.substring(0,40)}), pakai regex`, 'var(--amb)');
+      return parseRencanaWithRegex(items);
+    }
+    throw err; // error lain tetap di-throw
+  }
 }
 
 // Fungsi utama: kumpulkan MTU yang perlu di-parse, kirim ke Claude, simpan ke Supabase
@@ -3769,9 +3880,9 @@ async function runParseRencana(scope){
       }
 
       appendParseLog(
-        `✓ Batch ${i+1}: ${batch.length} item → `+
-        parsed.map(p=>`${p.jenis_kegiatan||'?'}${p.tahun_rencana?'/'+p.tahun_rencana:''}`).join(', '),
-        'var(--grn)'
+        `✓ Batch ${i+1}: ${batch.length} item [${parsed[0]?._method||'?'}] → `+
+        parsed.map(p=>`${p.jenis_kegiatan||'?'}${p.bulan_target?'/'+p.bulan_target:''}${p.tahun_rencana?'/'+p.tahun_rencana:''}`).join(', '),
+        parsed[0]?._method==='claude' ? 'var(--grn)' : 'var(--amb)'
       );
 
     }catch(err){
