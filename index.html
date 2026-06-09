@@ -3762,6 +3762,7 @@ async function parseBatchWithClaude(items){
     }
 
     const data = await response.json();
+    console.log('Edge Function response:', JSON.stringify(data).substring(0, 300));
     if(data.error) throw new Error(data.error);
 
     // Tandai hasil sebagai 'claude'
