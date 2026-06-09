@@ -1104,6 +1104,7 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
               <th>Status Hi</th>
               <th>Nilai Hi</th>
               <th>UPT</th>
+              <th>Justifikasi</th>
               <th>Serial Id</th>
               <th style="width:100px">Aksi</th>
             </tr>
@@ -1207,10 +1208,12 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
               <th onclick="semuaSortBy('gi')" data-col="gi" style="cursor:pointer">GI</th>
               <th onclick="semuaSortBy('bay')" data-col="bay" style="cursor:pointer">Bay</th>
               <th>Jenis MTU</th>
+              <th onclick="semuaSortBy('upt')" data-col="upt" style="cursor:pointer">UPT</th>
               <th onclick="semuaSortBy('sid')" data-col="sid" style="cursor:pointer">Serial Id</th>
               <th onclick="semuaSortBy('jenis')" data-col="jenis" style="cursor:pointer">Jenis Kegiatan</th>
               <th onclick="semuaSortBy('status')" data-col="status" style="cursor:pointer">Status</th>
               <th onclick="semuaSortBy('target')" data-col="target" style="cursor:pointer">Target</th>
+              <th>Justifikasi</th>
               <th>Uraian</th>
               <th onclick="semuaSortBy('created')" data-col="created" style="cursor:pointer">Dibuat Oleh</th>
               <th style="width:80px">Aksi</th>
@@ -4464,6 +4467,7 @@ function renderAlertTable(rows){
         <td>${stH(r._se)}</td>
         <td><div class="hiwrap"><span class="hival">${r['Nilai Hi']||'—'}</span></div></td>
         <td style="font-size:10px;color:var(--text3)">${e((r.Upt||'').replace('UPT ',''))}</td>
+        <td style="font-size:10px;color:var(--text2);max-width:220px;white-space:normal;line-height:1.4">${e(r['Justifikasi Prioritas']||'—')}</td>
         <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${e(sid||'—')}</td>
         <td>${addBtn}</td>
       </tr>`;
@@ -4706,6 +4710,7 @@ function renderSemuaRencana(){
     }
     if(col==='gi')      return (a._mtu?.Gi||'').localeCompare(b._mtu?.Gi||'')*m;
     if(col==='bay')     return (a._mtu?.Bay||'').localeCompare(b._mtu?.Bay||'')*m;
+    if(col==='upt')     return (a._mtu?.Upt||'').localeCompare(b._mtu?.Upt||'')*m;
     if(col==='sid')     return (a._sid||'').localeCompare(b._sid||'')*m;
     if(col==='jenis')   return (a.jenis_kegiatan||'').localeCompare(b.jenis_kegiatan||'')*m;
     if(col==='status')  return (a.status||'').localeCompare(b.status||'')*m;
@@ -4739,10 +4744,12 @@ function renderSemuaTable(rows, canEdit){
         <td style="color:var(--text);font-size:11px">${e(mtu?.Gi||'—')}</td>
         <td style="font-size:11px">${e(mtu?.Bay||'—')}</td>
         <td><span class="badge" style="background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.2);font-size:9px">${e(mtu?.['#']||'—')}</span></td>
+        <td style="font-size:10px;color:var(--text3)">${e((mtu?.Upt||'').replace('UPT ',''))}</td>
         <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${e(rk._sid||'—')}</td>
         <td><span style="font-size:10px;font-family:var(--mono);color:${col}">${e(rk.jenis_kegiatan||'—')}</span></td>
         <td><span style="font-size:10px;font-family:var(--mono);color:${sc}">${rk.status}</span></td>
         <td style="font-family:var(--mono);font-size:10px;${od?'color:var(--red);font-weight:600':''}">${od?'⚠ ':''}${e(tgt)}</td>
+        <td style="font-size:10px;color:var(--text2);max-width:200px;white-space:normal;line-height:1.4">${e(mtu?.['Justifikasi Prioritas']||'—')}</td>
         <td style="font-size:10px;color:var(--text2);max-width:280px;white-space:normal;line-height:1.4">${e(rk.uraian||'—')}</td>
         <td style="font-size:10px;color:var(--text3)">${e(rk.created_by_name||'—')}</td>
         <td>
