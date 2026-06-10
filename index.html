@@ -622,6 +622,7 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
               <option value="PEMELIHARAAN">PEMELIHARAAN</option>
               <option value="PENGGANTIAN">PENGGANTIAN</option>
               <option value="MONITORING">MONITORING</option>
+              <option value="UJI ULANG">UJI ULANG</option>
               <option value="VERIFIKASI">VERIFIKASI</option>
               <option value="MENUNGGU PADAM">MENUNGGU PADAM</option>
               <option value="PENGADAAN MATERIAL">PENGADAAN MATERIAL</option>
@@ -1181,6 +1182,7 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
           <option value="PEMELIHARAAN">PEMELIHARAAN</option>
           <option value="PENGGANTIAN">PENGGANTIAN</option>
           <option value="MONITORING">MONITORING</option>
+          <option value="UJI ULANG">UJI ULANG</option>
           <option value="VERIFIKASI">VERIFIKASI</option>
           <option value="MENUNGGU PADAM">MENUNGGU PADAM</option>
           <option value="PENGADAAN MATERIAL">PENGADAAN MATERIAL</option>
@@ -1218,7 +1220,7 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
         <span class="fl">Status AHI</span>
         <select id="semuaAhiFilter" class="fs" onchange="renderSemuaRencana()">
           <option value="">Semua</option>
-          <option value="CRITICAL">CRITICAL</option>
+          <option value="CRITICAL" selected>CRITICAL</option>
           <option value="POOR">POOR</option>
           <option value="FAIR">FAIR</option>
           <option value="GOOD">GOOD</option>
@@ -1227,6 +1229,9 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
       </div>
       <div class="fcnt" id="semuaCount">—</div>
     </div>
+
+    <!-- Cards summary sinkron filter -->
+    <div id="semuaCards" class="alert-cards" style="margin-bottom:14px"></div>
     <div class="tsec">
       <div class="tw">
         <table>
@@ -3638,6 +3643,7 @@ function jenisColor(jenis){
     'PEMELIHARAAN':      '#60a5fa',
     'PENGGANTIAN':       '#f87171',
     'MONITORING':        '#34d399',
+    'UJI ULANG':         '#22d3ee',
     'VERIFIKASI':        '#a78bfa',
     'MENUNGGU PADAM':    '#fbbf24',
     'PENGADAAN MATERIAL':'#fb923c',
@@ -3941,8 +3947,10 @@ function parseRencanaWithRegex(items){
       jenis = 'PENGGANTIAN';
     else if(/pelihara|pemeliharaan|harmon|overhaul|servis|pm\b|p\.m\b|rekondisi|rehabilitasi/.test(txt))
       jenis = 'PEMELIHARAAN';
-    else if(/monitor|pantau|observasi|cek rutin|pengujian|inspeksi|surveillance|uji ulang|uji kembali/.test(txt))
+    else if(/monitor|pantau|observasi|cek rutin|inspeksi|surveillance/.test(txt))
       jenis = 'MONITORING';
+    else if(/uji ulang|uji kembali|pengujian ulang|retest|re-test|diuji ulang|dikan uji/.test(txt))
+      jenis = 'UJI ULANG';
 
     // ── TAHUN ──────────────────────────────────────────────────────────────
     let tahun = null;
@@ -4575,6 +4583,7 @@ const JENIS_CAL_COLOR = {
   'PEMELIHARAAN':      '#3b82f6',
   'PENGGANTIAN':       '#ef4444',
   'MONITORING':        '#22c55e',
+  'UJI ULANG':         '#22d3ee',
   'VERIFIKASI':        '#a78bfa',
   'MENUNGGU PADAM':    '#f59e0b',
   'PENGADAAN MATERIAL':'#f97316',
@@ -4831,6 +4840,31 @@ function renderSemuaRencana(){
 
   document.getElementById('semuaCount').innerHTML =
     `Menampilkan <span style="color:var(--accent)">${rows.length.toLocaleString('id-ID')}</span> rencana`;
+
+  // Cards summary sinkron filter
+  const SEMUA_JENIS = ['PEMELIHARAAN','PENGGANTIAN','MONITORING','UJI ULANG','VERIFIKASI',
+                        'MENUNGGU PADAM','PENGADAAN MATERIAL','CLOSE','LAINNYA'];
+  const jenisCnt = {};
+  SEMUA_JENIS.forEach(j=>jenisCnt[j]=0);
+  let overdueTotal = 0;
+  rows.forEach(rk=>{
+    if(jenisCnt[rk.jenis_kegiatan]!==undefined) jenisCnt[rk.jenis_kegiatan]++;
+    else jenisCnt['LAINNYA']++;
+    if(isOverdue(rk)) overdueTotal++;
+  });
+  const cardsHtml = SEMUA_JENIS.filter(j=>jenisCnt[j]>0).map(j=>{
+    const col = JENIS_CAL_COLOR[j]||'#6b7585';
+    return `<div class="alert-card" style="border-left:3px solid ${col};cursor:pointer"
+      onclick="document.getElementById('semuaJenisFilter').value='${j}';renderSemuaRencana()">
+      <div class="alert-card-val" style="color:${col}">${jenisCnt[j]}</div>
+      <div class="alert-card-lbl" style="color:${col}">${j}</div>
+    </div>`;
+  }).join('') + `<div class="alert-card" style="border-left:3px solid var(--red);cursor:pointer"
+    onclick="document.getElementById('semuaOverdueFilter').value='1';renderSemuaRencana()">
+    <div class="alert-card-val" style="color:var(--red)">${overdueTotal}</div>
+    <div class="alert-card-lbl">⚠ Lewat Target</div>
+  </div>`;
+  document.getElementById('semuaCards').innerHTML = cardsHtml;
 
   renderSemuaTable(rows, canEdit);
 }
