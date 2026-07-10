@@ -4028,6 +4028,7 @@ function parseRencanaWithRegex(items){
     const BA_DOC   = /\bBA\b.{0,15}?(verifikasi|validasi)/i;
     const ONSITE   = /\bonsite\b(?!\s+[A-Z]{1,5}\d[\w\-]*)|\bon site\b|\bmaterial\b.{0,30}\bonsite\b/i;
     const RFQ      = /\bRFQ\b/i;
+    const SPEK     = /spek\s+(tidak\s+sesuai|tdk\s+sesuai|tidak\s+match|mismatch)|tidak\s+sesuai\s+spek|spec\s+mismatch/i;
 
     let jenis = 'LAINNYA';
     let needsReview = false;
@@ -4045,7 +4046,10 @@ function parseRencanaWithRegex(items){
     } else if(prefix === 'PERLU MATERIAL PENGGANTI'){
       const hasOnsite = ONSITE.test(rawTxt);
       const hasRfq    = RFQ.test(rawTxt);
-      if(hasOnsite && !hasRfq){
+      const hasSpek   = SPEK.test(rawTxt);
+      if(hasSpek){
+        jenis = 'REVIEW MATERIAL'; confidence = 'tinggi';
+      } else if(hasOnsite && !hasRfq){
         jenis = 'MENUNGGU PADAM'; confidence = 'sedang';
       } else if(hasOnsite && hasRfq){
         jenis = 'MENUNGGU PADAM'; needsReview = true; confidence = 'rendah'; // ambigu
