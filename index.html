@@ -1245,6 +1245,7 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
       <div class="fcnt" id="semuaCount">—</div>
       <button class="filter-reset-btn" onclick="resetSemuaFilter()" title="Reset semua filter">✕ Reset Filter</button>
       <span id="semuaActiveFilters" class="filter-active-count" style="display:none"></span>
+      <button onclick="exportSemuaCSV()" style="background:var(--accent);border:none;color:#fff;padding:4px 12px;border-radius:var(--r);font-family:var(--mono);font-size:11px;cursor:pointer;margin-left:4px" title="Export hasil filter ke CSV">⬇ Export CSV</button>
     </div>
 
     <!-- Cards summary sinkron filter -->
@@ -4852,6 +4853,131 @@ function updateSemuaFilterIndicators(){
   } else {
     badge.style.display = 'none';
   }
+}
+
+function exportSemuaCSV(){
+  // Ambil rows sesuai filter aktif (sama dengan yang ditampilkan di tabel)
+  const upt    = document.getElementById('semuaUptFilter').value;
+  const gi     = document.getElementById('semuaGiFilter').value;
+  const stf    = document.getElementById('semuaStatusFilter').value;
+  const jenis  = document.getElementById('semuaJenisFilter').value;
+  const tahun  = document.getElementById('semuaTahunFilter').value;
+  const od     = document.getElementById('semuaOverdueFilter').value;
+  const krit   = document.getElementById('semuaKritFilter').value;
+  const ahi    = document.getElementById('semuaAhiFilter').value;
+
+  const rows = [];
+  rencanaMap.forEach((list, sid)=>{
+    const mtu = mtuMap.get(sid);
+    list.forEach(rk=>{
+      if(stf && rk.status!==stf) return;
+      if(jenis && rk.jenis_kegiatan!==jenis) return;
+      if(tahun && String(rk.tahun_rencana)!==tahun) return;
+      if(upt && (!mtu || mtu.Upt!==upt)) return;
+      if(gi  && (!mtu || mtu.Gi!==gi)) return;
+      if(od==='1' && !isOverdue(rk)) return;
+      if(od==='0' && isOverdue(rk)) return;
+      const isKrit = giKrit.has((mtu?.Gi||'').trim());
+      if(krit==='1' && !isKrit) return;
+      if(krit==='0' && isKrit) return;
+      if(ahi && (mtu?._se||'').toUpperCase()!==ahi) return;
+      rows.push({...rk, _sid:sid, _mtu:mtu});
+    });
+  });
+
+  if(!rows.length){ showToast('Tidak ada data untuk diexport','err'); return; }
+
+  // Sort sama dengan tabel (sesuai semuaSort aktif)
+  const {col, dir} = semuaSort;
+  const m = dir==='asc'?1:-1;
+  rows.sort((a,b)=>{
+    if(col==='target'){
+      const ta=a.tanggal_target||`${a.tahun_rencana||9999}-${String(a.bulan_target||12).padStart(2,'0')}-28`;
+      const tb=b.tanggal_target||`${b.tahun_rencana||9999}-${String(b.bulan_target||12).padStart(2,'0')}-28`;
+      return ta.localeCompare(tb)*m;
+    }
+    if(col==='gi')      return (a._mtu?.Gi||'').localeCompare(b._mtu?.Gi||'')*m;
+    if(col==='bay')     return (a._mtu?.Bay||'').localeCompare(b._mtu?.Bay||'')*m;
+    if(col==='upt')     return (a._mtu?.Upt||'').localeCompare(b._mtu?.Upt||'')*m;
+    if(col==='sid')     return (a._sid||'').localeCompare(b._sid||'')*m;
+    if(col==='jenis')   return (a.jenis_kegiatan||'').localeCompare(b.jenis_kegiatan||'')*m;
+    if(col==='status')  return (a.status||'').localeCompare(b.status||'')*m;
+    if(col==='ahi'){    const oa=ST_ORD[a._mtu?._se||'']??9, ob=ST_ORD[b._mtu?._se||'']??9; return (oa-ob)*m; }
+    if(col==='created') return (a.created_by_name||'').localeCompare(b.created_by_name||'')*m;
+    return 0;
+  });
+
+  // Header kolom — urutan optimal untuk analisa Claude AI
+  const HEADERS = [
+    'GI','GI Kritikal','Bay','Jenis MTU','UPT','Serial Id',
+    'Status AHI','Nilai Hi','Justifikasi Prioritas',
+    'Jenis Kegiatan','Status Rencana','Target','Lewat Target','Hari Lewat',
+    'Uraian Rencana','Dibuat Oleh','Tanggal Dibuat','Tahun Rencana','Bulan Target'
+  ];
+
+  const NAMA_BULAN = ['','Januari','Februari','Maret','April','Mei','Juni',
+                      'Juli','Agustus','September','Oktober','November','Desember'];
+
+  const csvRows = rows.map(rk=>{
+    const mtu  = rk._mtu;
+    const od   = isOverdue(rk);
+    const days = od ? overdueDays(rk) : 0;
+    const isKrit = giKrit.has((mtu?.Gi||'').trim());
+    const tgt  = formatTarget(rk);
+    const createdDate = rk.created_at
+      ? new Date(rk.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})
+      : '';
+
+    return [
+      mtu?.Gi || rk.gi || '',
+      isKrit ? 'Ya' : 'Tidak',
+      mtu?.Bay || rk.bay || '',
+      mtu?.['#'] || '',
+      (mtu?.Upt || '').replace('UPT ',''),
+      rk._sid || '',
+      mtu?._se || '',
+      mtu?.['Nilai Hi'] || '',
+      mtu?.['Justifikasi Prioritas'] || '',
+      rk.jenis_kegiatan || '',
+      rk.status || '',
+      tgt,
+      od ? 'Ya' : 'Tidak',
+      od ? days : '',
+      rk.uraian || '',
+      rk.created_by_name || '',
+      createdDate,
+      rk.tahun_rencana || '',
+      rk.bulan_target ? NAMA_BULAN[rk.bulan_target] : '',
+    ].map(v => {
+      const s = String(v==null?'':v);
+      // Quote jika mengandung koma, newline, atau tanda kutip
+      return (s.includes(',')||s.includes('\n')||s.includes('"'))
+        ? '"'+s.replace(/"/g,'""')+'"'
+        : s;
+    });
+  });
+
+  // Susun CSV
+  const csv = [HEADERS.join(','), ...csvRows.map(r=>r.join(','))].join('\r\n');
+  const BOM = '\uFEFF'; // BOM untuk Excel UTF-8
+  const blob = new Blob([BOM+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const now = new Date();
+  const stamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  const filterLabel = [
+    upt?upt.replace('UPT ',''):'',
+    gi?gi.replace(/^GI /,'').substring(0,10):'',
+    ahi||'',
+    stf||''
+  ].filter(Boolean).join('_')||'semua';
+  a.href = url;
+  a.download = `rencana_kerja_${filterLabel}_${stamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`✓ Export ${rows.length} rencana → CSV`, 'ok');
 }
 
 function onSemuaUptChange(){
