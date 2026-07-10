@@ -880,6 +880,11 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
     <span class="tdesc">PMT usia &lt;15 th, FAIR → GOOD</span>
     <span class="tbadge" id="badge-pmt">0 item</span>
   </div>
+  <div class="tgrp">
+    <label class="tsw"><input type="checkbox" id="tog-close" onchange="onToggle()"><span class="tslider"></span></label>
+    <span class="tdesc">Rencana CLOSE → naik 1 tingkat AHI</span>
+    <span class="tbadge" id="badge-close">0 item</span>
+  </div>
 </div>
 
 <!-- MAIN NAV TABS -->
@@ -1575,18 +1580,38 @@ function setP(pct, txt){
 function updToggle(){
   const nt=raw.filter(r=>r['#']==='TRAFO'&&r._so==='FAIR'&&r._age!=null&&r._age<20).length;
   const np=raw.filter(r=>r['#']==='PMT'  &&r._so==='FAIR'&&r._age!=null&&r._age<15).length;
+  // Hitung MTU yang punya rencana CLOSE aktif
+  const nc=raw.filter(r=>{
+    const sid=(r['Serial Id']||'').trim();
+    if(!sid||sid==='NO DATA') return false;
+    const list=rencanaMap.get(sid)||[];
+    return list.some(rk=>rk.jenis_kegiatan==='CLOSE'&&rk.status!=='BATAL');
+  }).length;
   const bt=document.getElementById('badge-trafo'), bp=document.getElementById('badge-pmt');
+  const bc=document.getElementById('badge-close');
   bt.textContent=nt+' item'; bt.classList.toggle('on',nt>0);
   bp.textContent=np+' item'; bp.classList.toggle('on',np>0);
+  if(bc){ bc.textContent=nc+' item'; bc.classList.toggle('on',nc>0); }
 }
+
+const AHI_UPGRADE = {CRITICAL:'POOR', POOR:'FAIR', FAIR:'GOOD', GOOD:'VERY GOOD', 'VERY GOOD':'VERY GOOD'};
 
 function onToggle(){
   const tt=document.getElementById('tog-trafo').checked;
   const tp=document.getElementById('tog-pmt').checked;
+  const tc=document.getElementById('tog-close').checked;
   raw.forEach(r=>{
     let e=r._so;
     if(tt&&r['#']==='TRAFO'&&r._so==='FAIR'&&r._age!=null&&r._age<20) e='GOOD';
     if(tp&&r['#']==='PMT'  &&r._so==='FAIR'&&r._age!=null&&r._age<15) e='GOOD';
+    if(tc){
+      const sid=(r['Serial Id']||'').trim();
+      if(sid&&sid!=='NO DATA'){
+        const list=rencanaMap.get(sid)||[];
+        const hasClose=list.some(rk=>rk.jenis_kegiatan==='CLOSE'&&rk.status!=='BATAL');
+        if(hasClose && AHI_UPGRADE[e]) e=AHI_UPGRADE[e];
+      }
+    }
     r._se=e; r._adj=(e!==r._so);
   });
   applyFilters();
@@ -5164,25 +5189,50 @@ function renderSemuaRencana(){
   const SEMUA_JENIS = ['PEMELIHARAAN','PENGGANTIAN','MONITORING','UJI ULANG','VERIFIKASI',
                         'MENUNGGU PADAM','PENGADAAN MATERIAL','REVIEW MATERIAL','CLOSE','LAINNYA'];
   const jenisCnt = {};
-  SEMUA_JENIS.forEach(j=>jenisCnt[j]=0);
+  const jenisUpt  = {};
+  SEMUA_JENIS.forEach(j=>{ jenisCnt[j]=0; jenisUpt[j]={}; });
   let overdueTotal = 0;
+  const overdueUpt = {};
   rows.forEach(rk=>{
-    if(rk._noRencana) return; // skip MTU tanpa rencana
-    if(jenisCnt[rk.jenis_kegiatan]!==undefined) jenisCnt[rk.jenis_kegiatan]++;
-    else jenisCnt['LAINNYA']++;
-    if(isOverdue(rk)) overdueTotal++;
+    if(rk._noRencana) return;
+    const j = jenisCnt[rk.jenis_kegiatan]!==undefined ? rk.jenis_kegiatan : 'LAINNYA';
+    jenisCnt[j]++;
+    const uLabel = (rk._mtu?.Upt||'—').replace('UPT ','');
+    if(!jenisUpt[j][uLabel]) jenisUpt[j][uLabel]=0;
+    jenisUpt[j][uLabel]++;
+    if(isOverdue(rk)){
+      overdueTotal++;
+      if(!overdueUpt[uLabel]) overdueUpt[uLabel]=0;
+      overdueUpt[uLabel]++;
+    }
   });
+
+  function uptBreakdown(uptMap){
+    return Object.entries(uptMap)
+      .sort((a,b)=>b[1]-a[1])
+      .map(([u,c])=>`<span style="display:flex;justify-content:space-between;gap:8px">
+        <span style="color:var(--text3)">${e(u)}</span>
+        <span style="color:var(--text2);font-weight:500">${c}</span>
+      </span>`).join('');
+  }
+
   const cardsHtml = SEMUA_JENIS.filter(j=>jenisCnt[j]>0).map(j=>{
     const col = JENIS_CAL_COLOR[j]||'#6b7585';
     return `<div class="alert-card" style="border-left:3px solid ${col};cursor:pointer"
       onclick="document.getElementById('semuaJenisFilter').value='${j}';renderSemuaRencana()">
       <div class="alert-card-val" style="color:${col}">${jenisCnt[j]}</div>
       <div class="alert-card-lbl" style="color:${col}">${j}</div>
+      <div style="margin-top:6px;font-size:9px;font-family:var(--mono);border-top:1px solid var(--border);padding-top:5px;display:flex;flex-direction:column;gap:2px">
+        ${uptBreakdown(jenisUpt[j])}
+      </div>
     </div>`;
   }).join('') + `<div class="alert-card" style="border-left:3px solid var(--red);cursor:pointer"
     onclick="document.getElementById('semuaOverdueFilter').value='1';renderSemuaRencana()">
     <div class="alert-card-val" style="color:var(--red)">${overdueTotal}</div>
     <div class="alert-card-lbl">⚠ Lewat Target</div>
+    <div style="margin-top:6px;font-size:9px;font-family:var(--mono);border-top:1px solid var(--border);padding-top:5px;display:flex;flex-direction:column;gap:2px">
+      ${uptBreakdown(overdueUpt)}
+    </div>
   </div>`;
   document.getElementById('semuaCards').innerHTML = cardsHtml;
 
