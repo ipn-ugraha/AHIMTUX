@@ -1216,6 +1216,14 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
         </select>
       </div>
       <div class="fg">
+        <span class="fl">Rencana</span>
+        <select id="semuaAdaRencanaFilter" class="fs" onchange="renderSemuaRencana()">
+          <option value="ada">Ada Rencana</option>
+          <option value="">Semua (termasuk belum ada)</option>
+          <option value="belum">Belum Ada Rencana</option>
+        </select>
+      </div>
+      <div class="fg">
         <span class="fl">Lewat Target</span>
         <select id="semuaOverdueFilter" class="fs" onchange="renderSemuaRencana()">
           <option value="">Semua</option>
@@ -4827,6 +4835,7 @@ function resetSemuaFilter(){
   document.getElementById('semuaOverdueFilter').value= '';
   document.getElementById('semuaKritFilter').value   = '';
   document.getElementById('semuaAhiFilter').value    = '';
+  document.getElementById('semuaAdaRencanaFilter').value = 'ada';
   // Rebuild GI dropdown ke semua lalu render
   const giSel = document.getElementById('semuaGiFilter');
   while(giSel.options.length>1) giSel.remove(1);
@@ -4837,7 +4846,8 @@ function resetSemuaFilter(){
 
 function updateSemuaFilterIndicators(){
   const ids = ['semuaUptFilter','semuaGiFilter','semuaStatusFilter','semuaJenisFilter',
-                'semuaTahunFilter','semuaOverdueFilter','semuaKritFilter','semuaAhiFilter'];
+                'semuaTahunFilter','semuaOverdueFilter','semuaKritFilter','semuaAhiFilter',
+                'semuaAdaRencanaFilter'];
   let activeCount = 0;
   ids.forEach(id=>{
     const el = document.getElementById(id);
@@ -4865,25 +4875,45 @@ function exportSemuaCSV(){
   const od     = document.getElementById('semuaOverdueFilter').value;
   const krit   = document.getElementById('semuaKritFilter').value;
   const ahi    = document.getElementById('semuaAhiFilter').value;
+  const adaRencana = document.getElementById('semuaAdaRencanaFilter').value;
 
   const rows = [];
-  rencanaMap.forEach((list, sid)=>{
-    const mtu = mtuMap.get(sid);
-    list.forEach(rk=>{
-      if(stf && rk.status!==stf) return;
-      if(jenis && rk.jenis_kegiatan!==jenis) return;
-      if(tahun && String(rk.tahun_rencana)!==tahun) return;
-      if(upt && (!mtu || mtu.Upt!==upt)) return;
-      if(gi  && (!mtu || mtu.Gi!==gi)) return;
-      if(od==='1' && !isOverdue(rk)) return;
-      if(od==='0' && isOverdue(rk)) return;
-      const isKrit = giKrit.has((mtu?.Gi||'').trim());
-      if(krit==='1' && !isKrit) return;
-      if(krit==='0' && isKrit) return;
-      if(ahi && (mtu?._se||'').toUpperCase()!==ahi) return;
-      rows.push({...rk, _sid:sid, _mtu:mtu});
+  if(adaRencana !== 'belum'){
+    rencanaMap.forEach((list, sid)=>{
+      const mtu = mtuMap.get(sid);
+      list.forEach(rk=>{
+        if(stf && rk.status!==stf) return;
+        if(jenis && rk.jenis_kegiatan!==jenis) return;
+        if(tahun && String(rk.tahun_rencana)!==tahun) return;
+        if(upt && (!mtu || mtu.Upt!==upt)) return;
+        if(gi  && (!mtu || mtu.Gi!==gi)) return;
+        if(od==='1' && !isOverdue(rk)) return;
+        if(od==='0' && isOverdue(rk)) return;
+        const isKrit = giKrit.has((mtu?.Gi||'').trim());
+        if(krit==='1' && !isKrit) return;
+        if(krit==='0' && isKrit) return;
+        if(ahi && (mtu?._se||'').toUpperCase()!==ahi) return;
+        rows.push({...rk, _sid:sid, _mtu:mtu, _noRencana:false});
+      });
     });
-  });
+  }
+  if(adaRencana !== 'ada' && !stf && !jenis && !tahun && !od){
+    raw.forEach(r=>{
+      const sid=(r['Serial Id']||'').trim();
+      if(!sid||sid==='NO DATA'||sid.startsWith('__INVALID_SCI__')) return;
+      if(upt&&r.Upt!==upt) return;
+      if(gi&&r.Gi!==gi) return;
+      if(ahi&&(r._se||'').toUpperCase()!==ahi) return;
+      const isKrit=giKrit.has((r.Gi||'').trim());
+      if(krit==='1'&&!isKrit) return;
+      if(krit==='0'&&isKrit) return;
+      const list=rencanaMap.get(sid)||[];
+      if(list.filter(rk=>rk.status!=='BATAL').length>0) return;
+      rows.push({_sid:sid,_mtu:r,_noRencana:true,jenis_kegiatan:'',status:'BELUM ADA RENCANA',
+        tahun_rencana:null,bulan_target:null,tanggal_target:null,uraian:'',
+        created_by_name:'',created_at:null,gi:r.Gi,bay:r.Bay});
+    });
+  }
 
   if(!rows.length){ showToast('Tidak ada data untuk diexport','err'); return; }
 
@@ -5002,26 +5032,58 @@ function renderSemuaRencana(){
   const od     = document.getElementById('semuaOverdueFilter').value;
   const krit   = document.getElementById('semuaKritFilter').value;
   const ahi    = document.getElementById('semuaAhiFilter').value;
+  const adaRencana = document.getElementById('semuaAdaRencanaFilter').value;
   const canEdit = ['admin','editor'].includes(currentRole);
 
   const rows = [];
-  rencanaMap.forEach((list, sid)=>{
-    const mtu = mtuMap.get(sid);
-    list.forEach(rk=>{
-      if(stf && rk.status!==stf) return;
-      if(jenis && rk.jenis_kegiatan!==jenis) return;
-      if(tahun && String(rk.tahun_rencana)!==tahun) return;
-      if(upt && (!mtu || mtu.Upt!==upt)) return;
-      if(gi  && (!mtu || mtu.Gi!==gi)) return;
-      if(od==='1' && !isOverdue(rk)) return;
-      if(od==='0' && isOverdue(rk)) return;
-      const isKrit = giKrit.has((mtu?.Gi||'').trim());
-      if(krit==='1' && !isKrit) return;
-      if(krit==='0' && isKrit) return;
-      if(ahi && (mtu?._se||'').toUpperCase()!==ahi) return;
-      rows.push({...rk, _sid:sid, _mtu:mtu});
+
+  // MTU yang PUNYA rencana
+  if(adaRencana !== 'belum'){
+    rencanaMap.forEach((list, sid)=>{
+      const mtu = mtuMap.get(sid);
+      list.forEach(rk=>{
+        if(stf && rk.status!==stf) return;
+        if(jenis && rk.jenis_kegiatan!==jenis) return;
+        if(tahun && String(rk.tahun_rencana)!==tahun) return;
+        if(upt && (!mtu || mtu.Upt!==upt)) return;
+        if(gi  && (!mtu || mtu.Gi!==gi)) return;
+        if(od==='1' && !isOverdue(rk)) return;
+        if(od==='0' && isOverdue(rk)) return;
+        const isKrit = giKrit.has((mtu?.Gi||'').trim());
+        if(krit==='1' && !isKrit) return;
+        if(krit==='0' && isKrit) return;
+        if(ahi && (mtu?._se||'').toUpperCase()!==ahi) return;
+        rows.push({...rk, _sid:sid, _mtu:mtu, _noRencana:false});
+      });
     });
-  });
+  }
+
+  // MTU yang BELUM punya rencana (dari raw)
+  if(adaRencana !== 'ada'){
+    // Filter tidak berlaku: status rencana, jenis, tahun, overdue (tidak relevan)
+    if(!stf && !jenis && !tahun && !od) {
+      raw.forEach(r=>{
+        const sid = (r['Serial Id']||'').trim();
+        if(!sid || sid==='NO DATA' || sid.startsWith('__INVALID_SCI__')) return;
+        if(upt && r.Upt!==upt) return;
+        if(gi  && r.Gi!==gi) return;
+        if(ahi && (r._se||'').toUpperCase()!==ahi) return;
+        const isKrit = giKrit.has((r.Gi||'').trim());
+        if(krit==='1' && !isKrit) return;
+        if(krit==='0' && isKrit) return;
+        // Hanya yang tidak punya rencana aktif
+        const list = rencanaMap.get(sid)||[];
+        const aktif = list.filter(rk=>rk.status!=='BATAL');
+        if(aktif.length > 0) return; // sudah punya rencana, skip
+        rows.push({
+          _sid:sid, _mtu:r, _noRencana:true,
+          jenis_kegiatan:'', status:'', tahun_rencana:null,
+          bulan_target:null, tanggal_target:null, uraian:'',
+          created_by_name:'', created_at:null, gi:r.Gi, bay:r.Bay
+        });
+      });
+    }
+  }
 
   // Sort
   const {col, dir} = semuaSort;
@@ -5054,6 +5116,7 @@ function renderSemuaRencana(){
   SEMUA_JENIS.forEach(j=>jenisCnt[j]=0);
   let overdueTotal = 0;
   rows.forEach(rk=>{
+    if(rk._noRencana) return; // skip MTU tanpa rencana
     if(jenisCnt[rk.jenis_kegiatan]!==undefined) jenisCnt[rk.jenis_kegiatan]++;
     else jenisCnt['LAINNYA']++;
     if(isOverdue(rk)) overdueTotal++;
@@ -5097,6 +5160,27 @@ function renderSemuaTable(rows, canEdit){
       const createdDate = rk.created_at
         ? new Date(rk.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'2-digit'})
         : '—';
+
+      // Baris MTU tanpa rencana
+      if(rk._noRencana){
+        return `<tr class="rk-row" onclick="openRencana('${e(rk._sid)}')"
+          style="background:rgba(99,102,241,.03);border-left:2px solid rgba(99,102,241,.2)">
+          <td style="color:var(--text);font-size:11px">${e(mtu?.Gi||'—')}</td>
+          <td style="text-align:center">${isKrit?`<span style="color:#f87171;font-size:11px" title="GI Kritikal">★</span>`:'<span style="color:var(--text3)">—</span>'}</td>
+          <td style="font-size:11px">${e(mtu?.Bay||'—')}</td>
+          <td><span class="badge" style="background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.2);font-size:9px">${e(mtu?.['#']||'—')}</span></td>
+          <td style="font-size:10px;color:var(--text3)">${e((mtu?.Upt||'').replace('UPT ',''))}</td>
+          <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${e(rk._sid||'—')}</td>
+          <td>${mtu?._se ? stH(mtu._se) : '—'}</td>
+          <td colspan="6" style="font-size:10px;color:var(--text3);font-family:var(--mono);font-style:italic">
+            — belum ada rencana kerja —
+          </td>
+          <td onclick="event.stopPropagation()" style="text-align:center">
+            ${canEdit?`<button onclick="openRencana('${e(rk._sid)}')" style="background:var(--accent);border:none;color:#fff;padding:2px 7px;border-radius:4px;font-family:var(--mono);font-size:10px;cursor:pointer">➕</button>`:''}
+          </td>
+        </tr>`;
+      }
+
       return `<tr class="rk-row${isClose?' rk-close':''}${od&&!isClose?' rk-overdue':''}"
         onclick="openRencana('${e(rk._sid)}')"
         style="${od&&!isClose?'background:rgba(239,68,68,.04)':''}">
