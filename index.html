@@ -643,6 +643,7 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
               <option value="VERIFIKASI">VERIFIKASI</option>
               <option value="MENUNGGU PADAM">MENUNGGU PADAM</option>
               <option value="PENGADAAN MATERIAL">PENGADAAN MATERIAL</option>
+              <option value="REVIEW MATERIAL">REVIEW MATERIAL</option>
               <option value="CLOSE">CLOSE</option>
               <option value="LAINNYA">LAINNYA</option>
             </select>
@@ -1203,6 +1204,7 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
           <option value="VERIFIKASI">VERIFIKASI</option>
           <option value="MENUNGGU PADAM">MENUNGGU PADAM</option>
           <option value="PENGADAAN MATERIAL">PENGADAAN MATERIAL</option>
+          <option value="REVIEW MATERIAL">REVIEW MATERIAL</option>
           <option value="CLOSE">CLOSE</option>
           <option value="LAINNYA">LAINNYA</option>
         </select>
@@ -3687,6 +3689,7 @@ function jenisColor(jenis){
     'VERIFIKASI':        '#a78bfa',
     'MENUNGGU PADAM':    '#fbbf24',
     'PENGADAAN MATERIAL':'#fb923c',
+    'REVIEW MATERIAL':   '#e879f9',
     'CLOSE':             '#4ade80',
     'LAINNYA':           '#9ca3af',
   };
@@ -3992,11 +3995,13 @@ function parseRencanaWithRegex(items){
       'MATERIAL SIAP MENUNGGU JADWAL PADAM':  'MENUNGGU PADAM',
       'DIRENCANAKAN UJI ULANG':               'UJI ULANG',
       'DIRENCANAKAN PERBAIKAN':               'PEMELIHARAAN',
+      'PERLU REVIEW MATERIAL':                'REVIEW MATERIAL',
+      'SPEK TIDAK SESUAI':                    'REVIEW MATERIAL',
     };
 
     // Pola regex pembantu
     const BA_DOC   = /\bBA\b.{0,15}?(verifikasi|validasi)/i;
-    const ONSITE   = /\bonsite\b|\bon site\b/i;
+    const ONSITE   = /\bonsite\b(?!\s+[A-Z]{1,5}\d[\w\-]*)|\bon site\b|\bmaterial\b.{0,30}\bonsite\b/i;
     const RFQ      = /\bRFQ\b/i;
 
     let jenis = 'LAINNYA';
@@ -4670,6 +4675,7 @@ const JENIS_CAL_COLOR = {
   'VERIFIKASI':        '#a78bfa',
   'MENUNGGU PADAM':    '#f59e0b',
   'PENGADAAN MATERIAL':'#f97316',
+  'REVIEW MATERIAL':   '#e879f9',
   'CLOSE':             '#14b8a6',
   'LAINNYA':           '#6b7585',
 };
@@ -5156,7 +5162,7 @@ function renderSemuaRencana(){
 
   // Cards summary sinkron filter
   const SEMUA_JENIS = ['PEMELIHARAAN','PENGGANTIAN','MONITORING','UJI ULANG','VERIFIKASI',
-                        'MENUNGGU PADAM','PENGADAAN MATERIAL','CLOSE','LAINNYA'];
+                        'MENUNGGU PADAM','PENGADAAN MATERIAL','REVIEW MATERIAL','CLOSE','LAINNYA'];
   const jenisCnt = {};
   SEMUA_JENIS.forEach(j=>jenisCnt[j]=0);
   let overdueTotal = 0;
