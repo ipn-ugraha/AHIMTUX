@@ -271,7 +271,22 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
 .cal-event:hover{filter:brightness(1.2)}
 .cal-day.has-overdue{background:rgba(239,68,68,.04)}
 
-/* Warning row highlight */
+/* Filter aktif indicator */
+.fs.filter-active{border-color:var(--accent)!important;background:rgba(99,102,241,.08)!important}
+.filter-reset-btn{background:transparent;border:1px solid var(--border2);color:var(--text3);padding:4px 10px;border-radius:var(--r);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .15s}
+.filter-reset-btn:hover{border-color:var(--red);color:var(--red)}
+.filter-active-count{font-family:var(--mono);font-size:10px;color:var(--accent);background:rgba(99,102,241,.1);padding:2px 8px;border-radius:8px}
+
+/* Hari lewat target badge */
+.overdue-days{font-size:9px;font-family:var(--mono);background:rgba(239,68,68,.15);color:var(--red);padding:1px 5px;border-radius:3px;white-space:nowrap}
+
+/* Baris CLOSE grey-out */
+tr.rk-close td{opacity:.45}
+tr.rk-close:hover td{opacity:.7}
+
+/* Klik baris */
+tr.rk-row{cursor:pointer}
+tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
 .row-mtu.rk-overdue td{background:rgba(239,68,68,.05) !important}
 .row-mtu.rk-overdue:hover td{background:rgba(239,68,68,.09) !important}
 
@@ -1228,6 +1243,8 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
         </select>
       </div>
       <div class="fcnt" id="semuaCount">—</div>
+      <button class="filter-reset-btn" onclick="resetSemuaFilter()" title="Reset semua filter">✕ Reset Filter</button>
+      <span id="semuaActiveFilters" class="filter-active-count" style="display:none"></span>
     </div>
 
     <!-- Cards summary sinkron filter -->
@@ -1238,6 +1255,7 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
           <thead id="semuaHead">
             <tr>
               <th onclick="semuaSortBy('gi')" data-col="gi" style="cursor:pointer">GI</th>
+              <th>★</th>
               <th onclick="semuaSortBy('bay')" data-col="bay" style="cursor:pointer">Bay</th>
               <th>Jenis MTU</th>
               <th onclick="semuaSortBy('upt')" data-col="upt" style="cursor:pointer">UPT</th>
@@ -1248,8 +1266,8 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
               <th onclick="semuaSortBy('target')" data-col="target" style="cursor:pointer">Target</th>
               <th>Justifikasi</th>
               <th>Uraian</th>
-              <th onclick="semuaSortBy('created')" data-col="created" style="cursor:pointer">Dibuat Oleh</th>
-              <th style="width:80px">Aksi</th>
+              <th onclick="semuaSortBy('created')" data-col="created" style="cursor:pointer">Dibuat</th>
+              <th style="width:60px">Aksi</th>
             </tr>
           </thead>
           <tbody id="semuaTableBody"></tbody>
@@ -1270,6 +1288,7 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
 const SB_TABLE_AHI='AHI_MTU', SB_TABLE_REF='gi_referensi', SB_TABLE_RK='rencana_kerja';
 // Map serial_id → array rencana_kerja (diisi saat init)
 let rencanaMap = new Map();
+let mtuMap = new Map(); // Serial Id → raw MTU row (untuk lookup O(1))
 // Supabase project URL (diisi saat init, dipakai untuk Edge Function URL)
 let activeSupabaseUrl = '';
 const PAGE=40, YR=new Date().getFullYear();
@@ -1516,6 +1535,10 @@ async function init(){
   });
 
   buildFilters();
+
+  // Bangun mtuMap untuk lookup O(1)
+  mtuMap.clear();
+  raw.forEach(r=>{ const sid=(r['Serial Id']||'').trim(); if(sid) mtuMap.set(sid,r); });
 
   setP(99,'Rendering...');
   await new Promise(r=>setTimeout(r,30));
@@ -3355,6 +3378,12 @@ async function submitUpload(){
             row._bayKat=katBay(row.Bay||'');
           });
           applyFilters();
+          // Rebuild mtuMap untuk lookup O(1) setelah data baru
+          mtuMap.clear();
+          raw.forEach(r=>{ const sid=(r['Serial Id']||'').trim(); if(sid) mtuMap.set(sid,r); });
+          // Reset rencanaPageInit agar filter UPT/GI di tab Rencana ikut refresh
+          rencanaPageInit = false;
+          updateAlertBadge();
           // Auto-parse rencana dari CSV baru (hanya yang berubah)
           showToast('⏳ Auto-parsing rencana kerja...','ok');
           await autoParseAfterUpload();
@@ -3657,7 +3686,7 @@ let rkCurrentSerialId = '';
 function openRencana(serialId){
   rkCurrentSerialId = serialId;
   // Cari data MTU untuk subtitle
-  const mtu = raw.find(r=>(r['Serial Id']||'').trim()===serialId.trim());
+  const mtu = mtuMap.get((serialId||'').trim());
   const subtitle = mtu ? `${mtu.Gi||'—'} › ${mtu.Bay||'—'} › ${mtu['#']||'—'} | SN: ${serialId}` : serialId;
   document.getElementById('rkSubtitle').textContent = subtitle;
   document.getElementById('rkFormSection').style.display = 'none';
@@ -3805,7 +3834,7 @@ async function saveRkForm(){
     return;
   }
 
-  const mtu = raw.find(r=>(r['Serial Id']||'').trim()===sid);
+  const mtu = mtuMap.get(sid);
   const username = currentUser._username || currentUser.email.split('@')[0];
 
   const saveBtn = document.getElementById('rkFormSaveBtn');
@@ -4160,7 +4189,7 @@ async function runParseRencana(scope){
           console.log('Skip: serial_id tidak valid:', sid);
           continue;
         }
-        const mtu = raw.find(r=>(r['Serial Id']||'').trim()===sid);
+        const mtu = mtuMap.get(sid);
         const srcText = items.find(x=>x.serial_id===sid)?.rencana_text || '';
 
         // Cek apakah sudah ada baris auto-parsed untuk serial_id ini
@@ -4296,7 +4325,7 @@ async function runParseRencanaSilent(scope){
       const parsed = await parseBatchWithClaude(items);
       for(const p of parsed){
         const sid = p.id;
-        const mtu = raw.find(r=>(r['Serial Id']||'').trim()===sid);
+        const mtu = mtuMap.get(sid);
         const srcText = items.find(x=>x.serial_id===sid)?.rencana_text||'';
         const existingList = rencanaMap.get(sid)||[];
         const existingAuto = existingList.find(rk=>rk.is_auto_parsed);
@@ -4608,7 +4637,7 @@ function renderKalender(){
     list.forEach(rk=>{
       if(stf && rk.status!==stf) return;
       if(upt){
-        const mtu = raw.find(r=>(r['Serial Id']||'').trim()===sid);
+        const mtu = mtuMap.get(sid);
         if(!mtu || mtu.Upt!==upt) return;
       }
       let yr=null, mo=null, dy=null;
@@ -4662,7 +4691,7 @@ function renderKalender(){
         ${dayEvts.slice(0,2).map(rk=>{
           const col=JENIS_CAL_COLOR[rk.jenis_kegiatan]||'#6b7585';
           const od=isOverdue(rk);
-          const mtu=raw.find(r=>(r['Serial Id']||'').trim()===rk._sid);
+          const mtu=mtuMap.get(rk._sid);
           const lbl=(mtu?.Bay||rk._sid||'').substring(0,10);
           return `<div class="cal-event" style="background:${col}22;color:${col};border-left:2px solid ${col}${od?';outline:1px solid var(--red)':''}"
             title="${e(rk.uraian||'')}">${od?'⚠ ':''}${e(lbl)}</div>`;
@@ -4694,7 +4723,7 @@ function showCalPopup(day, mo, yr, evt){
     list.forEach(rk=>{
       if(stf && rk.status!==stf) return;
       if(upt){
-        const mtu=raw.find(r=>(r['Serial Id']||'').trim()===sid);
+        const mtu=mtuMap.get(sid);
         if(!mtu||mtu.Upt!==upt) return;
       }
       let match=false;
@@ -4715,7 +4744,7 @@ function showCalPopup(day, mo, yr, evt){
     `${day} ${NAMA_BULAN_FULL[mo]} ${yr} — ${events.length} rencana`;
   const stColors={DRAFT:'#9ca3af',DIAJUKAN:'#60a5fa',SELESAI:'#4ade80',BATAL:'#f87171'};
   document.getElementById('calPopupBody').innerHTML=events.map(rk=>{
-    const mtu=raw.find(r=>(r['Serial Id']||'').trim()===rk._sid);
+    const mtu=mtuMap.get(rk._sid);
     const od=isOverdue(rk);
     const col=JENIS_CAL_COLOR[rk.jenis_kegiatan]||'#6b7585';
     return `<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer"
@@ -4775,6 +4804,56 @@ function onAlertUptChange(){
   renderAlertPanel();
 }
 
+function overdueDays(rk){
+  if(!rk || rk.status==='SELESAI' || rk.status==='BATAL') return 0;
+  const today = new Date(); today.setHours(0,0,0,0);
+  let ref = null;
+  if(rk.tanggal_target) ref = new Date(rk.tanggal_target);
+  else if(rk.bulan_target && rk.tahun_rencana)
+    ref = new Date(rk.tahun_rencana, rk.bulan_target, 0); // hari terakhir bulan
+  else if(rk.tahun_rencana)
+    ref = new Date(rk.tahun_rencana, 11, 31);
+  if(!ref || ref >= today) return 0;
+  return Math.floor((today - ref) / 86400000);
+}
+
+function resetSemuaFilter(){
+  document.getElementById('semuaUptFilter').value    = '';
+  document.getElementById('semuaGiFilter').value     = '';
+  document.getElementById('semuaStatusFilter').value = '';
+  document.getElementById('semuaJenisFilter').value  = '';
+  document.getElementById('semuaTahunFilter').value  = '';
+  document.getElementById('semuaOverdueFilter').value= '';
+  document.getElementById('semuaKritFilter').value   = '';
+  document.getElementById('semuaAhiFilter').value    = '';
+  // Rebuild GI dropdown ke semua lalu render
+  const giSel = document.getElementById('semuaGiFilter');
+  while(giSel.options.length>1) giSel.remove(1);
+  const gis = [...new Set(raw.map(r=>r.Gi).filter(Boolean))].sort();
+  gis.forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent=g; giSel.appendChild(o); });
+  renderSemuaRencana();
+}
+
+function updateSemuaFilterIndicators(){
+  const ids = ['semuaUptFilter','semuaGiFilter','semuaStatusFilter','semuaJenisFilter',
+                'semuaTahunFilter','semuaOverdueFilter','semuaKritFilter','semuaAhiFilter'];
+  let activeCount = 0;
+  ids.forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    const active = el.value !== '';
+    el.classList.toggle('filter-active', active);
+    if(active) activeCount++;
+  });
+  const badge = document.getElementById('semuaActiveFilters');
+  if(activeCount > 0){
+    badge.style.display = 'inline';
+    badge.textContent = activeCount + ' filter aktif';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
 function onSemuaUptChange(){
   const upt = document.getElementById('semuaUptFilter').value;
   const giSel = document.getElementById('semuaGiFilter');
@@ -4801,7 +4880,7 @@ function renderSemuaRencana(){
 
   const rows = [];
   rencanaMap.forEach((list, sid)=>{
-    const mtu = raw.find(r=>(r['Serial Id']||'').trim()===sid);
+    const mtu = mtuMap.get(sid);
     list.forEach(rk=>{
       if(stf && rk.status!==stf) return;
       if(jenis && rk.jenis_kegiatan!==jenis) return;
@@ -4840,6 +4919,7 @@ function renderSemuaRencana(){
 
   document.getElementById('semuaCount').innerHTML =
     `Menampilkan <span style="color:var(--accent)">${rows.length.toLocaleString('id-ID')}</span> rencana`;
+  updateSemuaFilterIndicators();
 
   // Cards summary sinkron filter
   const SEMUA_JENIS = ['PEMELIHARAAN','PENGGANTIAN','MONITORING','UJI ULANG','VERIFIKASI',
@@ -4877,29 +4957,47 @@ function renderSemuaTable(rows, canEdit){
   const stColors = {DRAFT:'#9ca3af',DIAJUKAN:'#60a5fa',SELESAI:'#4ade80',BATAL:'#f87171'};
 
   if(!sl.length){
-    tbody.innerHTML='<tr><td colspan="10" class="empty">Tidak ada rencana</td></tr>';
+    tbody.innerHTML='<tr><td colspan="14" class="empty">Tidak ada rencana</td></tr>';
   } else {
     tbody.innerHTML = sl.map(rk=>{
       const mtu = rk._mtu;
       const od = isOverdue(rk);
+      const days = od ? overdueDays(rk) : 0;
+      const isClose = rk.status==='SELESAI'||rk.status==='BATAL'||rk.jenis_kegiatan==='CLOSE';
+      const isKrit = giKrit.has((mtu?.Gi||'').trim());
       const col = JENIS_CAL_COLOR[rk.jenis_kegiatan]||'#6b7585';
       const sc  = stColors[rk.status]||'#9ca3af';
       const tgt = formatTarget(rk);
-      return `<tr style="${od?'background:rgba(239,68,68,.04)':''}">
-        <td style="color:var(--text);font-size:11px">${mtu ? e(mtu.Gi||'—') : `<span style="color:var(--text3);font-size:10px;font-family:var(--mono)" title="MTU tidak ditemukan di data CSV">⚠ ${e(rk.gi||'—')}</span>`}</td>
-        <td style="font-size:11px">${mtu ? e(mtu.Bay||'—') : `<span style="color:var(--text3);font-size:10px">${e(rk.bay||'—')}</span>`}</td>
+      const createdDate = rk.created_at
+        ? new Date(rk.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'2-digit'})
+        : '—';
+      return `<tr class="rk-row${isClose?' rk-close':''}${od&&!isClose?' rk-overdue':''}"
+        onclick="openRencana('${e(rk._sid)}')"
+        style="${od&&!isClose?'background:rgba(239,68,68,.04)':''}">
+        <td style="color:var(--text);font-size:11px">${mtu
+          ? e(mtu.Gi||'—')
+          : `<span style="color:var(--text3);font-size:10px;font-family:var(--mono)" title="MTU tidak ditemukan">⚠ ${e(rk.gi||'—')}</span>`}</td>
+        <td style="text-align:center">${isKrit?`<span style="color:#f87171;font-size:11px" title="GI Kritikal">★</span>`:'<span style="color:var(--text3)">—</span>'}</td>
+        <td style="font-size:11px">${mtu ? e(mtu.Bay||'—') : `<span style="font-size:10px;color:var(--text3)">${e(rk.bay||'—')}</span>`}</td>
         <td><span class="badge" style="background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.2);font-size:9px">${e(mtu?.['#']||'—')}</span></td>
         <td style="font-size:10px;color:var(--text3)">${e((mtu?.Upt||'').replace('UPT ',''))}</td>
         <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${e(rk._sid||'—')}</td>
         <td>${mtu?._se ? stH(mtu._se) : '<span style="color:var(--text3);font-size:10px">—</span>'}</td>
         <td><span style="font-size:10px;font-family:var(--mono);color:${col}">${e(rk.jenis_kegiatan||'—')}</span></td>
         <td><span style="font-size:10px;font-family:var(--mono);color:${sc}">${rk.status}</span></td>
-        <td style="font-family:var(--mono);font-size:10px;${od?'color:var(--red);font-weight:600':''}">${od?'⚠ ':''}${e(tgt)}</td>
-        <td style="font-size:10px;color:var(--text2);max-width:200px;white-space:normal;line-height:1.4">${e(mtu?.['Justifikasi Prioritas']||'—')}</td>
-        <td style="font-size:10px;color:var(--text2);max-width:280px;white-space:normal;line-height:1.4">${e(rk.uraian||'—')}</td>
-        <td style="font-size:10px;color:var(--text3)">${e(rk.created_by_name||'—')}</td>
-        <td>
-          ${canEdit?`<button onclick="openRencana('${e(rk._sid)}')" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;font-family:var(--mono);font-size:10px;cursor:pointer">✎</button>`:''}
+        <td style="font-family:var(--mono);font-size:10px;white-space:nowrap">
+          ${od&&!isClose
+            ? `<span style="color:var(--red);font-weight:600">⚠ ${e(tgt)}</span> <span class="overdue-days">${days}h</span>`
+            : (e(tgt)||'—')}
+        </td>
+        <td style="font-size:10px;color:var(--text2);max-width:160px;white-space:normal;line-height:1.4">${e(mtu?.['Justifikasi Prioritas']||'—')}</td>
+        <td style="font-size:10px;color:var(--text2);max-width:200px;white-space:normal;line-height:1.4">${e(rk.uraian||'—')}</td>
+        <td style="font-size:10px;color:var(--text3);white-space:nowrap">
+          <div>${e(rk.created_by_name||'—')}</div>
+          <div style="font-size:9px;font-family:var(--mono);color:var(--text3)">${createdDate}</div>
+        </td>
+        <td onclick="event.stopPropagation()" style="text-align:center">
+          ${canEdit?`<button onclick="openRencana('${e(rk._sid)}')" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:10px;cursor:pointer">✎</button>`:''}
         </td>
       </tr>`;
     }).join('');
