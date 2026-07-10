@@ -589,7 +589,9 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
         <div id="parseIdle" style="font-size:12px;color:var(--text3);font-family:var(--mono)">
           Siap. Klik "Mulai Parse" untuk memulai.<br>
           <span style="font-size:10px;color:var(--text3);margin-top:6px;display:block">
-            ✦ Pakai Claude AI (Edge Function) jika tersedia, otomatis fallback ke regex parser jika belum di-setup.
+            ✦ Parser berbasis prefix (FORMAT: PREFIX - detail).<br>
+            ⚡ = confidence sedang &nbsp;|&nbsp; ⚠ = perlu review manual.<br>
+            Pakai Claude AI jika Edge Function tersedia, fallback ke parser lokal.
           </span>
         </div>
       </div>
@@ -3971,24 +3973,58 @@ function parseRencanaWithRegex(items){
     const txt = (item.rencana_text||'').toLowerCase().trim();
     const rawTxt = item.rencana_text||'';
 
-    // ── JENIS KEGIATAN ─────────────────────────────────────────────────────
+    // ── JENIS KEGIATAN (parser berbasis prefix) ────────────────────────────
+    // Ekstrak prefix: teks sebelum " - " pertama
+    const SEP = ' - ';
+    const hasSep = rawTxt.includes(SEP);
+    const prefix = hasSep ? rawTxt.split(SEP)[0].trim().toUpperCase() : null;
+
+    // Kamus prefix baku
+    const PREFIX_MAP = {
+      'CLOSE':                    'CLOSE',
+      'HASIL UJI ULANG TETAP':    'UJI ULANG',
+      'DIKAN UJI ULANG':          'UJI ULANG',
+      'PERLU UPDATE DATA':        'LAINNYA',
+      'BA VERIFIKASI':            'VERIFIKASI',
+      'USULAN AI':                'UJI ULANG',
+      'BELUM ADA TINJUT':         'UJI ULANG',
+      'MATERIAL SIAP MENUNGGU PADAM': 'MENUNGGU PADAM',
+    };
+
+    // Pola regex pembantu
+    const BA_DOC   = /\bBA\b.{0,15}?(verifikasi|validasi)/i;
+    const ONSITE   = /\bonsite\b|\bon site\b/i;
+    const RFQ      = /\bRFQ\b/i;
+
     let jenis = 'LAINNYA';
-    if(/\bclose\b|sudah close|already close|sudah selesai|telah selesai|sudah close|closed/.test(txt))
-      jenis = 'CLOSE';
-    else if(/ba verifikasi|ba mitigasi|mitigasi.*verifikasi|verifikasi.*ba|ba validasi|berita acara verif/.test(txt))
-      jenis = 'VERIFIKASI';
-    else if(/menunggu padam|material.*onsite|material.*on site|material siap.*padam|onsite.*padam/.test(txt))
-      jenis = 'MENUNGGU PADAM';
-    else if(/perlu material|pengadaan material|pencarian material|\brfq\b|procurement|proses pengadaan|material pengganti/.test(txt))
-      jenis = 'PENGADAAN MATERIAL';
-    else if(/ganti|penggantian|replace|diganti|pergantian/.test(txt))
-      jenis = 'PENGGANTIAN';
-    else if(/pelihara|pemeliharaan|harmon|overhaul|servis|pm\b|p\.m\b|rekondisi|rehabilitasi/.test(txt))
-      jenis = 'PEMELIHARAAN';
-    else if(/monitor|pantau|observasi|cek rutin|inspeksi|surveillance/.test(txt))
-      jenis = 'MONITORING';
-    else if(/uji ulang|uji kembali|pengujian ulang|retest|re-test|diuji ulang|dikan uji/.test(txt))
-      jenis = 'UJI ULANG';
+    let needsReview = false;
+    let confidence = 'tinggi';
+
+    if(!hasSep){
+      // Tidak ada separator — tidak bisa di-parse dengan aman
+      jenis = 'LAINNYA'; needsReview = true; confidence = 'rendah';
+    } else if(prefix === 'CLOSE'){
+      // Status akhir selalu menang
+      jenis = 'CLOSE'; confidence = 'tinggi';
+    } else if(BA_DOC.test(rawTxt)){
+      // Referensi dokumen BA Verifikasi/Validasi
+      jenis = 'VERIFIKASI'; confidence = 'tinggi';
+    } else if(prefix === 'PERLU MATERIAL PENGGANTI'){
+      const hasOnsite = ONSITE.test(rawTxt);
+      const hasRfq    = RFQ.test(rawTxt);
+      if(hasOnsite && !hasRfq){
+        jenis = 'MENUNGGU PADAM'; confidence = 'sedang';
+      } else if(hasOnsite && hasRfq){
+        jenis = 'MENUNGGU PADAM'; needsReview = true; confidence = 'rendah'; // ambigu
+      } else {
+        jenis = 'PENGADAAN MATERIAL'; confidence = 'tinggi';
+      }
+    } else if(prefix in PREFIX_MAP){
+      jenis = PREFIX_MAP[prefix]; confidence = 'tinggi';
+    } else {
+      // Prefix tidak dikenali
+      jenis = 'LAINNYA'; needsReview = true; confidence = 'rendah';
+    }
 
     // ── TAHUN ──────────────────────────────────────────────────────────────
     let tahun = null;
@@ -4066,7 +4102,9 @@ function parseRencanaWithRegex(items){
       bulan_target:   bulan,
       tanggal_target: tanggal,
       uraian:         uraian,
-      _method:        'regex', // marker internal
+      _method:        'regex',
+      _needsReview:   needsReview,
+      _confidence:    confidence,
     };
   });
 }
@@ -4218,7 +4256,7 @@ async function runParseRencana(scope){
           status:          'DRAFT',
           source_text:     srcText,
           is_auto_parsed:  true,
-          parsed_by:       'auto:'+username,
+          parsed_by:       `auto:${username}:${p._confidence||'tinggi'}${p._needsReview?':REVIEW':''}`,
           updated_by:      currentUser.id,
           updated_by_name: username,
         };
@@ -4263,9 +4301,14 @@ async function runParseRencana(scope){
         }
       }
 
+      const batchSummary = parsed.map(p=>{
+        const conf = p._confidence==='rendah' ? ' ⚠' : p._confidence==='sedang' ? ' ⚡' : '';
+        const rev  = p._needsReview ? ' [REVIEW]' : '';
+        const tgt  = (p.bulan_target?'/'+p.bulan_target:'')+(p.tahun_rencana?'/'+p.tahun_rencana:'');
+        return (p.jenis_kegiatan||'?')+tgt+conf+rev;
+      }).join(', ');
       appendParseLog(
-        `✓ Batch ${i+1}: ${batch.length} item [${parsed[0]?._method||'?'}] → `+
-        parsed.map(p=>`${p.jenis_kegiatan||'?'}${p.bulan_target?'/'+p.bulan_target:''}${p.tahun_rencana?'/'+p.tahun_rencana:''}`).join(', '),
+        '✓ Batch '+(i+1)+': '+batch.length+' item ['+(parsed[0]?._method||'?')+'] → '+batchSummary,
         parsed[0]?._method==='claude' ? 'var(--grn)' : 'var(--amb)'
       );
 
@@ -4346,8 +4389,7 @@ async function runParseRencanaSilent(scope){
           bulan_target:p.bulan_target||null,
           tanggal_target:p.tanggal_target||null,
           status:'DRAFT', source_text:srcText, is_auto_parsed:true,
-          parsed_by:'auto:'+username,
-          updated_by:currentUser.id, updated_by_name:username,
+          parsed_by:`auto:${username}:${p._confidence||'tinggi'}${p._needsReview?':REVIEW':''}`,
         };
         let result;
         if(existingAuto){
