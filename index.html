@@ -4674,8 +4674,8 @@ async function runParseRencana(scope){
       console.error('Parse batch error:', err);
     }
 
-    // Jeda kecil supaya tidak spam API
-    await new Promise(r=>setTimeout(r,300));
+    // Jeda antar batch — hindari rate limit Gemini free tier (max 15 req/menit = 1 per 4 detik)
+    await new Promise(r=>setTimeout(r,5000));
   }
 
   setParseProgress(100, 'Selesai');
