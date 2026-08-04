@@ -944,6 +944,7 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
 <div class="main-tabs">
   <button class="main-tab active" onclick="switchMainTab('dashboard',this)">📊 Dashboard</button>
   <button class="main-tab" onclick="switchMainTab('rencana',this)" id="rencanaTabBtn">📋 Rencana <span id="rencanaAlertBadge" style="display:none;background:var(--red);color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px">0</span></button>
+  <button class="main-tab" onclick="switchMainTab('trend',this)">📈 Trend</button>
 </div>
 
 <main class="main">
@@ -1353,10 +1354,34 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
 
 </div><!-- end panel-rencana -->
 
+<!-- PANEL TREND -->
+<div id="panel-trend" class="main-panel">
+  <div style="margin-bottom:16px">
+    <div id="trendInsight"></div>
+  </div>
+  <div id="trendEmpty" style="display:none;padding:40px;text-align:center;color:var(--text3);font-family:var(--mono)">
+    Belum ada data historis. Upload CSV pertama untuk mulai merekam trend.
+  </div>
+  <div id="trendCharts" style="display:none">
+    <div style="margin-bottom:20px">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Trend Status AHI</div>
+      <div style="height:280px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:16px">
+        <canvas id="trendLineC"></canvas>
+      </div>
+    </div>
+    <div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Status AHI per UPT (Upload Terakhir)</div>
+      <div style="height:280px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:16px">
+        <canvas id="trendBarC"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
 </main>
 
 <script>
-const SB_TABLE_AHI='AHI_MTU', SB_TABLE_REF='gi_referensi', SB_TABLE_RK='rencana_kerja';
+const SB_TABLE_AHI='AHI_MTU', SB_TABLE_REF='gi_referensi', SB_TABLE_RK='rencana_kerja', SB_TABLE_SNAP='ahi_snapshot';
 // Map serial_id → array rencana_kerja (diisi saat init)
 let rencanaMap = new Map();
 let mtuMap = new Map(); // Serial Id → raw MTU row (untuk lookup O(1))
@@ -2541,7 +2566,175 @@ document.getElementById('uploadFile').addEventListener('change',function(e){
   });
 });
 
-// ── THEME SWITCHER ────────────────────────────────────────────────────────────
+// ── TREND HISTORIS ────────────────────────────────────────────────────────────
+async function saveSnapshot(){
+  try{
+    const n = raw.length;
+    let cr=0,po=0,fa=0,go=0,tua=0;
+    const perUpt={}, perJenis={};
+    raw.forEach(r=>{
+      const st=r._se, u=(r.Upt||'—').replace('UPT ',''), j=r['#']||'—';
+      if(st==='CRITICAL') cr++;
+      else if(st==='POOR') po++;
+      else if(st==='FAIR') fa++;
+      else if(st==='GOOD'||st==='VERY GOOD') go++;
+      if((r['Status Usia']||'').toUpperCase()==='SANGAT TUA') tua++;
+      if(!perUpt[u]) perUpt[u]={total:0,critical:0,poor:0,fair:0,good_vg:0};
+      perUpt[u].total++;
+      if(st==='CRITICAL') perUpt[u].critical++;
+      else if(st==='POOR') perUpt[u].poor++;
+      else if(st==='FAIR') perUpt[u].fair++;
+      else if(st==='GOOD'||st==='VERY GOOD') perUpt[u].good_vg++;
+      if(!perJenis[j]) perJenis[j]={total:0,critical:0,poor:0};
+      perJenis[j].total++;
+      if(st==='CRITICAL') perJenis[j].critical++;
+      else if(st==='POOR') perJenis[j].poor++;
+    });
+    const payload = {
+      uploaded_by: currentUser?._username || 'unknown',
+      total:n, critical:cr, poor:po, fair:fa, good_vg:go, sangat_tua:tua,
+      per_upt: perUpt, per_jenis_mtu: perJenis
+    };
+    const res = await sbDb.from(SB_TABLE_SNAP).insert(payload);
+    if(res.error) console.warn('Snapshot save error:', res.error.message);
+    else console.log('✓ Snapshot tersimpan');
+  }catch(e){ console.warn('saveSnapshot error:', e.message); }
+}
+
+let snapshots = []; // cache data historis
+
+async function loadTrend(){
+  try{
+    const res = await sbDb.from(SB_TABLE_SNAP)
+      .select('*').order('uploaded_at', {ascending:true}).limit(24);
+    if(res.error){ console.warn('loadTrend error:', res.error.message); return; }
+    snapshots = res.data || [];
+    renderTrendCharts();
+  }catch(e){ console.warn('loadTrend error:', e.message); }
+}
+
+function renderTrendCharts(){
+  if(!snapshots.length){
+    document.getElementById('trendEmpty').style.display='block';
+    document.getElementById('trendCharts').style.display='none';
+    return;
+  }
+  document.getElementById('trendEmpty').style.display='none';
+  document.getElementById('trendCharts').style.display='block';
+
+  const labels = snapshots.map(s=>{
+    const d=new Date(s.uploaded_at);
+    return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'2-digit'});
+  });
+  const style = getComputedStyle(document.documentElement);
+  const text3  = style.getPropertyValue('--text3').trim()||'#6b7585';
+  const border = style.getPropertyValue('--border').trim()||'rgba(255,255,255,0.09)';
+  const bg2    = style.getPropertyValue('--bg2').trim()||'#23272d';
+
+  const chartOpts = (yLabel)=>({
+    responsive:true, maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{legend:{labels:{color:text3,font:{family:'IBM Plex Mono',size:10}}},
+      tooltip:{backgroundColor:bg2,titleColor:'#f0f2f5',bodyColor:text3,borderColor:border,borderWidth:1}},
+    scales:{
+      x:{ticks:{color:text3,font:{size:9}},grid:{color:border}},
+      y:{ticks:{color:text3},grid:{color:border},title:{display:true,text:yLabel,color:text3,font:{size:10}}}
+    }
+  });
+
+  // Chart 1 — Line: Status AHI over time
+  const c1el = document.getElementById('trendLineC');
+  if(window._trendLine) window._trendLine.destroy();
+  window._trendLine = new Chart(c1el,{
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'CRITICAL',data:snapshots.map(s=>s.critical),borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',tension:.3,fill:false,pointRadius:4},
+        {label:'POOR',    data:snapshots.map(s=>s.poor),    borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.1)',tension:.3,fill:false,pointRadius:4},
+        {label:'FAIR',    data:snapshots.map(s=>s.fair),    borderColor:'#eab308',backgroundColor:'rgba(234,179,8,.1)', tension:.3,fill:false,pointRadius:4},
+        {label:'GOOD+VG', data:snapshots.map(s=>s.good_vg), borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,.1)', tension:.3,fill:false,pointRadius:4},
+      ]
+    },
+    options: chartOpts('Jumlah MTU')
+  });
+
+  // Chart 2 — Bar: Total per UPT (snapshot terbaru vs sebelumnya)
+  const latest = snapshots[snapshots.length-1];
+  const prev   = snapshots.length>1 ? snapshots[snapshots.length-2] : null;
+  const upts   = Object.keys(latest.per_upt||{}).sort();
+  const c2el   = document.getElementById('trendBarC');
+  if(window._trendBar) window._trendBar.destroy();
+  window._trendBar = new Chart(c2el,{
+    type:'bar',
+    data:{
+      labels: upts,
+      datasets:[
+        {label:'CRITICAL', data:upts.map(u=>latest.per_upt[u]?.critical||0), backgroundColor:'rgba(239,68,68,.8)'},
+        {label:'POOR',     data:upts.map(u=>latest.per_upt[u]?.poor||0),     backgroundColor:'rgba(245,158,11,.8)'},
+        {label:'FAIR',     data:upts.map(u=>latest.per_upt[u]?.fair||0),     backgroundColor:'rgba(234,179,8,.8)'},
+        {label:'GOOD+VG',  data:upts.map(u=>latest.per_upt[u]?.good_vg||0), backgroundColor:'rgba(34,197,94,.8)'},
+      ]
+    },
+    options:{...chartOpts('Jumlah MTU'), scales:{...chartOpts('Jumlah MTU').scales, x:{stacked:true,ticks:{color:text3,font:{size:9}},grid:{color:border}}, y:{stacked:true,ticks:{color:text3},grid:{color:border}}}}
+  });
+
+  // Insight otomatis
+  renderTrendInsight(latest, prev);
+}
+
+function renderTrendInsight(latest, prev){
+  const el = document.getElementById('trendInsight');
+  if(!el) return;
+  if(!prev){ el.innerHTML='<span style="color:var(--text3);font-size:11px;font-family:var(--mono)">Butuh minimal 2 snapshot untuk menampilkan trend.</span>'; return; }
+
+  const diff=(a,b)=>a-b;
+  const dCr = diff(latest.critical, prev.critical);
+  const dPo = diff(latest.poor, prev.poor);
+  const dFa = diff(latest.fair, prev.fair);
+  const dGo = diff(latest.good_vg, prev.good_vg);
+  const fmt=(n)=>(n>0?'+':'')+n.toLocaleString('id-ID');
+  const arrow=(n)=>n<0?'↓':n>0?'↑':'→';
+  const col=(n,inv)=>n===0?'var(--text3)':((n<0)===inv?'var(--grn)':'var(--red)');
+
+  // UPT dengan perubahan CRITICAL terbesar
+  const uptChanges = Object.keys(latest.per_upt||{}).map(u=>({
+    u, delta:(latest.per_upt[u]?.critical||0)-(prev.per_upt?.[u]?.critical||0)
+  })).filter(x=>x.delta!==0).sort((a,b)=>a.delta-b.delta);
+  const bestUpt  = uptChanges[0];
+  const worstUpt = uptChanges[uptChanges.length-1];
+
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:12px">
+      <div class="alert-card" style="border-left:3px solid var(--red)">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">CRITICAL</div>
+        <div style="font-size:20px;font-weight:600;color:${col(dCr,true)}">${arrow(dCr)} ${fmt(dCr)}</div>
+        <div style="font-size:10px;color:var(--text3)">${latest.critical.toLocaleString('id-ID')} total</div>
+      </div>
+      <div class="alert-card" style="border-left:3px solid var(--amb)">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">POOR</div>
+        <div style="font-size:20px;font-weight:600;color:${col(dPo,true)}">${arrow(dPo)} ${fmt(dPo)}</div>
+        <div style="font-size:10px;color:var(--text3)">${latest.poor.toLocaleString('id-ID')} total</div>
+      </div>
+      <div class="alert-card" style="border-left:3px solid var(--grn)">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">GOOD+VG</div>
+        <div style="font-size:20px;font-weight:600;color:${col(dGo,false)}">${arrow(dGo)} ${fmt(dGo)}</div>
+        <div style="font-size:10px;color:var(--text3)">${latest.good_vg.toLocaleString('id-ID')} total</div>
+      </div>
+      ${bestUpt&&bestUpt.delta<0?`<div class="alert-card" style="border-left:3px solid var(--grn)">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">UPT TERBAIK</div>
+        <div style="font-size:14px;font-weight:600;color:var(--grn)">${bestUpt.u}</div>
+        <div style="font-size:10px;color:var(--text3)">Critical turun ${Math.abs(bestUpt.delta)} unit</div>
+      </div>`:''}
+      ${worstUpt&&worstUpt.delta>0?`<div class="alert-card" style="border-left:3px solid var(--red)">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">PERLU PERHATIAN</div>
+        <div style="font-size:14px;font-weight:600;color:var(--red)">${worstUpt.u}</div>
+        <div style="font-size:10px;color:var(--text3)">Critical naik ${worstUpt.delta} unit</div>
+      </div>`:''}
+    </div>`;
+}
+
+
 function setTheme(name){
   document.documentElement.setAttribute('data-theme', name==='dark' ? '' : name);
   ['dark','blue','light'].forEach(t=>{
@@ -3536,6 +3729,8 @@ async function submitUpload(){
           // Reset rencanaPageInit agar filter UPT/GI di tab Rencana ikut refresh
           rencanaPageInit = false;
           updateAlertBadge();
+          // Simpan snapshot trend historis
+          await saveSnapshot();
           // Auto-parse rencana dari CSV baru (hanya yang berubah)
           showToast('⏳ Auto-parsing rencana kerja...','ok');
           await autoParseAfterUpload();
@@ -4605,6 +4800,7 @@ function switchMainTab(name, btn){
   btn.classList.add('active');
   document.getElementById('panel-'+name).classList.add('active');
   if(name==='rencana') initRencanaPage();
+  if(name==='trend') loadTrend();
 }
 
 function switchRencTab(name, btn){
