@@ -901,9 +901,9 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
   </div>
   <div class="tright">
     <div class="theme-switcher" title="Ganti tema">
-      <button class="theme-btn theme-btn-dark active" id="tbtn-dark"  onclick="setTheme('dark')"  title="Dark"></button>
+      <button class="theme-btn theme-btn-dark"        id="tbtn-dark"  onclick="setTheme('dark')"  title="Dark"></button>
       <button class="theme-btn theme-btn-blue"        id="tbtn-blue"  onclick="setTheme('blue')"  title="Midnight Blue"></button>
-      <button class="theme-btn theme-btn-light"       id="tbtn-light" onclick="setTheme('light')" title="Light"></button>
+      <button class="theme-btn theme-btn-light active" id="tbtn-light" onclick="setTheme('light')" title="Light"></button>
     </div>
     <span id="last-update">—</span>
     <div id="gkbadge"><span class="bdot"></span><span id="gkn">0</span> GI Kritikal</div>
@@ -1143,13 +1143,13 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
 
   <!-- Sub-tab nav -->
   <div class="renc-tabs">
-    <button class="renc-tab active" onclick="switchRencTab('alert',this)">⚠ Alert</button>
+    <button class="renc-tab" onclick="switchRencTab('alert',this)">⚠ Alert</button>
     <button class="renc-tab" onclick="switchRencTab('kalender',this)">📅 Kalender</button>
-    <button class="renc-tab" onclick="switchRencTab('semua',this)">📋 Semua Rencana</button>
+    <button class="renc-tab active" onclick="switchRencTab('semua',this)">📋 Semua Rencana</button>
   </div>
 
   <!-- SUB-TAB: ALERT -->
-  <div id="renc-alert" class="renc-panel active">
+  <div id="renc-alert" class="renc-panel">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
       <span style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em">Filter:</span>
       <select id="alertUptFilter" class="fs" onchange="onAlertUptChange()" style="min-width:140px">
@@ -1231,7 +1231,7 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
   </div>
 
   <!-- SUB-TAB: SEMUA RENCANA -->
-  <div id="renc-semua" class="renc-panel">
+  <div id="renc-semua" class="renc-panel active">
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-end">
       <div class="fg">
         <span class="fl">UPT</span>
@@ -2555,9 +2555,9 @@ function setTheme(name){
 // Load tema tersimpan
 (function(){
   try{
-    const saved = localStorage.getItem('ahi_theme')||'dark';
+    const saved = localStorage.getItem('ahi_theme')||'light';
     if(saved!=='dark') setTheme(saved);
-  }catch(e){}
+  }catch(e){ setTheme('light'); }
 })();
 
 
@@ -4642,10 +4642,9 @@ function initRencanaPage(){
     raw.filter(r=>r._se==='CRITICAL'||r._se==='POOR').map(r=>r.Gi).filter(Boolean)
   )].sort();
   gisAlert.forEach(g=>{ const o=document.createElement('option'); o.value=g; o.textContent=g; giAlertSel.appendChild(o); });
-  renderAlertPanel();
+  renderSemuaRencana(); // default tab = Semua Rencana
   calYear = new Date().getFullYear();
-  calMonth = 0; // mulai dari Januari
-  renderKalender();
+  calMonth = 0;
 }
 
 // ── HELPER: cek apakah rencana sudah lewat target ─────────────────────────────
