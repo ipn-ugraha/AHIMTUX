@@ -260,7 +260,15 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
   .ttitle{display:none}
 }
 
-/* ── LIGHT MODE ADJUSTMENTS ────────────────────────────────────────────────── */
+/* ── PRINT / LAPORAN EKSEKUTIF ─────────────────────────────────────────────── */
+@media print {
+  body * { visibility: hidden !important; }
+  #printLaporan, #printLaporan * { visibility: visible !important; }
+  #printLaporan { position: fixed !important; top:0; left:0; width:100%; height:100%; z-index:9999; background:#fff; }
+  @page { size: A4 landscape; margin: 12mm; }
+}
+#printLaporan { display:none; }
+#printLaporan.active { display:block; }
 [data-theme="light"] .tw table thead th{background:var(--bg3)}
 [data-theme="light"] .row-gi:hover td,[data-theme="light"] .row-bay:hover td{background:rgba(37,99,235,0.04)!important}
 [data-theme="light"] .ms-dropdown{box-shadow:0 8px 24px rgba(0,0,0,.15)}
@@ -912,6 +920,7 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
       <span id="userRole" style="background:var(--accent);color:#fff;padding:1px 7px;border-radius:10px;font-size:9px;text-transform:uppercase">—</span>
     </div>
     <button id="downloadBtn" title="Download data CSV" style="background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">↓ CSV</button>
+    <button id="laporanBtn" onclick="cetakLaporan()" title="Laporan Ringkasan Eksekutif" style="background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">🖨 Laporan</button>
     <button id="uploadBtn" title="Upload CSV (admin only)" style="display:none;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">↑ Upload</button>
     <button id="auditBtn" title="Audit Log (admin only)" style="display:none;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">📜 Log</button>
     <button id="parseRencanaBtn" title="Parse teks Rencana dari CSV ke tabel rencana_kerja (admin only)" style="display:none;background:transparent;border:1px solid rgba(167,139,250,.4);color:#a78bfa;padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">✦ Parse Rencana</button>
@@ -2566,7 +2575,198 @@ document.getElementById('uploadFile').addEventListener('change',function(e){
   });
 });
 
-// ── TREND HISTORIS ────────────────────────────────────────────────────────────
+// ── LAPORAN EKSEKUTIF ─────────────────────────────────────────────────────────
+function cetakLaporan(){
+  const n = raw.length;
+  let cr=0,po=0,fa=0,go=0,tua=0;
+  const uptStat={};
+  raw.forEach(r=>{
+    const st=r._se, u=(r.Upt||'—').replace('UPT ','');
+    if(st==='CRITICAL') cr++;
+    else if(st==='POOR') po++;
+    else if(st==='FAIR') fa++;
+    else if(st==='GOOD'||st==='VERY GOOD') go++;
+    if((r['Status Usia']||'').toUpperCase()==='SANGAT TUA') tua++;
+    if(!uptStat[u]) uptStat[u]={cr:0,po:0,fa:0,go:0,total:0};
+    uptStat[u].total++;
+    if(st==='CRITICAL') uptStat[u].cr++;
+    else if(st==='POOR') uptStat[u].po++;
+    else if(st==='FAIR') uptStat[u].fa++;
+    else if(st==='GOOD'||st==='VERY GOOD') uptStat[u].go++;
+  });
+  const pct=(v,t)=>t?((v/t)*100).toFixed(1)+'%':'—';
+
+  // Rencana stats
+  const JENIS_LIST=['PEMELIHARAAN','PENGGANTIAN','MONITORING','UJI ULANG','VERIFIKASI',
+    'MENUNGGU PADAM','PENGADAAN MATERIAL','REVIEW MATERIAL','CLOSE','LAINNYA'];
+  const jenisCnt={};
+  JENIS_LIST.forEach(j=>jenisCnt[j]=0);
+  let totalRencana=0, lewatTarget=0, closeCount=0;
+  rencanaMap.forEach(list=>{
+    list.forEach(rk=>{
+      totalRencana++;
+      const j=rk.jenis_kegiatan||'LAINNYA';
+      if(jenisCnt[j]!==undefined) jenisCnt[j]++; else jenisCnt['LAINNYA']++;
+      if(isOverdue(rk)) lewatTarget++;
+      if(j==='CLOSE') closeCount++;
+    });
+  });
+
+  // Trend vs snapshot sebelumnya
+  const prev = snapshots.length>=2 ? snapshots[snapshots.length-2] : null;
+  const latest = snapshots.length>=1 ? snapshots[snapshots.length-1] : null;
+  const dCr = latest&&prev ? latest.critical-prev.critical : null;
+  const dGo = latest&&prev ? latest.good_vg-prev.good_vg : null;
+  const trendCr = dCr!==null ? `<span style="color:${dCr<=0?'#16a34a':'#dc2626'}">${dCr>0?'↑ +':'↓ '}${Math.abs(dCr)}</span>` : '';
+  const trendGo = dGo!==null ? `<span style="color:${dGo>=0?'#16a34a':'#dc2626'}">${dGo>=0?'↑ +':'↓ '}${Math.abs(dGo)}</span>` : '';
+
+  // Highlight otomatis
+  const highlights=[];
+  const uptArr = Object.entries(uptStat).sort((a,b)=>b[1].cr-a[1].cr);
+  if(uptArr.length) highlights.push(`⚠ <b>${uptArr[0][0]}</b> CRITICAL tertinggi: ${uptArr[0][1].cr} unit`);
+  if(dCr!==null && dCr<0) highlights.push(`✓ CRITICAL turun <b>${Math.abs(dCr)} unit</b> dari upload sebelumnya`);
+  if(dCr!==null && dCr>0) highlights.push(`⚠ CRITICAL naik <b>${dCr} unit</b> dari upload sebelumnya`);
+  if(dGo!==null && dGo>0) highlights.push(`✓ GOOD+VG naik <b>${dGo} unit</b>`);
+  highlights.push(`ℹ GI Kritikal: <b>${giKrit.size} GI</b>`);
+
+  // Tanggal update
+  const tglUpdate = raw.length && latest
+    ? new Date(latest.uploaded_at).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})
+    : new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+  const tglCetak = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+  // UPT bar chart (text-based untuk print)
+  const maxCr = Math.max(...Object.values(uptStat).map(u=>u.cr), 1);
+  const uptRows = uptArr.slice(0,8).map(([u,s])=>{
+    const barW = Math.round((s.cr/maxCr)*120);
+    return `<tr>
+      <td style="font-size:9px;padding:2px 6px;white-space:nowrap;font-weight:500">${u}</td>
+      <td style="padding:2px 4px">
+        <div style="display:flex;align-items:center;gap:4px">
+          <div style="width:${barW}px;height:10px;background:#dc2626;border-radius:2px;min-width:2px"></div>
+          <span style="font-size:8px;color:#dc2626">${s.cr}</span>
+          <div style="width:${Math.round((s.po/maxCr)*120)}px;height:10px;background:#d97706;border-radius:2px;min-width:${s.po?'2px':'0'}"></div>
+          <span style="font-size:8px;color:#d97706">${s.po||''}</span>
+        </div>
+      </td>
+      <td style="font-size:8px;padding:2px 4px;color:#475569">${s.total}</td>
+    </tr>`;
+  }).join('');
+
+  // Rencana rows (hanya jenis yang ada)
+  const rencanaRows = JENIS_LIST.filter(j=>jenisCnt[j]>0).map(j=>`
+    <tr><td style="font-size:9px;padding:1px 0">${j}</td>
+    <td style="font-size:9px;padding:1px 8px;text-align:right;font-weight:600">${jenisCnt[j]}</td>
+    <td style="font-size:9px;padding:1px 0;color:#475569">${pct(jenisCnt[j],totalRencana)}</td></tr>
+  `).join('');
+
+  const html=`
+  <div style="font-family:'IBM Plex Sans',Arial,sans-serif;color:#1e293b;background:#fff;padding:0">
+    <!-- HEADER -->
+    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #1e3a5f;padding-bottom:8px;margin-bottom:12px">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:#1e3a5f;letter-spacing:.02em">PLN UIT JBM — Health Index MTU</div>
+        <div style="font-size:10px;color:#475569;margin-top:2px">Laporan Ringkasan Eksekutif &nbsp;|&nbsp; Data update per ${tglUpdate}</div>
+      </div>
+      <div style="text-align:right;font-size:9px;color:#94a3b8">
+        Dicetak: ${tglCetak}<br>
+        oleh: ${currentUser?._username||'—'}
+      </div>
+    </div>
+
+    <!-- CARDS STATISTIK -->
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:12px">
+      ${[
+        {label:'Total Item',val:n.toLocaleString('id-ID'),sub:'peralatan',col:'#1e3a5f'},
+        {label:'CRITICAL',val:cr.toLocaleString('id-ID'),sub:pct(cr,n),col:'#dc2626',trend:trendCr},
+        {label:'POOR',val:po.toLocaleString('id-ID'),sub:pct(po,n),col:'#d97706',trend:''},
+        {label:'FAIR',val:fa.toLocaleString('id-ID'),sub:pct(fa,n),col:'#ca8a04',trend:''},
+        {label:'GOOD + VG',val:go.toLocaleString('id-ID'),sub:pct(go,n),col:'#16a34a',trend:trendGo},
+        {label:'Sangat Tua',val:tua.toLocaleString('id-ID'),sub:pct(tua,n),col:'#7c3aed'},
+      ].map(c=>`
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;border-top:3px solid ${c.col}">
+          <div style="font-size:8px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">${c.label}</div>
+          <div style="font-size:20px;font-weight:700;color:${c.col};line-height:1">${c.val}</div>
+          <div style="font-size:9px;color:#64748b;margin-top:2px">${c.sub} ${c.trend||''}</div>
+        </div>`).join('')}
+    </div>
+
+    <!-- BODY: 3 KOLOM -->
+    <div style="display:grid;grid-template-columns:1.4fr 1.6fr 1fr;gap:12px">
+
+      <!-- Kolom 1: UPT breakdown -->
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px">
+        <div style="font-size:9px;font-weight:600;color:#1e3a5f;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;border-bottom:1px solid #e2e8f0;padding-bottom:4px">
+          Status per UPT &nbsp;<span style="font-weight:400;color:#94a3b8">■ Critical &nbsp;■ Poor</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <tr style="background:#f1f5f9">
+            <th style="font-size:8px;padding:2px 6px;text-align:left;color:#475569">UPT</th>
+            <th style="font-size:8px;padding:2px 4px;text-align:left;color:#475569">Distribusi</th>
+            <th style="font-size:8px;padding:2px 4px;text-align:right;color:#475569">Total</th>
+          </tr>
+          ${uptRows}
+        </table>
+      </div>
+
+      <!-- Kolom 2: Rencana Kerja -->
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px">
+        <div style="font-size:9px;font-weight:600;color:#1e3a5f;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;border-bottom:1px solid #e2e8f0;padding-bottom:4px">
+          Rencana Kerja
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:4px;padding:6px 8px">
+            <div style="font-size:8px;color:#64748b">Total Rencana</div>
+            <div style="font-size:16px;font-weight:700;color:#1e3a5f">${totalRencana}</div>
+          </div>
+          <div style="background:#fff;border:1px solid #fca5a5;border-radius:4px;padding:6px 8px">
+            <div style="font-size:8px;color:#64748b">Lewat Target</div>
+            <div style="font-size:16px;font-weight:700;color:#dc2626">${lewatTarget}</div>
+          </div>
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <tr style="background:#f1f5f9">
+            <th style="font-size:8px;padding:2px 0;text-align:left;color:#475569">Jenis Kegiatan</th>
+            <th style="font-size:8px;padding:2px 8px;text-align:right;color:#475569">Jml</th>
+            <th style="font-size:8px;padding:2px 0;text-align:left;color:#475569">%</th>
+          </tr>
+          ${rencanaRows}
+        </table>
+      </div>
+
+      <!-- Kolom 3: Highlight -->
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px">
+        <div style="font-size:9px;font-weight:600;color:#1e3a5f;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;border-bottom:1px solid #e2e8f0;padding-bottom:4px">
+          Highlight
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${highlights.map(h=>`
+            <div style="font-size:9px;color:#1e293b;line-height:1.5;padding:5px 7px;background:#fff;border:1px solid #e2e8f0;border-radius:4px;border-left:3px solid ${h.startsWith('⚠')?'#dc2626':'#16a34a'}">
+              ${h}
+            </div>`).join('')}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div style="margin-top:10px;padding-top:6px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:8px;color:#94a3b8">Sistem AHI MTU — PLN UIT JBM</div>
+      <div style="font-size:8px;color:#94a3b8">Data: ${n.toLocaleString('id-ID')} peralatan | ${Object.keys(uptStat).length} UPT | ${giKrit.size} GI Kritikal</div>
+      <div style="font-size:8px;color:#94a3b8">Halaman 1 dari 1</div>
+    </div>
+  </div>`;
+
+  const el = document.getElementById('printLaporan');
+  el.innerHTML = html;
+  el.classList.add('active');
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{ el.classList.remove('active'); el.innerHTML=''; }, 500);
+  }, 300);
+}
+
+
 async function saveSnapshot(){
   try{
     const n = raw.length;
@@ -5680,5 +5880,8 @@ init().catch(err=>{
   },500);
 });
 </script>
+<!-- PRINT LAPORAN EKSEKUTIF -->
+<div id="printLaporan"></div>
+
 </body>
 </html>
