@@ -3707,9 +3707,17 @@ async function submitUpload(){
       closeUploadModal();
       // Reload raw data dari Supabase supaya auto-parse baca data terbaru
       try{
-        const reloadRes = await sbDb.from(SB_TABLE_AHI).select('*');
-        if(!reloadRes.error){
-          raw = (reloadRes.data||[]).filter(row=>{
+        const totalRes = await sbDb.from(SB_TABLE_AHI).select('*',{count:'exact',head:true});
+        const total = totalRes.count||0;
+        const CHUNK = 1000;
+        let allRows = [];
+        for(let from=0; from<total; from+=CHUNK){
+          const r = await sbDb.from(SB_TABLE_AHI).select('*').range(from, from+CHUNK-1);
+          if(r.error) break;
+          allRows = allRows.concat(r.data||[]);
+        }
+        if(allRows.length){
+          raw = allRows.filter(row=>{
             const gi=(row.Gi||'').trim();
             return gi && VALID_PFX.some(px=>gi.startsWith(px));
           });
