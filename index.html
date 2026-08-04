@@ -29,6 +29,41 @@
   --font:'IBM Plex Sans',sans-serif;--mono:'IBM Plex Mono',monospace;
   --r:8px;--rl:12px;
 }
+
+/* ── TEMA: MIDNIGHT BLUE ───────────────────────────────────────────────────── */
+[data-theme="blue"]{
+  --bg:#0f172a;--bg2:#1e293b;--bg3:#263348;--bg4:#2e3d57;
+  --border:rgba(148,163,184,0.10);--border2:rgba(148,163,184,0.18);
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#4a6080;
+  --accent:#60a5fa;--accent2:#3b82f6;
+  --red:#f87171;--red-bg:rgba(248,113,113,0.12);--red-bdr:rgba(248,113,113,0.3);
+  --amb:#fbbf24;--amb-bg:rgba(251,191,36,0.12);--amb-bdr:rgba(251,191,36,0.3);
+  --yel:#facc15;
+  --grn:#4ade80;--grn-bg:rgba(74,222,128,0.12);--grn-bdr:rgba(74,222,128,0.3);
+  --tel:#2dd4bf;--pur:#c084fc;
+}
+
+/* ── TEMA: LIGHT ───────────────────────────────────────────────────────────── */
+[data-theme="light"]{
+  --bg:#f1f5f9;--bg2:#ffffff;--bg3:#e9eef5;--bg4:#dde3ed;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
+  --text:#1e293b;--text2:#475569;--text3:#94a3b8;
+  --accent:#2563eb;--accent2:#1d4ed8;
+  --red:#dc2626;--red-bg:rgba(220,38,38,0.08);--red-bdr:rgba(220,38,38,0.25);
+  --amb:#b45309;--amb-bg:rgba(180,83,9,0.08);--amb-bdr:rgba(180,83,9,0.25);
+  --yel:#ca8a04;
+  --grn:#16a34a;--grn-bg:rgba(22,163,74,0.08);--grn-bdr:rgba(22,163,74,0.25);
+  --tel:#0d9488;--pur:#7c3aed;
+}
+
+/* ── THEME SWITCHER BUTTON ─────────────────────────────────────────────────── */
+.theme-switcher{display:flex;gap:4px;align-items:center}
+.theme-btn{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:all .15s;flex-shrink:0}
+.theme-btn:hover{transform:scale(1.15)}
+.theme-btn.active{border-color:var(--text);box-shadow:0 0 0 2px var(--accent)}
+.theme-btn-dark{background:linear-gradient(135deg,#1c1f23 50%,#3b82f6 50%)}
+.theme-btn-blue{background:linear-gradient(135deg,#0f172a 50%,#60a5fa 50%)}
+.theme-btn-light{background:linear-gradient(135deg,#f1f5f9 50%,#2563eb 50%);border-color:var(--border2)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.6;min-height:100vh}
 
@@ -225,7 +260,18 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
   .ttitle{display:none}
 }
 
-/* ── MAIN NAV TABS ─────────────────────────────────────────────────────────── */
+/* ── LIGHT MODE ADJUSTMENTS ────────────────────────────────────────────────── */
+[data-theme="light"] .tw table thead th{background:var(--bg3)}
+[data-theme="light"] .row-gi:hover td,[data-theme="light"] .row-bay:hover td{background:rgba(37,99,235,0.04)!important}
+[data-theme="light"] .ms-dropdown{box-shadow:0 8px 24px rgba(0,0,0,.15)}
+[data-theme="light"] .hival{color:var(--text)}
+[data-theme="light"] .lov{background:var(--bg)}
+[data-theme="light"] input[type="text"],.edit-input,[data-theme="light"] .edit-select{background:var(--bg2);color:var(--text)}
+[data-theme="light"] .b-cr{background:rgba(220,38,38,.1);color:var(--red);border-color:var(--red-bdr)}
+[data-theme="light"] .b-po{background:rgba(217,119,6,.1);color:var(--amb);border-color:var(--amb-bdr)}
+[data-theme="light"] .b-fa{background:rgba(202,138,4,.1);color:var(--yel);border-color:rgba(202,138,4,.3)}
+[data-theme="light"] .b-go{background:rgba(22,163,74,.1);color:var(--grn);border-color:var(--grn-bdr)}
+[data-theme="light"] .b-vg{background:rgba(13,148,136,.1);color:var(--tel);border-color:rgba(13,148,136,.3)}
 .main-tabs{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:2px}
 .main-tab{padding:10px 16px;font-size:12px;font-family:var(--mono);color:var(--text3);border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
 .main-tab:hover{color:var(--text2)}
@@ -854,6 +900,11 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
     <span class="ttitle">Dashboard Health Index Peralatan — UIT JBM</span>
   </div>
   <div class="tright">
+    <div class="theme-switcher" title="Ganti tema">
+      <button class="theme-btn theme-btn-dark active" id="tbtn-dark"  onclick="setTheme('dark')"  title="Dark"></button>
+      <button class="theme-btn theme-btn-blue"        id="tbtn-blue"  onclick="setTheme('blue')"  title="Midnight Blue"></button>
+      <button class="theme-btn theme-btn-light"       id="tbtn-light" onclick="setTheme('light')" title="Light"></button>
+    </div>
     <span id="last-update">—</span>
     <div id="gkbadge"><span class="bdot"></span><span id="gkn">0</span> GI Kritikal</div>
     <div id="userBadge" style="display:none;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border2);padding:4px 10px;border-radius:20px;font-family:var(--mono);font-size:11px;color:var(--text2)">
@@ -2490,13 +2541,47 @@ document.getElementById('uploadFile').addEventListener('change',function(e){
   });
 });
 
-// ── DIFF COMPARISON ──────────────────────────────────────────────────────────
+// ── THEME SWITCHER ────────────────────────────────────────────────────────────
+function setTheme(name){
+  document.documentElement.setAttribute('data-theme', name==='dark' ? '' : name);
+  ['dark','blue','light'].forEach(t=>{
+    const btn = document.getElementById('tbtn-'+t);
+    if(btn) btn.classList.toggle('active', t===name);
+  });
+  try{ localStorage.setItem('ahi_theme', name); }catch(e){}
+  // Update Chart.js warna kalau chart sudah dirender
+  if(typeof updateChartColors === 'function') updateChartColors();
+}
+// Load tema tersimpan
+(function(){
+  try{
+    const saved = localStorage.getItem('ahi_theme')||'dark';
+    if(saved!=='dark') setTheme(saved);
+  }catch(e){}
+})();
+
+
 let diffResult = null;
 let statsResult = null;
 
 // Normalisasi Serial Id yang rusak akibat Excel scientific notation
 // "2,73E+11" atau "2.73E+11" → tidak bisa diperbaiki tanpa nilai asli
 // Tandai sebagai INVALID agar tidak di-proses
+function updateChartColors(){
+  const style = getComputedStyle(document.documentElement);
+  const text3  = style.getPropertyValue('--text3').trim()  || '#6b7585';
+  const border = style.getPropertyValue('--border').trim() || 'rgba(255,255,255,0.09)';
+  Object.values(charts||{}).forEach(ch=>{
+    if(!ch||!ch.options) return;
+    const sc = ch.options.scales||{};
+    Object.values(sc).forEach(axis=>{
+      if(axis.ticks) axis.ticks.color = text3;
+      if(axis.grid)  axis.grid.color  = border;
+    });
+    ch.update('none');
+  });
+}
+
 function normalizeSerialId(val){
   if(!val) return val;
   const v = val.trim();
