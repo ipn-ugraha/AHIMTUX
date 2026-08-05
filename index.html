@@ -1957,7 +1957,8 @@ function updCharts(){
     };
     const uptLabels = upts.map(u=>u.replace('UPT ',''));
     const style = getComputedStyle(document.documentElement);
-    const textCol  = style.getPropertyValue('--text3').trim()||'#6b7585';
+    const textCol  = style.getPropertyValue('--text2').trim()||'#a8b0bc';
+    const textCol3 = style.getPropertyValue('--text3').trim()||'#6b7585';
     const gridCol  = style.getPropertyValue('--border').trim()||'rgba(255,255,255,0.09)';
     const bg2Col   = style.getPropertyValue('--bg2').trim()||'#23272d';
 
@@ -3108,9 +3109,10 @@ function updateChartColors(){
   });
   // Update ECharts UPT
   if(echartsUpt){
+    const text2 = style.getPropertyValue('--text2').trim()||'#a8b0bc';
     echartsUpt.setOption({
-      xAxis:{axisLabel:{color:text3},splitLine:{lineStyle:{color:border}}},
-      yAxis:{axisLabel:{color:text3}},
+      xAxis:{axisLabel:{color:text2},splitLine:{lineStyle:{color:border}}},
+      yAxis:{axisLabel:{color:text2}},
       tooltip:{backgroundColor:bg2,borderColor:border},
     });
   }
