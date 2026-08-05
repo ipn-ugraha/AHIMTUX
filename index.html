@@ -1995,13 +1995,16 @@ function updCharts(){
         trigger:'axis', axisPointer:{type:'shadow'},
         backgroundColor: bg2Col,
         borderColor: gridCol,
-        textStyle:{color:'#f0f2f5', fontSize:11},
+        textStyle:{color:textCol, fontSize:11},
+        extraCssText:`box-shadow:0 4px 12px rgba(0,0,0,.3)`,
         formatter(params){
           const total = params.reduce((s,p)=>s+p.value,0);
-          return `<b>${params[0].axisValue}</b><br>`+
+          const textC = getComputedStyle(document.documentElement).getPropertyValue('--text').trim()||'#f0f2f5';
+          const text2C = getComputedStyle(document.documentElement).getPropertyValue('--text2').trim()||'#a8b0bc';
+          return `<span style="color:${textC};font-weight:700">${params[0].axisValue}</span><br>`+
             params.filter(p=>p.value>0).map(p=>
-              `<span style="color:${p.color.colorStops?p.color.colorStops[0].color:p.color}">■</span> ${p.seriesName}: ${p.value.toLocaleString('id-ID')}`
-            ).join('<br>')+`<br><b>Total: ${total.toLocaleString('id-ID')}</b>`;
+              `<span style="color:${p.color.colorStops?p.color.colorStops[0].color:p.color}">■</span> <span style="color:${text2C}">${p.seriesName}: <b style="color:${textC}">${p.value.toLocaleString('id-ID')}</b></span>`
+            ).join('<br>')+`<br><span style="color:${textC};font-weight:700">Total: ${total.toLocaleString('id-ID')}</span>`;
         }
       },
       legend:{show:false},
