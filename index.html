@@ -1405,6 +1405,51 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
   </div>
 </div>
 
+<!-- PANEL PI ONLY -->
+<div id="panel-pi" class="main-panel" style="display:none">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+    <div>
+      <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text)">Aset PowerInspect — Tidak Ada di Smartness</span>
+      <span id="piOnlyCount" style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-left:8px"></span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <select id="piOnlyUpt" onchange="renderPiOnly()" style="font-family:var(--mono);font-size:11px;padding:4px 8px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text)">
+        <option value="">Semua UPT</option>
+      </select>
+      <select id="piOnlyStatus" onchange="renderPiOnly()" style="font-family:var(--mono);font-size:11px;padding:4px 8px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text)">
+        <option value="">Semua Status AHI</option>
+        <option value="CRITICAL">CRITICAL</option>
+        <option value="POOR">POOR</option>
+        <option value="FAIR">FAIR</option>
+        <option value="GOOD">GOOD</option>
+        <option value="VERY GOOD">VERY GOOD</option>
+      </select>
+      <button onclick="exportPiOnly()" style="font-family:var(--mono);font-size:11px;padding:4px 10px;background:transparent;border:1px solid var(--border2);border-radius:var(--r);color:var(--text2);cursor:pointer">⬇ CSV</button>
+    </div>
+  </div>
+  <!-- Stats cards PI Only -->
+  <div id="piOnlyCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:14px"></div>
+  <!-- Tabel -->
+  <div class="tw" style="max-height:calc(100vh - 280px);overflow-y:auto">
+    <table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="background:var(--bg3);font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">
+          <th style="padding:8px 10px;text-align:left;white-space:nowrap">Gardu Induk</th>
+          <th style="padding:8px 10px;text-align:left">Bay</th>
+          <th style="padding:8px 10px;text-align:left">Jenis</th>
+          <th style="padding:8px 10px;text-align:left">Phasa</th>
+          <th style="padding:8px 10px;text-align:left">Merek</th>
+          <th style="padding:8px 10px;text-align:left">Tipe</th>
+          <th style="padding:8px 10px;text-align:left">Tegangan</th>
+          <th style="padding:8px 10px;text-align:left">AHI PI</th>
+          <th style="padding:8px 10px;text-align:left">UPT</th>
+        </tr>
+      </thead>
+      <tbody id="piOnlyBody"></tbody>
+    </table>
+  </div>
+</div>
+
 </main>
 
 <script>
@@ -2680,7 +2725,87 @@ document.getElementById('uploadFile').addEventListener('change',function(e){
   });
 });
 
-// ── POWER INSPECT (PI) ───────────────────────────────────────────────────────
+// ── PANEL PI ONLY ─────────────────────────────────────────────────────────────
+function renderPiOnly(){
+  // Kumpulkan key yang sudah ada di Smartness
+  const smartnessKeys = new Set();
+  raw.forEach(r=>{
+    const key = makePiKey(r.Gi, r.Bay, r['#']);
+    if(key) smartnessKeys.add(key);
+  });
+
+  // Filter PI yang tidak ada di Smartness (pi_only)
+  const piOnly = [];
+  const seen = new Set();
+  piMap.forEach((r, key)=>{
+    // Skip techidentno keys (hanya proses GI|Bay|Jenis keys)
+    if(!key.includes('|')) return;
+    if(seen.has(key)) return;
+    seen.add(key);
+    if(!smartnessKeys.has(key)) piOnly.push(r);
+  });
+
+  // Isi filter UPT
+  const uptSel = document.getElementById('piOnlyUpt');
+  const prevUpt = uptSel.value;
+  const upts = [...new Set(piOnly.map(r=>(r.unit_pelaksana||'—').replace('UPT ','')))].sort();
+  uptSel.innerHTML = '<option value="">Semua UPT</option>' +
+    upts.map(u=>`<option value="${e(u)}" ${prevUpt===u?'selected':''}>${e(u)}</option>`).join('');
+
+  // Apply filter
+  const fUpt    = document.getElementById('piOnlyUpt').value;
+  const fStatus = document.getElementById('piOnlyStatus').value;
+  let rows = piOnly;
+  if(fUpt)    rows = rows.filter(r=>(r.unit_pelaksana||'').replace('UPT ','')===fUpt);
+  if(fStatus) rows = rows.filter(r=>r.ahi_status===fStatus);
+
+  // Hitung stats
+  const stats={CRITICAL:0,POOR:0,FAIR:0,GOOD:0,'VERY GOOD':0};
+  rows.forEach(r=>{ if(stats[r.ahi_status]!==undefined) stats[r.ahi_status]++; });
+  const ST_COL2={'CRITICAL':'var(--red)','POOR':'var(--amb)','FAIR':'var(--yel)','GOOD':'var(--grn)','VERY GOOD':'var(--tel)'};
+  document.getElementById('piOnlyCards').innerHTML =
+    Object.entries(stats).map(([st,cnt])=>`
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;border-top:3px solid ${ST_COL2[st]}">
+        <div style="font-size:8px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-bottom:3px">${st}</div>
+        <div style="font-size:20px;font-weight:700;color:${ST_COL2[st]}">${cnt.toLocaleString('id-ID')}</div>
+      </div>`).join('');
+
+  document.getElementById('piOnlyCount').textContent =
+    `${rows.length.toLocaleString('id-ID')} dari ${piOnly.length.toLocaleString('id-ID')} aset PI-only`;
+
+  // Render tabel
+  document.getElementById('piOnlyBody').innerHTML = rows.map(r=>`
+    <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:6px 10px;font-size:11px;color:var(--text)">${e(r.gi||'—')}</td>
+      <td style="padding:6px 10px;font-size:11px;color:var(--text2)">${e(r.bay||'—')}</td>
+      <td style="padding:6px 10px"><span class="badge" style="background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.2);font-size:9px">${e(r.jenis_asset||'—')}</span></td>
+      <td style="padding:6px 10px;font-size:10px;color:var(--text3);font-family:var(--mono)">${e(r.phasa||'—')}</td>
+      <td style="padding:6px 10px;font-size:11px;color:var(--text2)">${e(r.merk||'—')} <span style="color:var(--text3);font-size:10px">${e(r.tipe||'')}</span></td>
+      <td style="padding:6px 10px;font-size:10px;color:var(--text3);font-family:var(--mono)">${e(r.tipe||'—')}</td>
+      <td style="padding:6px 10px;font-size:10px;color:var(--text3);font-family:var(--mono)">${e(r.tegangan||'—')}</td>
+      <td style="padding:6px 10px">${stH(r.ahi_status)}</td>
+      <td style="padding:6px 10px;font-size:10px;color:var(--text3)">${e((r.unit_pelaksana||'—').replace('UPT ',''))}</td>
+    </tr>`).join('');
+}
+
+function exportPiOnly(){
+  const smartnessKeys = new Set();
+  raw.forEach(r=>{ const k=makePiKey(r.Gi,r.Bay,r['#']); if(k) smartnessKeys.add(k); });
+  const rows=[], seen=new Set();
+  piMap.forEach((r,key)=>{
+    if(!key.includes('|')||seen.has(key)) return;
+    seen.add(key);
+    if(!smartnessKeys.has(key)) rows.push(r);
+  });
+  const cols=['gi','bay','jenis_asset','phasa','merk','tipe','tegangan','ahi_status','ahi_raw','unit_pelaksana','ultg','techidentno'];
+  const csv=[cols.join(','), ...rows.map(r=>cols.map(c=>'"'+(r[c]||'').toString().replace(/"/g,'""')+'"').join(','))].join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download='PI_Only_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+
 
 // Parse AHI string "2 - Good" → {status:'GOOD', nilai:2}
 function parseAhiPI(raw){
@@ -2863,10 +2988,13 @@ function setPiMode(enable){
   document.getElementById('btnPi').style.background  = enable?'var(--accent)':'transparent';
   document.getElementById('btnPi').style.color       = enable?'#fff':'var(--text2)';
 
+  // Tampilkan/sembunyikan panel PI Only
+  const piPanel = document.getElementById('panel-pi');
+  if(piPanel) piPanel.style.display = enable ? 'block' : 'none';
+
   if(enable){
     let matched=0, unmatched=0;
     raw.forEach(r=>{
-      // Match via GI + Bay + Jenis + Phasa
       const key = makePiKey(r.Gi, r.Bay, r['#']);
       const pi  = key ? piMap.get(key) : null;
       r._pi = pi||null;
@@ -2875,6 +3003,7 @@ function setPiMode(enable){
       if(pi) matched++; else unmatched++;
     });
     console.log(`PI matching: ${matched} matched, ${unmatched} unmatched`);
+    renderPiOnly();
   } else {
     raw.forEach(r=>{ r._se=r._so; r._pi=null; r._adj=false; });
   }
