@@ -2921,25 +2921,34 @@ async function submitUploadPi(){
 
     if(!rows.length){ showToast('Tidak ada data valid di file PI','err'); btn.disabled=false; return; }
 
+    // Deduplikasi berdasarkan gi+bay+jenis_asset+phasa
+    const deduped = [];
+    const seenKeys = new Set();
+    rows.forEach(r=>{
+      const k = `${r.gi}|${r.bay}|${r.jenis_asset}|${r.phasa}`.toUpperCase();
+      if(!seenKeys.has(k)){ seenKeys.add(k); deduped.push(r); }
+    });
+    console.log(`PI rows: ${rows.length} total, ${deduped.length} setelah deduplikasi`);
+
     setP(80, `Menghapus data PI lama...`);
     // Delete semua data lama
     await sbDb.from(SB_TABLE_PI).delete().neq('id','00000000-0000-0000-0000-000000000000');
 
-    setP(85, `Menyimpan ${rows.length.toLocaleString('id-ID')} baris ke Supabase...`);
-    // Insert dalam chunk 500
+    setP(85, `Menyimpan ${deduped.length.toLocaleString('id-ID')} baris ke Supabase...`);
+    // Insert dalam chunk 500 (pakai deduped)
     const CHUNK=500;
-    for(let i=0;i<rows.length;i+=CHUNK){
-      const chunk=rows.slice(i,i+CHUNK);
+    for(let i=0;i<deduped.length;i+=CHUNK){
+      const chunk=deduped.slice(i,i+CHUNK);
       const res=await sbDb.from(SB_TABLE_PI).insert(chunk);
       if(res.error) throw new Error('Insert PI error: '+res.error.message);
-      setP(85+Math.floor((i/rows.length)*12), `Menyimpan... ${Math.min(i+CHUNK,rows.length).toLocaleString('id-ID')}/${rows.length.toLocaleString('id-ID')}`);
+      setP(85+Math.floor((i/deduped.length)*12), `Menyimpan... ${Math.min(i+CHUNK,deduped.length).toLocaleString('id-ID')}/${deduped.length.toLocaleString('id-ID')}`);
     }
 
     setP(98,'Memuat data PI ke memori...');
     await loadPiData();
 
     setP(100,'Selesai ✓');
-    showToast(`✓ ${rows.length.toLocaleString('id-ID')} aset PI berhasil diupload`,'ok');
+    showToast(`✓ ${deduped.length.toLocaleString('id-ID')} aset PI berhasil diupload`,'ok');
     setTimeout(closeUploadPiModal, 1500);
 
   }catch(err){
