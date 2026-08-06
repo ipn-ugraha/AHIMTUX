@@ -1407,40 +1407,64 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
 
 <!-- PANEL PI ONLY -->
 <div id="panel-pi" class="main-panel" style="display:none">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+
+  <!-- Header & filter bar -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
     <div>
       <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text)">Aset PowerInspect — Tidak Ada di Smartness</span>
       <span id="piOnlyCount" style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-left:8px"></span>
     </div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <select id="piOnlyUpt" onchange="renderPiOnly()" style="font-family:var(--mono);font-size:11px;padding:4px 8px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text)">
-        <option value="">Semua UPT</option>
-      </select>
-      <select id="piOnlyStatus" onchange="renderPiOnly()" style="font-family:var(--mono);font-size:11px;padding:4px 8px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text)">
-        <option value="">Semua Status AHI</option>
-        <option value="CRITICAL">CRITICAL</option>
-        <option value="POOR">POOR</option>
-        <option value="FAIR">FAIR</option>
-        <option value="GOOD">GOOD</option>
-        <option value="VERY GOOD">VERY GOOD</option>
-      </select>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <!-- Mode toggle -->
+      <div style="display:flex;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden">
+        <button id="piViewTree" onclick="setPiView('tree')" style="padding:4px 10px;font-family:var(--mono);font-size:11px;border:none;cursor:pointer;background:var(--accent);color:#fff">🌲 Tree</button>
+        <button id="piViewFlat" onclick="setPiView('flat')" style="padding:4px 10px;font-family:var(--mono);font-size:11px;border:none;cursor:pointer;background:transparent;color:var(--text2)">≡ Flat</button>
+      </div>
+      <!-- Expand/collapse (tree mode) -->
+      <div id="piExpandBtns" style="display:flex;gap:4px">
+        <button onclick="piExpandAll()" style="font-family:var(--mono);font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--border2);border-radius:var(--r);color:var(--text2);cursor:pointer">Buka Semua</button>
+        <button onclick="piCollapseAll()" style="font-family:var(--mono);font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--border2);border-radius:var(--r);color:var(--text2);cursor:pointer">Tutup Semua</button>
+      </div>
       <button onclick="exportPiOnly()" style="font-family:var(--mono);font-size:11px;padding:4px 10px;background:transparent;border:1px solid var(--border2);border-radius:var(--r);color:var(--text2);cursor:pointer">⬇ CSV</button>
     </div>
   </div>
-  <!-- Stats cards PI Only -->
-  <div id="piOnlyCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:14px"></div>
+
+  <!-- Filter row -->
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+    <select id="piOnlyUpt" onchange="renderPiOnly()" style="font-family:var(--mono);font-size:11px;padding:4px 8px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text)"><option value="">Semua UPT</option></select>
+    <select id="piOnlyGi" onchange="renderPiOnly()" style="font-family:var(--mono);font-size:11px;padding:4px 8px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text)"><option value="">Semua GI</option></select>
+    <select id="piOnlyJenis" onchange="renderPiOnly()" style="font-family:var(--mono);font-size:11px;padding:4px 8px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text)">
+      <option value="">Semua Jenis</option>
+      <option>PMS</option><option>LA</option><option>TRAFO</option>
+      <option>CT</option><option>PT</option><option>PMT</option>
+    </select>
+    <select id="piOnlyStatus" onchange="renderPiOnly()" style="font-family:var(--mono);font-size:11px;padding:4px 8px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text)">
+      <option value="">Semua Status AHI</option>
+      <option value="CRITICAL">CRITICAL</option>
+      <option value="POOR">POOR</option>
+      <option value="FAIR">FAIR</option>
+      <option value="GOOD">GOOD</option>
+      <option value="VERY GOOD">VERY GOOD</option>
+    </select>
+    <select id="piOnlyTeg" onchange="renderPiOnly()" style="font-family:var(--mono);font-size:11px;padding:4px 8px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text)"><option value="">Semua Tegangan</option></select>
+    <button onclick="resetPiFilters()" style="font-family:var(--mono);font-size:11px;padding:4px 8px;background:transparent;border:1px solid var(--border2);border-radius:var(--r);color:var(--text3);cursor:pointer">✕ Reset</button>
+  </div>
+
+  <!-- Stats cards -->
+  <div id="piOnlyCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px"></div>
+
   <!-- Tabel -->
-  <div class="tw" style="max-height:calc(100vh - 280px);overflow-y:auto">
-    <table style="width:100%;border-collapse:collapse">
+  <div class="tw" style="max-height:calc(100vh - 320px);overflow-y:auto">
+    <table style="width:100%;border-collapse:collapse" id="piOnlyTable">
       <thead>
-        <tr style="background:var(--bg3);font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">
-          <th style="padding:8px 10px;text-align:left;white-space:nowrap">Gardu Induk</th>
-          <th style="padding:8px 10px;text-align:left">Bay</th>
+        <tr style="background:var(--bg3);font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;position:sticky;top:0;z-index:2">
+          <th style="padding:8px 8px;text-align:left;width:32px"></th>
+          <th style="padding:8px 10px;text-align:left">GI / Bay / Aset</th>
           <th style="padding:8px 10px;text-align:left">Jenis</th>
           <th style="padding:8px 10px;text-align:left">Phasa</th>
-          <th style="padding:8px 10px;text-align:left">Merek</th>
-          <th style="padding:8px 10px;text-align:left">Tipe</th>
+          <th style="padding:8px 10px;text-align:left">Merek & Tipe</th>
           <th style="padding:8px 10px;text-align:left">Tegangan</th>
+          <th style="padding:8px 10px;text-align:left">Tahun</th>
           <th style="padding:8px 10px;text-align:left">AHI PI</th>
           <th style="padding:8px 10px;text-align:left">UPT</th>
         </tr>
@@ -2726,77 +2750,185 @@ document.getElementById('uploadFile').addEventListener('change',function(e){
 });
 
 // ── PANEL PI ONLY ─────────────────────────────────────────────────────────────
-function renderPiOnly(){
-  // Kumpulkan key yang sudah ada di Smartness
-  const smartnessKeys = new Set();
-  raw.forEach(r=>{
-    const key = makePiKey(r.Gi, r.Bay, r['#']);
-    if(key) smartnessKeys.add(key);
-  });
+let piOnlyView = 'tree';      // 'tree' | 'flat'
+let piOnlyExpGi = new Set();  // expanded GI
+let piOnlyExpBay = new Set(); // expanded Bay
 
-  // Filter PI yang tidak ada di Smartness (pi_only)
-  const piOnly = [];
-  const seen = new Set();
-  piMap.forEach((r, key)=>{
-    // Skip techidentno keys (hanya proses GI|Bay|Jenis keys)
-    if(!key.includes('|')) return;
-    if(seen.has(key)) return;
+function getPiOnlyRows(){
+  // Kumpulkan key Smartness
+  const sk = new Set();
+  raw.forEach(r=>{ const k=makePiKey(r.Gi,r.Bay,r['#']); if(k) sk.add(k); });
+  // Kumpulkan PI-only
+  const all=[], seen=new Set();
+  piMap.forEach((r,key)=>{
+    if(!key.includes('|')||seen.has(key)) return;
     seen.add(key);
-    if(!smartnessKeys.has(key)) piOnly.push(r);
+    if(!sk.has(key)) all.push(r);
   });
+  return all;
+}
 
-  // Isi filter UPT
-  const uptSel = document.getElementById('piOnlyUpt');
-  const prevUpt = uptSel.value;
-  const upts = [...new Set(piOnly.map(r=>(r.unit_pelaksana||'—').replace('UPT ','')))].sort();
-  uptSel.innerHTML = '<option value="">Semua UPT</option>' +
-    upts.map(u=>`<option value="${e(u)}" ${prevUpt===u?'selected':''}>${e(u)}</option>`).join('');
+function resetPiFilters(){
+  ['piOnlyUpt','piOnlyGi','piOnlyJenis','piOnlyStatus','piOnlyTeg'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  renderPiOnly();
+}
+
+function setPiView(mode){
+  piOnlyView=mode;
+  document.getElementById('piViewTree').style.background = mode==='tree'?'var(--accent)':'transparent';
+  document.getElementById('piViewTree').style.color      = mode==='tree'?'#fff':'var(--text2)';
+  document.getElementById('piViewFlat').style.background = mode==='flat'?'var(--accent)':'transparent';
+  document.getElementById('piViewFlat').style.color      = mode==='flat'?'#fff':'var(--text2)';
+  document.getElementById('piExpandBtns').style.display  = mode==='tree'?'flex':'none';
+  renderPiOnly();
+}
+
+function piExpandAll(){
+  const all=getPiOnlyRows();
+  all.forEach(r=>{ piOnlyExpGi.add(r.gi); piOnlyExpBay.add((r.gi||'')+' '+(r.bay||'')); });
+  renderPiOnly();
+}
+function piCollapseAll(){ piOnlyExpGi.clear(); piOnlyExpBay.clear(); renderPiOnly(); }
+function piToggleGi(gi){ piOnlyExpGi.has(gi)?piOnlyExpGi.delete(gi):piOnlyExpGi.add(gi); renderPiOnly(); }
+function piToggleBay(bk){ piOnlyExpBay.has(bk)?piOnlyExpBay.delete(bk):piOnlyExpBay.add(bk); renderPiOnly(); }
+
+function renderPiOnly(){
+  const all = getPiOnlyRows();
+  const ST_COL2={'CRITICAL':'var(--red)','POOR':'var(--amb)','FAIR':'var(--yel)','GOOD':'var(--grn)','VERY GOOD':'var(--tel)'};
+
+  // Isi filter dropdowns (pertahankan nilai)
+  const prev={};
+  ['piOnlyUpt','piOnlyGi','piOnlyJenis','piOnlyTeg'].forEach(id=>{ prev[id]=document.getElementById(id)?.value||''; });
+
+  const upts=[...new Set(all.map(r=>(r.unit_pelaksana||'—').replace('UPT ','')))].sort();
+  const gis=[...new Set(all.map(r=>r.gi||'—'))].sort();
+  const tegs=[...new Set(all.map(r=>r.tegangan||'—').filter(t=>t&&t!=='-'&&t!=='—'))].sort();
+  document.getElementById('piOnlyUpt').innerHTML='<option value="">Semua UPT</option>'+upts.map(u=>`<option value="${e(u)}"${prev.piOnlyUpt===u?' selected':''}>${e(u)}</option>`).join('');
+  document.getElementById('piOnlyGi').innerHTML='<option value="">Semua GI</option>'+gis.map(g=>`<option value="${e(g)}"${prev.piOnlyGi===g?' selected':''}>${e(g)}</option>`).join('');
+  document.getElementById('piOnlyTeg').innerHTML='<option value="">Semua Tegangan</option>'+tegs.map(t=>`<option value="${e(t)}"${prev.piOnlyTeg===t?' selected':''}>${e(t)}</option>`).join('');
 
   // Apply filter
-  const fUpt    = document.getElementById('piOnlyUpt').value;
-  const fStatus = document.getElementById('piOnlyStatus').value;
-  let rows = piOnly;
-  if(fUpt)    rows = rows.filter(r=>(r.unit_pelaksana||'').replace('UPT ','')===fUpt);
-  if(fStatus) rows = rows.filter(r=>r.ahi_status===fStatus);
+  const fUpt=document.getElementById('piOnlyUpt').value;
+  const fGi=document.getElementById('piOnlyGi').value;
+  const fJenis=document.getElementById('piOnlyJenis').value;
+  const fStatus=document.getElementById('piOnlyStatus').value;
+  const fTeg=document.getElementById('piOnlyTeg').value;
+  let rows=all;
+  if(fUpt)    rows=rows.filter(r=>(r.unit_pelaksana||'').replace('UPT ','')=== fUpt);
+  if(fGi)     rows=rows.filter(r=>r.gi===fGi);
+  if(fJenis)  rows=rows.filter(r=>r.jenis_asset===fJenis);
+  if(fStatus) rows=rows.filter(r=>r.ahi_status===fStatus);
+  if(fTeg)    rows=rows.filter(r=>r.tegangan===fTeg);
 
-  // Hitung stats
+  // Stats cards
   const stats={CRITICAL:0,POOR:0,FAIR:0,GOOD:0,'VERY GOOD':0};
   rows.forEach(r=>{ if(stats[r.ahi_status]!==undefined) stats[r.ahi_status]++; });
-  const ST_COL2={'CRITICAL':'var(--red)','POOR':'var(--amb)','FAIR':'var(--yel)','GOOD':'var(--grn)','VERY GOOD':'var(--tel)'};
-  document.getElementById('piOnlyCards').innerHTML =
+  document.getElementById('piOnlyCards').innerHTML=
     Object.entries(stats).map(([st,cnt])=>`
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;border-top:3px solid ${ST_COL2[st]}">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;border-top:3px solid ${ST_COL2[st]};cursor:pointer"
+        onclick="document.getElementById('piOnlyStatus').value='${st}';renderPiOnly()">
         <div style="font-size:8px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-bottom:3px">${st}</div>
         <div style="font-size:20px;font-weight:700;color:${ST_COL2[st]}">${cnt.toLocaleString('id-ID')}</div>
       </div>`).join('');
 
-  document.getElementById('piOnlyCount').textContent =
-    `${rows.length.toLocaleString('id-ID')} dari ${piOnly.length.toLocaleString('id-ID')} aset PI-only`;
+  document.getElementById('piOnlyCount').textContent=`${rows.length.toLocaleString('id-ID')} dari ${all.length.toLocaleString('id-ID')} aset PI-only`;
 
   // Render tabel
+  if(piOnlyView==='flat'){
+    renderPiFlat(rows, ST_COL2);
+  } else {
+    renderPiTree(rows, ST_COL2);
+  }
+}
+
+function renderPiFlat(rows, ST_COL2){
   document.getElementById('piOnlyBody').innerHTML = rows.map(r=>`
     <tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:6px 10px;font-size:11px;color:var(--text)">${e(r.gi||'—')}</td>
-      <td style="padding:6px 10px;font-size:11px;color:var(--text2)">${e(r.bay||'—')}</td>
+      <td style="padding:6px 8px"></td>
+      <td style="padding:6px 10px;font-size:11px;color:var(--text)">${e(r.gi||'—')} <span style="color:var(--text3);font-size:10px">/ ${e(r.bay||'—')}</span></td>
       <td style="padding:6px 10px"><span class="badge" style="background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.2);font-size:9px">${e(r.jenis_asset||'—')}</span></td>
       <td style="padding:6px 10px;font-size:10px;color:var(--text3);font-family:var(--mono)">${e(r.phasa||'—')}</td>
       <td style="padding:6px 10px;font-size:11px;color:var(--text2)">${e(r.merk||'—')} <span style="color:var(--text3);font-size:10px">${e(r.tipe||'')}</span></td>
-      <td style="padding:6px 10px;font-size:10px;color:var(--text3);font-family:var(--mono)">${e(r.tipe||'—')}</td>
       <td style="padding:6px 10px;font-size:10px;color:var(--text3);font-family:var(--mono)">${e(r.tegangan||'—')}</td>
+      <td style="padding:6px 10px;font-size:10px;color:var(--text3);font-family:var(--mono)">${e(r.tahun_buat||'—')}</td>
       <td style="padding:6px 10px">${stH(r.ahi_status)}</td>
       <td style="padding:6px 10px;font-size:10px;color:var(--text3)">${e((r.unit_pelaksana||'—').replace('UPT ',''))}</td>
     </tr>`).join('');
 }
 
-function exportPiOnly(){
-  const smartnessKeys = new Set();
-  raw.forEach(r=>{ const k=makePiKey(r.Gi,r.Bay,r['#']); if(k) smartnessKeys.add(k); });
-  const rows=[], seen=new Set();
-  piMap.forEach((r,key)=>{
-    if(!key.includes('|')||seen.has(key)) return;
-    seen.add(key);
-    if(!smartnessKeys.has(key)) rows.push(r);
+function renderPiTree(rows, ST_COL2){
+  // Kelompokkan per GI → Bay → aset
+  const giMap=new Map();
+  rows.forEach(r=>{
+    const gi=r.gi||'—';
+    if(!giMap.has(gi)) giMap.set(gi,new Map());
+    const bayMap=giMap.get(gi);
+    const bay=r.bay||'—';
+    if(!bayMap.has(bay)) bayMap.set(bay,[]);
+    bayMap.get(bay).push(r);
   });
+
+  const giArr=[...giMap.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  let html='';
+  giArr.forEach(([gi,bayMap])=>{
+    const isGiOpen=piOnlyExpGi.has(gi);
+    // Hitung stats GI
+    const giRows=[...bayMap.values()].flat();
+    const giCr=giRows.filter(r=>r.ahi_status==='CRITICAL').length;
+    const giPo=giRows.filter(r=>r.ahi_status==='POOR').length;
+    const bk=JSON.stringify(gi).replace(/"/g,'&quot;');
+    html+=`<tr class="row-gi" style="background:var(--bg3);cursor:pointer" onclick="piToggleGi(${bk})">
+      <td style="padding:8px 8px;text-align:center;color:var(--text3);font-size:12px">${isGiOpen?'▼':'▶'}</td>
+      <td style="padding:8px 10px;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text)" colspan="7">
+        ${e(gi)}
+        ${giCr?`<span class="badge b-cr" style="margin-left:6px">${giCr} CR</span>`:''}
+        ${giPo?`<span class="badge b-po" style="margin-left:4px">${giPo} PO</span>`:''}
+        <span style="color:var(--text3);font-size:10px;margin-left:8px">${giRows.length} aset</span>
+      </td>
+      <td style="padding:8px 10px;font-size:10px;color:var(--text3)">${e((giRows[0]?.unit_pelaksana||'—').replace('UPT ',''))}</td>
+    </tr>`;
+    if(!isGiOpen) return;
+
+    [...bayMap.entries()].sort((a,b)=>a[0].localeCompare(b[0])).forEach(([bay,asets])=>{
+      const bk2=(gi+' '+bay);
+      const isBayOpen=piOnlyExpBay.has(bk2);
+      const bayCr=asets.filter(r=>r.ahi_status==='CRITICAL').length;
+      const bayPo=asets.filter(r=>r.ahi_status==='POOR').length;
+      const bk2Json=JSON.stringify(bk2).replace(/"/g,'&quot;');
+      html+=`<tr class="row-bay" style="cursor:pointer" onclick="piToggleBay(${bk2Json})">
+        <td style="padding:6px 8px;text-align:center;color:var(--text3);font-size:11px">${isBayOpen?'▼':'▶'}</td>
+        <td style="padding:6px 10px;font-size:11px;color:var(--text);padding-left:28px" colspan="7">
+          ${e(bay)}
+          ${bayCr?`<span class="badge b-cr" style="margin-left:6px">${bayCr}</span>`:''}
+          ${bayPo?`<span class="badge b-po" style="margin-left:4px">${bayPo}</span>`:''}
+          <span style="color:var(--text3);font-size:10px;margin-left:8px">${asets.length} aset</span>
+        </td>
+        <td></td>
+      </tr>`;
+      if(!isBayOpen) return;
+
+      asets.forEach(r=>{
+        html+=`<tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:5px 8px"></td>
+          <td style="padding:5px 10px;padding-left:52px"><span class="badge" style="background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.2);font-size:9px">${e(r.jenis_asset||'—')}</span></td>
+          <td style="padding:5px 10px"><span class="badge" style="background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.2);font-size:9px">${e(r.jenis_asset||'—')}</span></td>
+          <td style="padding:5px 10px;font-size:10px;color:var(--text3);font-family:var(--mono)">${e(r.phasa||'—')}</td>
+          <td style="padding:5px 10px;font-size:11px;color:var(--text2)">${e(r.merk||'—')} <span style="color:var(--text3);font-size:10px">${e(r.tipe||'')}</span></td>
+          <td style="padding:5px 10px;font-size:10px;color:var(--text3);font-family:var(--mono)">${e(r.tegangan||'—')}</td>
+          <td style="padding:5px 10px;font-size:10px;color:var(--text3);font-family:var(--mono)">${e(r.tahun_buat||'—')}</td>
+          <td style="padding:5px 10px">${stH(r.ahi_status)}</td>
+          <td style="padding:5px 10px;font-size:10px;color:var(--text3)">${e((r.unit_pelaksana||'—').replace('UPT ',''))}</td>
+        </tr>`;
+      });
+    });
+  });
+  document.getElementById('piOnlyBody').innerHTML=html;
+}
+
+function exportPiOnly(){
+  const rows=getPiOnlyRows();
   const cols=['gi','bay','jenis_asset','phasa','merk','tipe','tegangan','ahi_status','ahi_raw','unit_pelaksana','ultg','techidentno'];
   const csv=[cols.join(','), ...rows.map(r=>cols.map(c=>'"'+(r[c]||'').toString().replace(/"/g,'""')+'"').join(','))].join('\n');
   const a=document.createElement('a');
