@@ -3140,7 +3140,8 @@ function renderDiffAhi(){
       const bg = cnt>0 ? (isDiag?'rgba(100,100,100,.1)':`rgba(${s==='CRITICAL'?'239,68,68':s==='POOR'?'245,158,11':s==='FAIR'?'234,179,8':s==='GOOD'?'34,197,94':'20,184,166'},${intensity})`) : 'transparent';
       const border = isActive ? '2px solid var(--accent)' : '1px solid var(--border)';
       const cursor = cnt>0&&!isDiag ? 'pointer' : 'default';
-      matHtml += `<td onclick="${cnt>0&&!isDiag?`selectDiffCell('${s}','${p}')`:''})" 
+      const onclickFn = (cnt>0&&!isDiag) ? `selectDiffCell('${s}','${p}')` : '';
+      matHtml += `<td onclick="${onclickFn}"
         style="padding:6px 8px;text-align:center;background:${bg};border:${border};border-radius:4px;cursor:${cursor};min-width:50px;transition:all .15s">
         <span style="font-size:${cnt>99?'11':'13'}px;font-weight:700;color:${cnt>0?'var(--text)':'var(--text3)'}">${cnt>0?cnt.toLocaleString('id-ID'):'—'}</span>
       </td>`;
