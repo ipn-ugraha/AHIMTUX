@@ -2824,9 +2824,13 @@ async function submitUploadPi(){
   btn.disabled=false;
 }
 
+function makePiKey(gi, bay, jenis){
+  if(!gi||!bay||!jenis) return null;
+  return [gi,bay,jenis].map(s=>String(s||'').trim().toUpperCase()).join('|');
+}
+
 async function loadPiData(){
   try{
-    // Load semua pi_data (bisa ribuan, pakai chunking)
     const countRes = await sbDb.from(SB_TABLE_PI).select('*',{count:'exact',head:true});
     const total = countRes.count||0;
     if(!total){ piMap.clear(); piLoaded=true; return; }
@@ -2836,42 +2840,46 @@ async function loadPiData(){
     for(let from=0;from<total;from+=CHUNK){
       const res=await sbDb.from(SB_TABLE_PI).select('*').range(from,from+CHUNK-1);
       if(res.error) break;
-      (res.data||[]).forEach(r=>{ if(r.techidentno) piMap.set(r.techidentno, r); });
+      (res.data||[]).forEach(r=>{
+        // Key 1: GI|Bay|Jenis|Phasa
+        const key = makePiKey(r.gi, r.bay, r.jenis_asset);
+        if(key) piMap.set(key, r);
+        // Key 2: techidentno sebagai fallback
+        if(r.techidentno) piMap.set(r.techidentno, r);
+      });
     }
     piLoaded=true;
-    console.log('PI data loaded:', piMap.size, 'records');
+    console.log('PI data loaded:', piMap.size, 'keys from', total, 'records');
 
-    // Tampilkan toggle jika ada data
     const wrap=document.getElementById('piToggleWrap');
-    if(wrap) wrap.style.display='flex';
+    if(wrap && total>0) wrap.style.display='flex';
   }catch(e){ console.warn('loadPiData error:', e.message); }
 }
 
 function setPiMode(enable){
   piMode=enable;
-  // Update toggle button style
-  document.getElementById('btnMtu').style.background = enable?'transparent':  'var(--accent)';
-  document.getElementById('btnMtu').style.color      = enable?'var(--text2)': '#fff';
-  document.getElementById('btnPi').style.background  = enable?'var(--accent)': 'transparent';
-  document.getElementById('btnPi').style.color       = enable?'#fff': 'var(--text2)';
-  // Re-apply status AHI ke raw berdasarkan mode
-  raw.forEach(r=>{
-    if(enable){
-      // Coba match via Serial Id ke techidentno
-      const sid=(r['Serial Id']||'').trim();
-      const pi = piMap.get(sid);
+  document.getElementById('btnMtu').style.background = enable?'transparent':'var(--accent)';
+  document.getElementById('btnMtu').style.color      = enable?'var(--text2)':'#fff';
+  document.getElementById('btnPi').style.background  = enable?'var(--accent)':'transparent';
+  document.getElementById('btnPi').style.color       = enable?'#fff':'var(--text2)';
+
+  if(enable){
+    let matched=0, unmatched=0;
+    raw.forEach(r=>{
+      // Match via GI + Bay + Jenis + Phasa
+      const key = makePiKey(r.Gi, r.Bay, r['#']);
+      const pi  = key ? piMap.get(key) : null;
       r._pi = pi||null;
-      r._se = pi?.ahi_status || r._so; // fallback ke MTU jika tidak match
-    } else {
-      r._se = r._so; // kembali ke nilai MTU asli
-      r._pi = null;
-    }
-    r._adj = r._se!==r._so;
-  });
-  // Re-apply toggle lain (trafo/pmt adjustment)
+      r._se = pi?.ahi_status || r._so;
+      r._adj = r._se!==r._so;
+      if(pi) matched++; else unmatched++;
+    });
+    console.log(`PI matching: ${matched} matched, ${unmatched} unmatched`);
+  } else {
+    raw.forEach(r=>{ r._se=r._so; r._pi=null; r._adj=false; });
+  }
   onToggle();
-  // Update badge PI mode di topbar
-  showToast(enable?'Mode: Power Inspect':'Mode: MTU', 'ok');
+  showToast(enable?`Mode: Power Inspect`:'Mode: MTU','ok');
 }
 
 
