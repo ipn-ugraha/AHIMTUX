@@ -3152,8 +3152,8 @@ function renderDiffAhi(){
   document.getElementById('diffMatrix').innerHTML = matHtml;
 
   // ── SUMMARY CARDS ────────────────────────────────────────────────────────
-  const naik  = baseRows.filter(r=>ST_ORDER.indexOf(r.pi)<ST_ORDER.indexOf(r.smartness)).length;
-  const turun = baseRows.filter(r=>ST_ORDER.indexOf(r.pi)>ST_ORDER.indexOf(r.smartness)).length;
+  const naik  = baseRows.filter(r=>ST_ORDER.indexOf(r.pi)>ST_ORDER.indexOf(r.smartness)).length;
+  const turun = baseRows.filter(r=>ST_ORDER.indexOf(r.pi)<ST_ORDER.indexOf(r.smartness)).length;
   const crSm  = baseRows.filter(r=>r.smartness==='CRITICAL').length;
   const crPi  = baseRows.filter(r=>r.pi==='CRITICAL').length;
   document.getElementById('diffSummaryCards').innerHTML = [
@@ -3195,8 +3195,8 @@ function renderDiffAhi(){
   document.getElementById('diffBody').innerHTML = rows.map(r=>{
     const smIdx = ST_ORDER.indexOf(r.smartness);
     const piIdx = ST_ORDER.indexOf(r.pi);
-    const arah  = piIdx<smIdx ? '↑ Lebih baik' : '↓ Lebih buruk';
-    const arahC = piIdx<smIdx ? 'var(--grn)' : 'var(--red)';
+    const arah  = piIdx>smIdx ? '↑ Lebih baik' : '↓ Lebih buruk';
+    const arahC = piIdx>smIdx ? 'var(--grn)' : 'var(--red)';
     return `<tr style="border-bottom:1px solid var(--border)">
       <td style="padding:6px 10px;font-size:11px;color:var(--text)">${e(r.gi||'—')}</td>
       <td style="padding:6px 10px;font-size:11px;color:var(--text2)">${e(r.bay||'—')}</td>
