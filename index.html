@@ -1581,6 +1581,10 @@ async function init(){
     console.warn('gi_referensi error:',e.message);
   }
 
+  // Load PI data di background (tidak blokir init)
+  setP(6,'Memuat data Power Inspect...');
+  loadPiData().catch(e=>console.warn('loadPiData init error:',e.message));
+
   // Load rencana_kerja (semua, join di client)
   setP(8,'Memuat rencana kerja...');
   try{
