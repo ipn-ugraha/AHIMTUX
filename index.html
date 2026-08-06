@@ -936,9 +936,12 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
     <button id="uploadBtn" title="Upload CSV (admin only)" style="display:none;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">↑ Upload</button>
     <button id="uploadPiBtn" onclick="openUploadPiModal()" title="Upload Excel Power Inspect" style="display:none;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">↑ Upload PI</button>
     <!-- Toggle MTU / PI -->
-    <div id="piToggleWrap" style="display:none;align-items:center;gap:0;border:1px solid var(--border2);border-radius:6px;overflow:hidden">
-      <button id="btnMtu" onclick="setPiMode(false)" style="padding:5px 10px;font-family:var(--mono);font-size:11px;border:none;cursor:pointer;background:var(--accent);color:#fff">Smartness</button>
-      <button id="btnPi"  onclick="setPiMode(true)"  style="padding:5px 10px;font-family:var(--mono);font-size:11px;border:none;cursor:pointer;background:transparent;color:var(--text2)">PowerInspect</button>
+    <div id="piToggleWrap" style="display:none;align-items:center;gap:6px">
+      <div style="display:flex;border:1px solid var(--border2);border-radius:6px;overflow:hidden">
+        <button id="btnMtu" onclick="setPiMode(false)" style="padding:5px 10px;font-family:var(--mono);font-size:11px;border:none;cursor:pointer;background:var(--accent);color:#fff">Smartness</button>
+        <button id="btnPi"  onclick="setPiMode(true)"  style="padding:5px 10px;font-family:var(--mono);font-size:11px;border:none;cursor:pointer;background:transparent;color:var(--text2)">PowerInspect</button>
+      </div>
+      <button id="btnDiff" onclick="openDiffPanel()" style="padding:5px 10px;font-family:var(--mono);font-size:11px;border:1px solid var(--border2);border-radius:6px;cursor:pointer;background:transparent;color:var(--text2)" title="Lihat perbedaan AHI Smartness vs PowerInspect">≠ Beda AHI</button>
     </div>
     <button id="auditBtn" title="Audit Log (admin only)" style="display:none;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">📜 Log</button>
     <button id="parseRencanaBtn" title="Parse teks Rencana dari CSV ke tabel rencana_kerja (admin only)" style="display:none;background:transparent;border:1px solid rgba(167,139,250,.4);color:#a78bfa;padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">✦ Parse Rencana</button>
@@ -1470,6 +1473,74 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
         </tr>
       </thead>
       <tbody id="piOnlyBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PANEL BEDA AHI -->
+<div id="panel-diff" style="display:none;padding:0">
+
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+    <div>
+      <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text)">Perbandingan AHI — Smartness vs PowerInspect</span>
+      <span id="diffCount" style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-left:8px"></span>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <select id="diffUpt" onchange="renderDiffAhi()" style="font-family:var(--mono);font-size:11px;padding:4px 8px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text)"><option value="">Semua UPT</option></select>
+      <select id="diffJenis" onchange="renderDiffAhi()" style="font-family:var(--mono);font-size:11px;padding:4px 8px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text)">
+        <option value="">Semua Jenis</option>
+        <option>PMS</option><option>LA</option><option>TRAFO</option>
+        <option>CT</option><option>PT</option><option>PMT</option>
+      </select>
+      <button onclick="resetDiffFilters()" style="font-family:var(--mono);font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--border2);border-radius:var(--r);color:var(--text3);cursor:pointer">✕ Reset</button>
+      <button onclick="exportDiffAhi()" style="font-family:var(--mono);font-size:11px;padding:4px 10px;background:transparent;border:1px solid var(--border2);border-radius:var(--r);color:var(--text2);cursor:pointer">⬇ CSV</button>
+    </div>
+  </div>
+
+  <!-- Heatmap matriks -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+
+    <!-- Matriks -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:14px">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">
+        Matriks AHI — baris: Smartness, kolom: PowerInspect
+      </div>
+      <div id="diffMatrix"></div>
+    </div>
+
+    <!-- Summary cards -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div id="diffSummaryCards" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:14px;flex:1">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Distribusi Perubahan</div>
+        <div id="diffDistrib"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter matriks cell -->
+  <div id="diffCellFilter" style="display:none;margin-bottom:8px;padding:6px 10px;background:var(--bg3);border-radius:var(--r);font-family:var(--mono);font-size:11px;color:var(--text2)">
+    Filter: <span id="diffCellLabel"></span>
+    <button onclick="clearDiffCellFilter()" style="margin-left:8px;background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:12px">✕</button>
+  </div>
+
+  <!-- Tabel detail -->
+  <div class="tw" style="max-height:calc(100vh - 420px);overflow-y:auto">
+    <table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr style="background:var(--bg3);font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;position:sticky;top:0;z-index:2">
+          <th style="padding:8px 10px;text-align:left">Gardu Induk</th>
+          <th style="padding:8px 10px;text-align:left">Bay</th>
+          <th style="padding:8px 10px;text-align:left">Jenis</th>
+          <th style="padding:8px 10px;text-align:left">Phasa</th>
+          <th style="padding:8px 10px;text-align:left">AHI Smartness</th>
+          <th style="padding:8px 10px;text-align:left">AHI PowerInspect</th>
+          <th style="padding:8px 10px;text-align:left">Arah</th>
+          <th style="padding:8px 10px;text-align:left">UPT</th>
+        </tr>
+      </thead>
+      <tbody id="diffBody"></tbody>
     </table>
   </div>
 </div>
@@ -2955,6 +3026,198 @@ function exportPiOnly(){
 }
 
 
+
+// ── BEDA AHI SMARTNESS vs POWERINSPECT ──────────────────────────────────────
+let diffCellFilter = null; // {smartness, pi} atau null
+
+function openDiffPanel(){
+  const panel = document.getElementById('panel-diff');
+  if(!panel) return;
+  // Toggle visibility
+  const visible = panel.style.display !== 'none';
+  panel.style.display = visible ? 'none' : 'block';
+  const btn = document.getElementById('btnDiff');
+  if(btn){
+    btn.style.background = visible ? 'transparent' : 'var(--accent)';
+    btn.style.color = visible ? 'var(--text2)' : '#fff';
+  }
+  if(!visible) renderDiffAhi();
+}
+
+function getDiffRows(){
+  // Baris MTU yang punya pasangan di PI dan AHI-nya berbeda
+  const rows = [];
+  raw.forEach(r=>{
+    const key = makePiKey(r.Gi, r.Bay, r['#']);
+    const pi  = key ? piMap.get(key) : null;
+    if(!pi || !pi.ahi_status) return;
+    const smartness = r._so; // selalu pakai nilai asli Smartness
+    const piSt      = pi.ahi_status;
+    if(smartness === piSt) return; // sama = skip
+    rows.push({
+      gi:       r.Gi,
+      bay:      r.Bay,
+      jenis:    r['#'],
+      phasa:    r.Phasa||'—',
+      smartness,
+      pi:       piSt,
+      upt:      (r.Upt||'—').replace('UPT ',''),
+      merek:    r.Merek||'—',
+      tipe:     r.Tipe||'—',
+    });
+  });
+  return rows;
+}
+
+function resetDiffFilters(){
+  ['diffUpt','diffJenis'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  diffCellFilter = null;
+  document.getElementById('diffCellFilter').style.display='none';
+  renderDiffAhi();
+}
+
+function clearDiffCellFilter(){
+  diffCellFilter = null;
+  document.getElementById('diffCellFilter').style.display='none';
+  renderDiffAhi();
+}
+
+function selectDiffCell(smartness, pi){
+  if(diffCellFilter?.smartness===smartness && diffCellFilter?.pi===pi){
+    clearDiffCellFilter(); return;
+  }
+  diffCellFilter = {smartness, pi};
+  document.getElementById('diffCellFilter').style.display='block';
+  document.getElementById('diffCellLabel').textContent = `Smartness: ${smartness} → PI: ${pi}`;
+  renderDiffAhi();
+}
+
+function renderDiffAhi(){
+  const all = getDiffRows();
+  const ST_ORDER = ['CRITICAL','POOR','FAIR','GOOD','VERY GOOD'];
+  const ST_COL2  = {CRITICAL:'var(--red)',POOR:'var(--amb)',FAIR:'var(--yel)',GOOD:'var(--grn)','VERY GOOD':'var(--tel)'};
+  const ST_BG    = {CRITICAL:'rgba(239,68,68,.12)',POOR:'rgba(245,158,11,.12)',FAIR:'rgba(234,179,8,.12)',GOOD:'rgba(34,197,94,.12)','VERY GOOD':'rgba(20,184,166,.12)'};
+
+  // Isi filter UPT
+  const prevUpt = document.getElementById('diffUpt').value;
+  const upts = [...new Set(all.map(r=>r.upt).filter(u=>u&&u!=='—'))].sort();
+  document.getElementById('diffUpt').innerHTML = '<option value="">Semua UPT</option>' +
+    upts.map(u=>`<option value="${e(u)}"${prevUpt===u?' selected':''}>${e(u)}</option>`).join('');
+
+  // Apply filter
+  let rows = all;
+  const fUpt   = document.getElementById('diffUpt').value;
+  const fJenis = document.getElementById('diffJenis').value;
+  if(fUpt)   rows = rows.filter(r=>r.upt===fUpt);
+  if(fJenis) rows = rows.filter(r=>r.jenis===fJenis);
+  if(diffCellFilter) rows = rows.filter(r=>r.smartness===diffCellFilter.smartness && r.pi===diffCellFilter.pi);
+
+  document.getElementById('diffCount').textContent = `${rows.length.toLocaleString('id-ID')} dari ${all.length.toLocaleString('id-ID')} aset berbeda AHI`;
+
+  // ── HEATMAP MATRIKS ──────────────────────────────────────────────────────
+  // Hitung matrix (pakai semua row sebelum cell filter)
+  let baseRows = all;
+  if(fUpt)   baseRows = baseRows.filter(r=>r.upt===fUpt);
+  if(fJenis) baseRows = baseRows.filter(r=>r.jenis===fJenis);
+  const matrix = {};
+  ST_ORDER.forEach(s=>{ matrix[s]={}; ST_ORDER.forEach(p=>matrix[s][p]=0); });
+  baseRows.forEach(r=>{ if(matrix[r.smartness]&&matrix[r.smartness][r.pi]!==undefined) matrix[r.smartness][r.pi]++; });
+  const maxVal = Math.max(...baseRows.map(()=>1), ...Object.values(matrix).flatMap(row=>Object.values(row)));
+
+  let matHtml = `<table style="border-collapse:collapse;width:100%">
+    <tr>
+      <th style="padding:4px 6px;font-size:9px;color:var(--text3);font-family:var(--mono);text-align:left">↓ Smartness \ PI →</th>`;
+  ST_ORDER.forEach(p=>{ matHtml += `<th style="padding:4px 6px;font-size:9px;color:${ST_COL2[p]};font-family:var(--mono);text-align:center">${p.replace('VERY ','VY ')}</th>`; });
+  matHtml += '</tr>';
+
+  ST_ORDER.forEach(s=>{
+    matHtml += `<tr><td style="padding:4px 6px;font-size:9px;color:${ST_COL2[s]};font-family:var(--mono);font-weight:600;white-space:nowrap">${s.replace('VERY ','VY ')}</td>`;
+    ST_ORDER.forEach(p=>{
+      const cnt = matrix[s][p];
+      const isDiag = s===p; // diagonal = sama (tidak muncul karena sudah difilter)
+      const isActive = diffCellFilter?.smartness===s && diffCellFilter?.pi===p;
+      const intensity = cnt>0 ? Math.max(0.15, Math.min(0.9, cnt/maxVal*0.9)) : 0;
+      const bg = cnt>0 ? (isDiag?'rgba(100,100,100,.1)':`rgba(${s==='CRITICAL'?'239,68,68':s==='POOR'?'245,158,11':s==='FAIR'?'234,179,8':s==='GOOD'?'34,197,94':'20,184,166'},${intensity})`) : 'transparent';
+      const border = isActive ? '2px solid var(--accent)' : '1px solid var(--border)';
+      const cursor = cnt>0&&!isDiag ? 'pointer' : 'default';
+      matHtml += `<td onclick="${cnt>0&&!isDiag?`selectDiffCell('${s}','${p}')`:''})" 
+        style="padding:6px 8px;text-align:center;background:${bg};border:${border};border-radius:4px;cursor:${cursor};min-width:50px;transition:all .15s">
+        <span style="font-size:${cnt>99?'11':'13'}px;font-weight:700;color:${cnt>0?'var(--text)':'var(--text3)'}">${cnt>0?cnt.toLocaleString('id-ID'):'—'}</span>
+      </td>`;
+    });
+    matHtml += '</tr>';
+  });
+  matHtml += '</table>';
+  document.getElementById('diffMatrix').innerHTML = matHtml;
+
+  // ── SUMMARY CARDS ────────────────────────────────────────────────────────
+  const naik  = baseRows.filter(r=>ST_ORDER.indexOf(r.pi)<ST_ORDER.indexOf(r.smartness)).length;
+  const turun = baseRows.filter(r=>ST_ORDER.indexOf(r.pi)>ST_ORDER.indexOf(r.smartness)).length;
+  const crSm  = baseRows.filter(r=>r.smartness==='CRITICAL').length;
+  const crPi  = baseRows.filter(r=>r.pi==='CRITICAL').length;
+  document.getElementById('diffSummaryCards').innerHTML = [
+    {l:'Total Beda AHI', v:baseRows.length.toLocaleString('id-ID'), c:'var(--accent)', s:'dari '+all.length.toLocaleString('id-ID')+' match'},
+    {l:'PI lebih baik ↑', v:naik.toLocaleString('id-ID'), c:'var(--grn)', s:((naik/baseRows*100)||0).toFixed(1)+'%'},
+    {l:'PI lebih buruk ↓', v:turun.toLocaleString('id-ID'), c:'var(--red)', s:((turun/baseRows*100)||0).toFixed(1)+'%'},
+    {l:'CRITICAL Smartness', v:crSm.toLocaleString('id-ID'), c:'var(--red)', s:'vs PI: '+crPi},
+  ].map(c=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;border-top:3px solid ${c.c}">
+    <div style="font-size:8px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-bottom:3px">${c.l}</div>
+    <div style="font-size:18px;font-weight:700;color:${c.c}">${c.v}</div>
+    <div style="font-size:9px;color:var(--text3)">${c.s}</div>
+  </div>`).join('');
+
+  // ── DISTRIBUSI PERUBAHAN ─────────────────────────────────────────────────
+  const distrib = {};
+  baseRows.forEach(r=>{
+    const key = `${r.smartness} → ${r.pi}`;
+    distrib[key] = (distrib[key]||0)+1;
+  });
+  const distribSorted = Object.entries(distrib).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxD = distribSorted[0]?.[1]||1;
+  document.getElementById('diffDistrib').innerHTML = distribSorted.map(([label,cnt])=>{
+    const [sm,pi2] = label.split(' → ');
+    const bw = Math.round(cnt/maxD*100);
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+      <div style="font-size:9px;font-family:var(--mono);width:160px;flex-shrink:0">
+        <span style="color:${ST_COL2[sm]}">${sm.replace('VERY GOOD','VG')}</span>
+        <span style="color:var(--text3)"> → </span>
+        <span style="color:${ST_COL2[pi2]}">${pi2.replace('VERY GOOD','VG')}</span>
+      </div>
+      <div style="flex:1;background:var(--bg3);border-radius:2px;height:12px;overflow:hidden">
+        <div style="width:${bw}%;height:100%;background:var(--accent);opacity:.7;border-radius:2px"></div>
+      </div>
+      <div style="font-size:9px;font-family:var(--mono);color:var(--text2);width:40px;text-align:right">${cnt.toLocaleString('id-ID')}</div>
+    </div>`;
+  }).join('');
+
+  // ── TABEL DETAIL ─────────────────────────────────────────────────────────
+  document.getElementById('diffBody').innerHTML = rows.map(r=>{
+    const smIdx = ST_ORDER.indexOf(r.smartness);
+    const piIdx = ST_ORDER.indexOf(r.pi);
+    const arah  = piIdx<smIdx ? '↑ Lebih baik' : '↓ Lebih buruk';
+    const arahC = piIdx<smIdx ? 'var(--grn)' : 'var(--red)';
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:6px 10px;font-size:11px;color:var(--text)">${e(r.gi||'—')}</td>
+      <td style="padding:6px 10px;font-size:11px;color:var(--text2)">${e(r.bay||'—')}</td>
+      <td style="padding:6px 10px"><span class="badge" style="background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.2);font-size:9px">${e(r.jenis||'—')}</span></td>
+      <td style="padding:6px 10px;font-size:10px;color:var(--text3);font-family:var(--mono)">${e(r.phasa||'—')}</td>
+      <td style="padding:6px 10px">${stH(r.smartness)}</td>
+      <td style="padding:6px 10px">${stH(r.pi)}</td>
+      <td style="padding:6px 10px;font-size:10px;font-family:var(--mono);color:${arahC};font-weight:600">${arah}</td>
+      <td style="padding:6px 10px;font-size:10px;color:var(--text3)">${e(r.upt||'—')}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportDiffAhi(){
+  const rows = getDiffRows();
+  const cols = ['gi','bay','jenis','phasa','smartness','pi','upt'];
+  const csv  = [cols.join(','), ...rows.map(r=>cols.map(c=>'"'+(r[c]||'').toString().replace(/"/g,'""')+'"').join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download = 'Beda_AHI_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
 
 // Parse AHI string "2 - Good" → {status:'GOOD', nilai:2}
 function parseAhiPI(raw){
