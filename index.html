@@ -354,6 +354,9 @@ tr.rk-row{cursor:pointer}
 tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
 .row-mtu.rk-overdue td{background:rgba(239,68,68,.05) !important}
 .row-mtu.rk-overdue:hover td{background:rgba(239,68,68,.09) !important}
+/* PI mode */
+.pi-nomatch td{opacity:.55}
+.pi-nomatch:hover td{opacity:.8}
 
 /* Tabel tanpa rencana */
 .no-rencana-tbl table{font-size:11px}
@@ -931,6 +934,12 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
     <button id="downloadBtn" title="Download data CSV" style="background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">↓ CSV</button>
     <button id="laporanBtn" onclick="cetakLaporan()" title="Laporan Ringkasan Eksekutif" style="background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">🖨 Laporan</button>
     <button id="uploadBtn" title="Upload CSV (admin only)" style="display:none;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">↑ Upload</button>
+    <button id="uploadPiBtn" onclick="openUploadPiModal()" title="Upload Excel Power Inspect" style="display:none;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">↑ Upload PI</button>
+    <!-- Toggle MTU / PI -->
+    <div id="piToggleWrap" style="display:none;align-items:center;gap:0;border:1px solid var(--border2);border-radius:6px;overflow:hidden">
+      <button id="btnMtu" onclick="setPiMode(false)" style="padding:5px 10px;font-family:var(--mono);font-size:11px;border:none;cursor:pointer;background:var(--accent);color:#fff">MTU</button>
+      <button id="btnPi"  onclick="setPiMode(true)"  style="padding:5px 10px;font-family:var(--mono);font-size:11px;border:none;cursor:pointer;background:transparent;color:var(--text2)">PI</button>
+    </div>
     <button id="auditBtn" title="Audit Log (admin only)" style="display:none;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">📜 Log</button>
     <button id="parseRencanaBtn" title="Parse teks Rencana dari CSV ke tabel rencana_kerja (admin only)" style="display:none;background:transparent;border:1px solid rgba(167,139,250,.4);color:#a78bfa;padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">✦ Parse Rencana</button>
     <button id="sbSettingBtn" title="Pengaturan Supabase" style="background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">⚙ DB</button>
@@ -1399,7 +1408,7 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
 </main>
 
 <script>
-const SB_TABLE_AHI='AHI_MTU', SB_TABLE_REF='gi_referensi', SB_TABLE_RK='rencana_kerja', SB_TABLE_SNAP='ahi_snapshot';
+const SB_TABLE_AHI='AHI_MTU', SB_TABLE_REF='gi_referensi', SB_TABLE_RK='rencana_kerja', SB_TABLE_SNAP='ahi_snapshot', SB_TABLE_PI='pi_data';
 // Map serial_id → array rencana_kerja (diisi saat init)
 let rencanaMap = new Map();
 let mtuMap = new Map(); // Serial Id → raw MTU row (untuk lookup O(1))
@@ -1419,7 +1428,10 @@ const USIA_BUCKETS=[
 ];
 
 let raw=[], giKrit=new Set(), giTierMap=new Map(), giKttMap=new Map(), filtered=[], giGroups=[];
-let echartsUpt = null; // ECharts instance untuk chart UPT
+let echartsUpt = null;
+let piMap = new Map();      // techidentno → pi_data row
+let piMode = false;         // false=MTU, true=PI
+let piLoaded = false;       // sudah load pi_data dari Supabase
 let page=1, scol='maxhi', sdir='desc', tab='all';
 let expGi=new Set(), expBay=new Set(), charts={};
 let sbDb=null, editingIdx=-1;
@@ -1659,6 +1671,8 @@ async function init(){
   await new Promise(r=>setTimeout(r,30));
   applyFilters();
   updateAlertBadge();
+  // Load PI data jika ada
+  await loadPiData();
 
   setP(100,'Selesai');
   await new Promise(r=>setTimeout(r,200));
@@ -1698,15 +1712,18 @@ function onToggle(){
   const tp=document.getElementById('tog-pmt').checked;
   const tc=document.getElementById('tog-close').checked;
   raw.forEach(r=>{
-    let e=r._so;
+    // Mulai dari PI jika piMode aktif, fallback ke _so
+    let e=(piMode&&r._pi?.ahi_status)?r._pi.ahi_status:r._so;
+    // Overlay toggle trafo/pmt — referensi tetap ke _so (nilai asli MTU)
     if(tt&&r['#']==='TRAFO'&&r._so==='FAIR'&&r._age!=null&&r._age<20) e='GOOD';
     if(tp&&r['#']==='PMT'  &&r._so==='FAIR'&&r._age!=null&&r._age<15) e='GOOD';
+    // Overlay toggle close
     if(tc){
       const sid=(r['Serial Id']||'').trim();
       if(sid&&sid!=='NO DATA'){
         const list=rencanaMap.get(sid)||[];
         const hasClose=list.some(rk=>rk.jenis_kegiatan==='CLOSE'&&rk.status!=='BATAL');
-        if(hasClose && AHI_UPGRADE[e]) e=AHI_UPGRADE[e];
+        if(hasClose&&AHI_UPGRADE[e]) e=AHI_UPGRADE[e];
       }
     }
     r._se=e; r._adj=(e!==r._so);
@@ -2312,7 +2329,15 @@ function mtuH(r){
   const rkList = rencanaMap.get((sid||'').trim())||[];
   const rkAktif = rkList.filter(rk=>rk.status!=='BATAL');
   const hasOverdue = rkAktif.some(rk=>isOverdue(rk));
-  return `<tr class="row-mtu${hasOverdue?' rk-overdue':''}">
+
+  // PI mode: tampilkan badge beda AHI
+  const piRow = piMode && r._pi;
+  const ahiBeda = piRow && r._pi.ahi_status && r._pi.ahi_status !== r._so;
+  const piBadge = piRow
+    ? `<span style="font-size:9px;font-family:var(--mono);color:${ahiBeda?'var(--amb)':'var(--text3)'};margin-left:4px" title="AHI PI: ${r._pi.ahi_status||'—'}">${ahiBeda?'≠':'='} PI:${r._pi.ahi_status||'—'}</span>`
+    : (piMode?'<span style="font-size:9px;color:var(--text3);font-family:var(--mono);margin-left:4px">no PI</span>':'');
+
+  return `<tr class="row-mtu${hasOverdue?' rk-overdue':''}${piMode&&!r._pi?' pi-nomatch':''}">
     <td style="text-align:center;padding:6px 6px">
       ${canEdit ? `<button class="edit-btn" onclick="openEditMtu(${rowIdx})" title="Edit data MTU">✎</button>` : ''}
     </td>
@@ -2320,7 +2345,7 @@ function mtuH(r){
     <td style="color:var(--text2)">${e(r.Merek||'—')} <span style="color:var(--text3);font-size:10px">${e(r.Tipe||'')}</span></td>
     <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${r.Phasa||'—'}</td>
     <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${r['Tahun Buat']||'—'}${r._age!=null?` <span style="color:var(--text3)">(${r._age}th)</span>`:''}</td>
-    <td>${stH(r._se)}${r._adj?'<span class="badge b-adj">adj</span>':''}</td>
+    <td>${stH(r._se)}${r._adj?'<span class="badge b-adj">adj</span>':''}${piBadge}</td>
     <td style="font-size:10px;color:var(--text3);max-width:180px;overflow:hidden;text-overflow:ellipsis" title="${e(r['Justifikasi Prioritas']||'')}">${e(r['Justifikasi Prioritas']||'—')}</td>
     <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${e(sid||'—')}</td>
     <td><div class="hiwrap"><div class="hibar" style="width:${bw}px;background:${bc}"></div><span class="hival">${hi||'—'}</span></div></td>
@@ -2651,7 +2676,201 @@ document.getElementById('uploadFile').addEventListener('change',function(e){
   });
 });
 
-// ── LAPORAN EKSEKUTIF ─────────────────────────────────────────────────────────
+// ── POWER INSPECT (PI) ───────────────────────────────────────────────────────
+
+// Parse AHI string "2 - Good" → {status:'GOOD', nilai:2}
+function parseAhiPI(raw){
+  if(!raw||raw==='-') return {status:null, nilai:null};
+  const AHI_MAP = {
+    '1':'VERY GOOD','2':'GOOD','3':'FAIR','4':'POOR','5':'CRITICAL'
+  };
+  const m = String(raw).match(/^(\d+)/);
+  if(!m) return {status:null, nilai:null};
+  return {status: AHI_MAP[m[1]]||null, nilai: parseInt(m[1])};
+}
+
+// Sheet name → jenis asset
+const PI_SHEET_JENIS = {
+  'PMS':'PMS','LA':'LA','NGR':'NGR','CAPACITOR':'CAPACITOR','REACTOR':'REACTOR',
+  'TRAFO':'TRAFO','CT':'CT','PT':'PT','PMT':'PMT'
+};
+// Sheet yang dipakai (skip NGR, CAPACITOR, REACTOR sesuai filter perbandingan)
+const PI_SHEET_AKTIF = ['PMS','LA','TRAFO','CT','PT','PMT'];
+
+function openUploadPiModal(){
+  document.getElementById('uploadPiModal').style.display='flex';
+  document.getElementById('piProgressBar').style.width='0%';
+  document.getElementById('piProgressText').textContent='Pilih file untuk mulai';
+  document.getElementById('piFileInput').value='';
+}
+function closeUploadPiModal(){
+  document.getElementById('uploadPiModal').style.display='none';
+}
+
+async function submitUploadPi(){
+  const file = document.getElementById('piFileInput').files[0];
+  if(!file){ showToast('Pilih file Excel PI terlebih dahulu','err'); return; }
+
+  const btn = document.getElementById('piSubmitBtn');
+  btn.disabled = true;
+  const setP = (pct,txt)=>{
+    document.getElementById('piProgressBar').style.width=pct+'%';
+    document.getElementById('piProgressText').textContent=txt;
+  };
+
+  try{
+    setP(5,'Membaca file Excel...');
+    const buf = await file.arrayBuffer();
+    const wb  = XLSX.read(buf, {type:'array'});
+
+    const rows = [];
+    const username = currentUser?._username||'unknown';
+    let sheetCount=0;
+
+    for(const sheetName of PI_SHEET_AKTIF){
+      if(!wb.SheetNames.includes(sheetName)) continue;
+      sheetCount++;
+      setP(5+sheetCount*12, `Memproses sheet ${sheetName}...`);
+
+      const ws   = wb.Sheets[sheetName];
+      const data = XLSX.utils.sheet_to_json(ws, {header:1, defval:null});
+
+      // Cari baris header (row 0 atau 1)
+      let headerRow = 0;
+      for(let i=0;i<Math.min(3,data.length);i++){
+        if(data[i] && data[i].some(c=>c==='Techidentno'||c==='Gardu Induk')) { headerRow=i; break; }
+      }
+      const headers = (data[headerRow]||[]).map(h=>String(h||'').trim());
+      const idx = (name)=>headers.indexOf(name);
+
+      const iTech = idx('Techidentno');
+      const iGI   = idx('Gardu Induk');
+      const iBay  = idx('Bay');
+      const iJenis= idx('Jenis Asset');
+      const iPhasa= idx('Phasa');
+      const iMerk = idx('Merk');
+      const iTipe = idx('Tipe');
+      const iTeg  = idx('Tegangan');
+      const iTBuat= idx('Tahun Buat');
+      const iTOps = idx('Tahun Operasi');
+      const iStat = idx('Status');
+      const iUPT  = idx('Unit Pelaksana');
+      const iULTG = idx('ULTG');
+      const iAHI  = idx('AHI');
+
+      if(iTech<0||iGI<0||iAHI<0) continue;
+
+      for(let r=headerRow+2; r<data.length; r++){
+        const row = data[r];
+        if(!row||!row[iGI]) continue;
+        const status = String(row[iStat]||'').trim();
+        if(!status || status==='-' || status.toLowerCase()!=='operasi') continue;
+        const techidentno = String(row[iTech]||'').trim();
+        if(!techidentno||techidentno==='-') continue;
+        const {status:ahiStatus, nilai:ahiNilai} = parseAhiPI(row[iAHI]);
+        rows.push({
+          techidentno,
+          gi:         String(row[iGI]||'').trim(),
+          bay:        String(row[iBay]||'').trim(),
+          jenis_asset:sheetName,
+          phasa:      String(row[iPhasa]||'').trim(),
+          merk:       String(row[iMerk]||'').trim(),
+          tipe:       String(row[iTipe]||'').trim(),
+          tegangan:   String(row[iTeg]||'').trim(),
+          tahun_buat: String(row[iTBuat]||'').trim(),
+          tahun_operasi: String(row[iTOps]||'').trim(),
+          status:     status||'Operasi',
+          unit_pelaksana: String(row[iUPT]||'').trim(),
+          ultg:       String(row[iULTG]||'').trim(),
+          ahi_raw:    String(row[iAHI]||'').trim(),
+          ahi_status: ahiStatus,
+          ahi_nilai:  ahiNilai,
+          uploaded_by: username,
+        });
+      }
+    }
+
+    if(!rows.length){ showToast('Tidak ada data valid di file PI','err'); btn.disabled=false; return; }
+
+    setP(80, `Menghapus data PI lama...`);
+    // Delete semua data lama
+    await sbDb.from(SB_TABLE_PI).delete().neq('id','00000000-0000-0000-0000-000000000000');
+
+    setP(85, `Menyimpan ${rows.length.toLocaleString('id-ID')} baris ke Supabase...`);
+    // Insert dalam chunk 500
+    const CHUNK=500;
+    for(let i=0;i<rows.length;i+=CHUNK){
+      const chunk=rows.slice(i,i+CHUNK);
+      const res=await sbDb.from(SB_TABLE_PI).insert(chunk);
+      if(res.error) throw new Error('Insert PI error: '+res.error.message);
+      setP(85+Math.floor((i/rows.length)*12), `Menyimpan... ${Math.min(i+CHUNK,rows.length).toLocaleString('id-ID')}/${rows.length.toLocaleString('id-ID')}`);
+    }
+
+    setP(98,'Memuat data PI ke memori...');
+    await loadPiData();
+
+    setP(100,'Selesai ✓');
+    showToast(`✓ ${rows.length.toLocaleString('id-ID')} aset PI berhasil diupload`,'ok');
+    setTimeout(closeUploadPiModal, 1500);
+
+  }catch(err){
+    showToast('Error upload PI: '+err.message,'err');
+    console.error('Upload PI error:', err);
+  }
+  btn.disabled=false;
+}
+
+async function loadPiData(){
+  try{
+    // Load semua pi_data (bisa ribuan, pakai chunking)
+    const countRes = await sbDb.from(SB_TABLE_PI).select('*',{count:'exact',head:true});
+    const total = countRes.count||0;
+    if(!total){ piMap.clear(); piLoaded=true; return; }
+
+    piMap.clear();
+    const CHUNK=1000;
+    for(let from=0;from<total;from+=CHUNK){
+      const res=await sbDb.from(SB_TABLE_PI).select('*').range(from,from+CHUNK-1);
+      if(res.error) break;
+      (res.data||[]).forEach(r=>{ if(r.techidentno) piMap.set(r.techidentno, r); });
+    }
+    piLoaded=true;
+    console.log('PI data loaded:', piMap.size, 'records');
+
+    // Tampilkan toggle jika ada data
+    const wrap=document.getElementById('piToggleWrap');
+    if(wrap) wrap.style.display='flex';
+  }catch(e){ console.warn('loadPiData error:', e.message); }
+}
+
+function setPiMode(enable){
+  piMode=enable;
+  // Update toggle button style
+  document.getElementById('btnMtu').style.background = enable?'transparent':  'var(--accent)';
+  document.getElementById('btnMtu').style.color      = enable?'var(--text2)': '#fff';
+  document.getElementById('btnPi').style.background  = enable?'var(--accent)': 'transparent';
+  document.getElementById('btnPi').style.color       = enable?'#fff': 'var(--text2)';
+  // Re-apply status AHI ke raw berdasarkan mode
+  raw.forEach(r=>{
+    if(enable){
+      // Coba match via Serial Id ke techidentno
+      const sid=(r['Serial Id']||'').trim();
+      const pi = piMap.get(sid);
+      r._pi = pi||null;
+      r._se = pi?.ahi_status || r._so; // fallback ke MTU jika tidak match
+    } else {
+      r._se = r._so; // kembali ke nilai MTU asli
+      r._pi = null;
+    }
+    r._adj = r._se!==r._so;
+  });
+  // Re-apply toggle lain (trafo/pmt adjustment)
+  onToggle();
+  // Update badge PI mode di topbar
+  showToast(enable?'Mode: Power Inspect':'Mode: MTU', 'ok');
+}
+
+
 function cetakLaporan(){
   const n = raw.length;
   let cr=0,po=0,fa=0,go=0,tua=0;
@@ -4342,6 +4561,9 @@ function showUserBadge(){
     document.getElementById('auditBtn').style.display = 'inline-block';
     document.getElementById('parseRencanaBtn').style.display = 'inline-block';
   }
+  if(currentRole === 'admin' || currentRole === 'editor'){
+    document.getElementById('uploadPiBtn').style.display = 'inline-block';
+  }
 }
 
 async function doLogout(){
@@ -6026,8 +6248,28 @@ init().catch(err=>{
   },500);
 });
 </script>
-<!-- PRINT LAPORAN EKSEKUTIF -->
-<div id="printLaporan"></div>
+<!-- MODAL UPLOAD PI -->
+<div id="uploadPiModal" class="lov" style="display:none;z-index:900">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rl);padding:24px;width:480px;max-width:95vw">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text)">↑ Upload Power Inspect</span>
+      <button onclick="closeUploadPiModal()" style="background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:18px">✕</button>
+    </div>
+    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:12px">
+      File Excel PI (<code>DOWNLOAD_AHI_PI_*.xlsx</code>) — berisi sheet PMS, LA, TRAFO, CT, PT, PMT, dst.
+    </div>
+    <input type="file" id="piFileInput" accept=".xlsx,.xls"
+      style="width:100%;padding:8px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:var(--mono);font-size:11px;margin-bottom:12px">
+    <div style="height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin-bottom:8px">
+      <div id="piProgressBar" style="height:100%;background:var(--accent);width:0%;transition:width .3s"></div>
+    </div>
+    <div id="piProgressText" style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:12px">Pilih file untuk mulai</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="closeUploadPiModal()" class="edit-btn-sec">Batal</button>
+      <button onclick="submitUploadPi()" id="piSubmitBtn" class="edit-btn-pri">Upload & Proses</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
