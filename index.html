@@ -1438,14 +1438,14 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
       <option>PMS</option><option>LA</option><option>TRAFO</option>
       <option>CT</option><option>PT</option><option>PMT</option>
     </select>
-    <select id="piOnlyStatus" onchange="renderPiOnly()" style="font-family:var(--mono);font-size:11px;padding:4px 8px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text)">
-      <option value="">Semua Status AHI</option>
-      <option value="CRITICAL">CRITICAL</option>
-      <option value="POOR">POOR</option>
-      <option value="FAIR">FAIR</option>
-      <option value="GOOD">GOOD</option>
-      <option value="VERY GOOD">VERY GOOD</option>
-    </select>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">AHI:</span>
+      <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-family:var(--mono);font-size:10px"><input type="checkbox" id="piCbCr" value="CRITICAL" onchange="renderPiOnly()" style="accent-color:#ef4444"><span style="color:#ef4444">CR</span></label>
+      <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-family:var(--mono);font-size:10px"><input type="checkbox" id="piCbPo" value="POOR"     onchange="renderPiOnly()" style="accent-color:#f59e0b"><span style="color:#f59e0b">PO</span></label>
+      <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-family:var(--mono);font-size:10px"><input type="checkbox" id="piCbFa" value="FAIR"     onchange="renderPiOnly()" style="accent-color:#eab308"><span style="color:#eab308">FA</span></label>
+      <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-family:var(--mono);font-size:10px"><input type="checkbox" id="piCbGo" value="GOOD"     onchange="renderPiOnly()" style="accent-color:#22c55e"><span style="color:#22c55e">GO</span></label>
+      <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-family:var(--mono);font-size:10px"><input type="checkbox" id="piCbVg" value="VERY GOOD" onchange="renderPiOnly()" style="accent-color:#14b8a6"><span style="color:#14b8a6">VG</span></label>
+    </div>
     <select id="piOnlyTeg" onchange="renderPiOnly()" style="font-family:var(--mono);font-size:11px;padding:4px 8px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text)"><option value="">Semua Tegangan</option></select>
     <button onclick="resetPiFilters()" style="font-family:var(--mono);font-size:11px;padding:4px 8px;background:transparent;border:1px solid var(--border2);border-radius:var(--r);color:var(--text3);cursor:pointer">✕ Reset</button>
   </div>
@@ -2755,23 +2755,33 @@ let piOnlyExpGi = new Set();  // expanded GI
 let piOnlyExpBay = new Set(); // expanded Bay
 
 function getPiOnlyRows(){
-  // Kumpulkan key Smartness
+  // Kumpulkan key Smartness + mapping GI → UPT
   const sk = new Set();
-  raw.forEach(r=>{ const k=makePiKey(r.Gi,r.Bay,r['#']); if(k) sk.add(k); });
-  // Kumpulkan PI-only
+  const giUptMap = new Map(); // GI → UPT
+  raw.forEach(r=>{
+    const k=makePiKey(r.Gi,r.Bay,r['#']);
+    if(k) sk.add(k);
+    if(r.Gi && r.Upt && !giUptMap.has(r.Gi)) giUptMap.set(r.Gi, r.Upt);
+  });
+  // Kumpulkan PI-only, inject UPT dari Smartness
   const all=[], seen=new Set();
   piMap.forEach((r,key)=>{
     if(!key.includes('|')||seen.has(key)) return;
     seen.add(key);
-    if(!sk.has(key)) all.push(r);
+    if(!sk.has(key)){
+      // Inject UPT dari mapping GI Smartness
+      const upt = giUptMap.get(r.gi) || r.unit_pelaksana || '—';
+      all.push({...r, _upt: upt.replace('UPT ','')});
+    }
   });
   return all;
 }
 
 function resetPiFilters(){
-  ['piOnlyUpt','piOnlyGi','piOnlyJenis','piOnlyStatus','piOnlyTeg'].forEach(id=>{
+  ['piOnlyUpt','piOnlyGi','piOnlyJenis','piOnlyTeg'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
+  document.querySelectorAll('#panel-pi input[type=checkbox]').forEach(cb=>cb.checked=false);
   renderPiOnly();
 }
 
@@ -2791,6 +2801,13 @@ function piExpandAll(){
   renderPiOnly();
 }
 function piCollapseAll(){ piOnlyExpGi.clear(); piOnlyExpBay.clear(); renderPiOnly(); }
+
+function piToggleStatusCard(st){
+  // Map status ke checkbox id
+  const cbMap={'CRITICAL':'piCbCr','POOR':'piCbPo','FAIR':'piCbFa','GOOD':'piCbGo','VERY GOOD':'piCbVg'};
+  const cb = document.getElementById(cbMap[st]);
+  if(cb){ cb.checked = !cb.checked; renderPiOnly(); }
+}
 function piToggleGi(gi){ piOnlyExpGi.has(gi)?piOnlyExpGi.delete(gi):piOnlyExpGi.add(gi); renderPiOnly(); }
 function piToggleBay(bk){ piOnlyExpBay.has(bk)?piOnlyExpBay.delete(bk):piOnlyExpBay.add(bk); renderPiOnly(); }
 
@@ -2802,7 +2819,7 @@ function renderPiOnly(){
   const prev={};
   ['piOnlyUpt','piOnlyGi','piOnlyJenis','piOnlyTeg'].forEach(id=>{ prev[id]=document.getElementById(id)?.value||''; });
 
-  const upts=[...new Set(all.map(r=>(r.unit_pelaksana||'—').replace('UPT ','')))].sort();
+  const upts=[...new Set(all.map(r=>r._upt||'—').filter(u=>u&&u!=='-'&&u!=='—'))].sort();
   const gis=[...new Set(all.map(r=>r.gi||'—'))].sort();
   const tegs=[...new Set(all.map(r=>r.tegangan||'—').filter(t=>t&&t!=='-'&&t!=='—'))].sort();
   document.getElementById('piOnlyUpt').innerHTML='<option value="">Semua UPT</option>'+upts.map(u=>`<option value="${e(u)}"${prev.piOnlyUpt===u?' selected':''}>${e(u)}</option>`).join('');
@@ -2813,13 +2830,13 @@ function renderPiOnly(){
   const fUpt=document.getElementById('piOnlyUpt').value;
   const fGi=document.getElementById('piOnlyGi').value;
   const fJenis=document.getElementById('piOnlyJenis').value;
-  const fStatus=document.getElementById('piOnlyStatus').value;
+  const fStatus=[...document.querySelectorAll('#panel-pi input[type=checkbox]:checked')].map(cb=>cb.value);
   const fTeg=document.getElementById('piOnlyTeg').value;
   let rows=all;
-  if(fUpt)    rows=rows.filter(r=>(r.unit_pelaksana||'').replace('UPT ','')=== fUpt);
+  if(fUpt)    rows=rows.filter(r=>r._upt===fUpt);
   if(fGi)     rows=rows.filter(r=>r.gi===fGi);
   if(fJenis)  rows=rows.filter(r=>r.jenis_asset===fJenis);
-  if(fStatus) rows=rows.filter(r=>r.ahi_status===fStatus);
+  if(fStatus.length) rows=rows.filter(r=>fStatus.includes(r.ahi_status));
   if(fTeg)    rows=rows.filter(r=>r.tegangan===fTeg);
 
   // Stats cards
@@ -2828,7 +2845,7 @@ function renderPiOnly(){
   document.getElementById('piOnlyCards').innerHTML=
     Object.entries(stats).map(([st,cnt])=>`
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;border-top:3px solid ${ST_COL2[st]};cursor:pointer"
-        onclick="document.getElementById('piOnlyStatus').value='${st}';renderPiOnly()">
+        onclick="piToggleStatusCard('${st}')">
         <div style="font-size:8px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;margin-bottom:3px">${st}</div>
         <div style="font-size:20px;font-weight:700;color:${ST_COL2[st]}">${cnt.toLocaleString('id-ID')}</div>
       </div>`).join('');
@@ -2854,7 +2871,7 @@ function renderPiFlat(rows, ST_COL2){
       <td style="padding:6px 10px;font-size:10px;color:var(--text3);font-family:var(--mono)">${e(r.tegangan||'—')}</td>
       <td style="padding:6px 10px;font-size:10px;color:var(--text3);font-family:var(--mono)">${e(r.tahun_buat||'—')}</td>
       <td style="padding:6px 10px">${stH(r.ahi_status)}</td>
-      <td style="padding:6px 10px;font-size:10px;color:var(--text3)">${e((r.unit_pelaksana||'—').replace('UPT ',''))}</td>
+      <td style="padding:6px 10px;font-size:10px;color:var(--text3)">${e(r._upt||'—')}</td>
     </tr>`).join('');
 }
 
@@ -2887,7 +2904,7 @@ function renderPiTree(rows, ST_COL2){
         ${giPo?`<span class="badge b-po" style="margin-left:4px">${giPo} PO</span>`:''}
         <span style="color:var(--text3);font-size:10px;margin-left:8px">${giRows.length} aset</span>
       </td>
-      <td style="padding:8px 10px;font-size:10px;color:var(--text3)">${e((giRows[0]?.unit_pelaksana||'—').replace('UPT ',''))}</td>
+      <td style="padding:8px 10px;font-size:10px;color:var(--text3)">${e(giRows[0]?._upt||'—')}</td>
     </tr>`;
     if(!isGiOpen) return;
 
@@ -2919,7 +2936,7 @@ function renderPiTree(rows, ST_COL2){
           <td style="padding:5px 10px;font-size:10px;color:var(--text3);font-family:var(--mono)">${e(r.tegangan||'—')}</td>
           <td style="padding:5px 10px;font-size:10px;color:var(--text3);font-family:var(--mono)">${e(r.tahun_buat||'—')}</td>
           <td style="padding:5px 10px">${stH(r.ahi_status)}</td>
-          <td style="padding:5px 10px;font-size:10px;color:var(--text3)">${e((r.unit_pelaksana||'—').replace('UPT ',''))}</td>
+          <td style="padding:5px 10px;font-size:10px;color:var(--text3)">${e(r._upt||'—')}</td>
         </tr>`;
       });
     });
