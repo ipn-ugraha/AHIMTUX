@@ -3831,7 +3831,8 @@ function cetakLaporanGI(filterUpts){
     const pi  = key ? piMap.get(key) : null;
     d.rows.push({bay:r.Bay||'—',jenis:r['#']||'—',phasa:r.Phasa||'—',
       merek:r.Merek||'—',tipe:r.Tipe||'—',tahun:r['Tahun Buat']||'—',
-      ahi_sm:st, ahi_pi:pi?.ahi_status||null});
+      ahi_sm:st, ahi_pi:pi?.ahi_status||null,
+      justifikasi: r['Justifikasi Prioritas']||''});
     if(st==='CRITICAL') d.cr++; else d.po++;
     d.total++;
   });
@@ -3912,7 +3913,10 @@ function cetakLaporanGI(filterUpts){
         <td style="padding:4px 8px;text-align:center;border:1px solid #e5e7eb;font-size:9px;color:#6b7280;font-family:monospace">${e2(r.phasa)}</td>
         <td style="padding:4px 8px;font-size:10px;border:1px solid #e5e7eb">${e2(r.merek)} <span style="color:#9ca3af;font-size:9px">${e2(r.tipe)}</span></td>
         <td style="padding:4px 8px;text-align:center;border:1px solid #e5e7eb;font-size:9px;color:#6b7280;font-family:monospace">${e2(r.tahun)}</td>
-        <td style="padding:4px 8px;text-align:center;border:1px solid #e5e7eb"><span style="display:inline-block;padding:2px 8px;border-radius:4px;background:${AHI_BG[r.ahi_sm]};color:${AHI_COL[r.ahi_sm]};font-size:9px;font-weight:700;border:1px solid ${AHI_COL[r.ahi_sm]}">${e2(r.ahi_sm)}</span></td>
+        <td style="padding:4px 8px;border:1px solid #e5e7eb;vertical-align:top">
+          <span style="display:inline-block;padding:2px 8px;border-radius:4px;background:${AHI_BG[r.ahi_sm]};color:${AHI_COL[r.ahi_sm]};font-size:9px;font-weight:700;border:1px solid ${AHI_COL[r.ahi_sm]}">${e2(r.ahi_sm)}</span>
+          ${r.justifikasi?`<div style="font-size:8px;color:#6b7280;margin-top:3px;line-height:1.4;max-width:180px">${e2(r.justifikasi.substring(0,150))}${r.justifikasi.length>150?'…':''}</div>`:''}
+        </td>
         ${piTd}
       </tr>`;
     }).join('');
