@@ -937,8 +937,8 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
     <button id="uploadPiBtn" onclick="openUploadPiModal()" title="Upload Excel Power Inspect" style="display:none;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">↑ Upload PI</button>
     <!-- Toggle MTU / PI -->
     <div id="piToggleWrap" style="display:none;align-items:center;gap:0;border:1px solid var(--border2);border-radius:6px;overflow:hidden">
-      <button id="btnMtu" onclick="setPiMode(false)" style="padding:5px 10px;font-family:var(--mono);font-size:11px;border:none;cursor:pointer;background:var(--accent);color:#fff">MTU</button>
-      <button id="btnPi"  onclick="setPiMode(true)"  style="padding:5px 10px;font-family:var(--mono);font-size:11px;border:none;cursor:pointer;background:transparent;color:var(--text2)">PI</button>
+      <button id="btnMtu" onclick="setPiMode(false)" style="padding:5px 10px;font-family:var(--mono);font-size:11px;border:none;cursor:pointer;background:var(--accent);color:#fff">Smartness</button>
+      <button id="btnPi"  onclick="setPiMode(true)"  style="padding:5px 10px;font-family:var(--mono);font-size:11px;border:none;cursor:pointer;background:transparent;color:var(--text2)">PowerInspect</button>
     </div>
     <button id="auditBtn" title="Audit Log (admin only)" style="display:none;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">📜 Log</button>
     <button id="parseRencanaBtn" title="Parse teks Rencana dari CSV ke tabel rencana_kerja (admin only)" style="display:none;background:transparent;border:1px solid rgba(167,139,250,.4);color:#a78bfa;padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">✦ Parse Rencana</button>
@@ -2879,7 +2879,7 @@ function setPiMode(enable){
     raw.forEach(r=>{ r._se=r._so; r._pi=null; r._adj=false; });
   }
   onToggle();
-  showToast(enable?`Mode: Power Inspect`:'Mode: MTU','ok');
+  showToast(enable?'Mode: PowerInspect':'Mode: Smartness','ok');
 }
 
 
