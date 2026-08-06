@@ -261,6 +261,14 @@ tbody td{padding:7px 10px;color:var(--text2);white-space:nowrap}
   .ttitle{display:none}
 }
 
+/* ── MODAL PI OVERLAY ─────────────────────────────────────────────────────── */
+.pi-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:800;display:flex;align-items:flex-start;justify-content:center;padding:20px;backdrop-filter:blur(2px)}
+.pi-modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rl);width:calc(100vw - 40px);max-width:1400px;max-height:calc(100vh - 40px);display:flex;flex-direction:column;overflow:hidden}
+.pi-modal-header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0}
+.pi-modal-body{flex:1;overflow-y:auto;padding:14px 18px}
+.pi-modal-close{background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:20px;line-height:1;padding:2px 6px;border-radius:4px}
+.pi-modal-close:hover{color:var(--text);background:var(--bg3)}
+
 /* ── PRINT / LAPORAN EKSEKUTIF ─────────────────────────────────────────────── */
 @media print {
   html, body { margin:0 !important; padding:0 !important; height:auto !important; }
@@ -941,7 +949,8 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
         <button id="btnMtu" onclick="setPiMode(false)" style="padding:5px 10px;font-family:var(--mono);font-size:11px;border:none;cursor:pointer;background:var(--accent);color:#fff">Smartness</button>
         <button id="btnPi"  onclick="setPiMode(true)"  style="padding:5px 10px;font-family:var(--mono);font-size:11px;border:none;cursor:pointer;background:transparent;color:var(--text2)">PowerInspect</button>
       </div>
-      <button id="btnDiff" onclick="openDiffPanel()" style="padding:5px 10px;font-family:var(--mono);font-size:11px;border:1px solid var(--border2);border-radius:6px;cursor:pointer;background:transparent;color:var(--text2)" title="Lihat perbedaan AHI Smartness vs PowerInspect">≠ Beda AHI</button>
+      <button onclick="openPiOnlyModal()" style="padding:5px 10px;font-family:var(--mono);font-size:11px;border:1px solid var(--border2);border-radius:6px;cursor:pointer;background:transparent;color:var(--text2)" title="Aset hanya di PowerInspect">📋 PI Only</button>
+      <button id="btnDiff" onclick="openDiffPanel()" style="padding:5px 10px;font-family:var(--mono);font-size:11px;border:1px solid var(--border2);border-radius:6px;cursor:pointer;background:transparent;color:var(--text2)" title="Perbedaan AHI Smartness vs PowerInspect">≠ Beda AHI</button>
     </div>
     <button id="auditBtn" title="Audit Log (admin only)" style="display:none;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">📜 Log</button>
     <button id="parseRencanaBtn" title="Parse teks Rencana dari CSV ke tabel rencana_kerja (admin only)" style="display:none;background:transparent;border:1px solid rgba(167,139,250,.4);color:#a78bfa;padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">✦ Parse Rencana</button>
@@ -1408,15 +1417,23 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
   </div>
 </div>
 
-<!-- PANEL PI ONLY -->
-<div id="panel-pi" class="main-panel" style="display:none">
+<!-- MODAL PI ONLY -->
+<div id="modal-pi" class="pi-modal-overlay" style="display:none" onclick="if(event.target===this)closePiModal()">
+<div class="pi-modal">
 
-  <!-- Header & filter bar -->
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-    <div>
-      <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text)">Aset PowerInspect — Tidak Ada di Smartness</span>
-      <span id="piOnlyCount" style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-left:8px"></span>
+  <div class="pi-modal-header">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text)">Aset PowerInspect — Tidak Ada di Smartness</span>
+      <span id="piOnlyCount" style="font-family:var(--mono);font-size:11px;color:var(--text3)"></span>
     </div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button onclick="closePiModal()" class="pi-modal-close">✕</button>
+    </div>
+  </div>
+  <div class="pi-modal-body">
+  <!-- Header filter bar -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+    <div></div>
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <!-- Mode toggle -->
       <div style="display:flex;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden">
@@ -1475,16 +1492,18 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
       <tbody id="piOnlyBody"></tbody>
     </table>
   </div>
-</div>
+</div><!-- pi-modal-body -->
+</div><!-- pi-modal -->
+</div><!-- modal-pi -->
 
-<!-- PANEL BEDA AHI -->
-<div id="panel-diff" style="display:none;padding:0">
+<!-- MODAL BEDA AHI -->
+<div id="modal-diff" class="pi-modal-overlay" style="display:none" onclick="if(event.target===this)closeDiffModal()">
+<div class="pi-modal">
 
-  <!-- Header -->
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-    <div>
-      <span style="font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text)">Perbandingan AHI — Smartness vs PowerInspect</span>
-      <span id="diffCount" style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-left:8px"></span>
+  <div class="pi-modal-header">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text)">Perbandingan AHI — Smartness vs PowerInspect</span>
+      <span id="diffCount" style="font-family:var(--mono);font-size:11px;color:var(--text3)"></span>
     </div>
     <div style="display:flex;gap:6px;align-items:center">
       <select id="diffUpt" onchange="renderDiffAhi()" style="font-family:var(--mono);font-size:11px;padding:4px 8px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text)"><option value="">Semua UPT</option></select>
@@ -1495,8 +1514,10 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
       </select>
       <button onclick="resetDiffFilters()" style="font-family:var(--mono);font-size:10px;padding:3px 8px;background:transparent;border:1px solid var(--border2);border-radius:var(--r);color:var(--text3);cursor:pointer">✕ Reset</button>
       <button onclick="exportDiffAhi()" style="font-family:var(--mono);font-size:11px;padding:4px 10px;background:transparent;border:1px solid var(--border2);border-radius:var(--r);color:var(--text2);cursor:pointer">⬇ CSV</button>
+      <button onclick="closeDiffModal()" class="pi-modal-close">✕</button>
     </div>
   </div>
+  <div class="pi-modal-body">
 
   <!-- Heatmap matriks -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
@@ -1543,7 +1564,9 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
       <tbody id="diffBody"></tbody>
     </table>
   </div>
-</div>
+  </div><!-- pi-modal-body -->
+</div><!-- pi-modal -->
+</div><!-- modal-diff -->
 
 </main>
 
@@ -3031,17 +3054,18 @@ function exportPiOnly(){
 let diffCellFilter = null; // {smartness, pi} atau null
 
 function openDiffPanel(){
-  const panel = document.getElementById('panel-diff');
-  if(!panel) return;
-  // Toggle visibility
-  const visible = panel.style.display !== 'none';
-  panel.style.display = visible ? 'none' : 'block';
-  const btn = document.getElementById('btnDiff');
-  if(btn){
-    btn.style.background = visible ? 'transparent' : 'var(--accent)';
-    btn.style.color = visible ? 'var(--text2)' : '#fff';
-  }
-  if(!visible) renderDiffAhi();
+  document.getElementById('modal-diff').style.display='flex';
+  renderDiffAhi();
+}
+function closeDiffModal(){
+  document.getElementById('modal-diff').style.display='none';
+}
+function openPiOnlyModal(){
+  document.getElementById('modal-pi').style.display='flex';
+  renderPiOnly();
+}
+function closePiModal(){
+  document.getElementById('modal-pi').style.display='none';
 }
 
 function getAllMatchRows(){
@@ -3415,8 +3439,7 @@ function setPiMode(enable){
   document.getElementById('btnPi').style.color       = enable?'#fff':'var(--text2)';
 
   // Tampilkan/sembunyikan panel PI Only
-  const piPanel = document.getElementById('panel-pi');
-  if(piPanel) piPanel.style.display = enable ? 'block' : 'none';
+  // Modal PI tersembunyi saat toggle — buka via tombol ≠ PI Only
 
   if(enable){
     let matched=0, unmatched=0;
