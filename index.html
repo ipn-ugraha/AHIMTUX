@@ -940,7 +940,7 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
       <span id="userRole" style="background:var(--accent);color:#fff;padding:1px 7px;border-radius:10px;font-size:9px;text-transform:uppercase">—</span>
     </div>
     <button id="downloadBtn" title="Download data CSV" style="background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">↓ CSV</button>
-    <button onclick="cetakLaporanGI()" title="Laporan MTU Critical/Poor per GI" style="background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">🖨 Lap. GI</button>
+    <button onclick="openLaporanGiModal()" title="Laporan MTU Critical/Poor per GI" style="background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">🖨 Lap. GI</button>
     <button id="laporanBtn" onclick="cetakLaporan()" title="Laporan Ringkasan Eksekutif" style="background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">🖨 Laporan</button>
     <button id="uploadBtn" title="Upload CSV (admin only)" style="display:none;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">↑ Upload</button>
     <button id="uploadPiBtn" onclick="openUploadPiModal()" title="Upload Excel Power Inspect" style="display:none;background:transparent;border:1px solid var(--border2);color:var(--text2);padding:5px 11px;border-radius:6px;font-family:var(--mono);font-size:11px;cursor:pointer">↑ Upload PI</button>
@@ -3761,7 +3761,27 @@ function cetakLaporan(){
       body { font-family:'IBM Plex Sans',Arial,sans-serif; background:#fff; color:#1e293b; }
       b { font-weight:700; }
     </style>
-  </head><body>${html}</body></html>`);
+  </head><body>${html}<!-- MODAL LAPORAN GI -->
+<div id="modalLaporanGi" class="lov" style="display:none;z-index:900">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rl);padding:24px;width:420px;max-width:95vw">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text)">🖨 Laporan MTU Critical/Poor per GI</span>
+      <button onclick="closeLaporanGiModal()" style="background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:18px">✕</button>
+    </div>
+    <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:12px">Pilih UPT yang akan dimasukkan dalam laporan:</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button onclick="lapGiSelectAll()" style="font-family:var(--mono);font-size:10px;padding:3px 10px;background:transparent;border:1px solid var(--border2);border-radius:var(--r);color:var(--text2);cursor:pointer">Pilih Semua</button>
+      <button onclick="lapGiClearAll()" style="font-family:var(--mono);font-size:10px;padding:3px 10px;background:transparent;border:1px solid var(--border2);border-radius:var(--r);color:var(--text2);cursor:pointer">Batal Semua</button>
+    </div>
+    <div id="lapGiUptList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;max-height:260px;overflow-y:auto;padding:2px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="closeLaporanGiModal()" class="edit-btn-sec">Batal</button>
+      <button onclick="submitLaporanGi()" class="edit-btn-pri">🖨 Cetak PDF</button>
+    </div>
+  </div>
+</div>
+
+</body></html>`);
   idoc.close();
   setTimeout(()=>{
     iframe.style.visibility = 'visible';
@@ -3771,8 +3791,44 @@ function cetakLaporan(){
   }, 600);
 }
 
+// ── MODAL PILIHAN UPT LAPORAN GI ────────────────────────────────────────────
+function openLaporanGiModal(){
+  // Kumpulkan UPT yang punya MTU Critical/Poor
+  const uptSet = new Set();
+  raw.forEach(r=>{
+    if(r._se==='CRITICAL'||r._se==='POOR') uptSet.add((r.Upt||'—').replace('UPT ',''));
+  });
+  const upts = [...uptSet].sort();
+
+  const list = document.getElementById('lapGiUptList');
+  list.innerHTML = upts.map(u=>`
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 10px;background:var(--bg3);border-radius:var(--r);font-family:var(--mono);font-size:11px">
+      <input type="checkbox" class="lapgi-cb" value="${e(u)}" checked style="width:14px;height:14px;accent-color:var(--accent)">
+      <span style="color:var(--text)">${e(u)}</span>
+      <span style="color:var(--text3);font-size:10px;margin-left:auto">${raw.filter(r=>(r.Upt||'').replace('UPT ','')===u&&(r._se==='CRITICAL'||r._se==='POOR')).length} aset</span>
+    </label>`).join('');
+
+  document.getElementById('modalLaporanGi').style.display='flex';
+}
+function closeLaporanGiModal(){
+  document.getElementById('modalLaporanGi').style.display='none';
+}
+function lapGiSelectAll(){
+  document.querySelectorAll('.lapgi-cb').forEach(cb=>cb.checked=true);
+}
+function lapGiClearAll(){
+  document.querySelectorAll('.lapgi-cb').forEach(cb=>cb.checked=false);
+}
+function submitLaporanGi(){
+  const selected = [...document.querySelectorAll('.lapgi-cb:checked')].map(cb=>cb.value);
+  if(!selected.length){ showToast('Pilih minimal 1 UPT','err'); return; }
+  closeLaporanGiModal();
+  cetakLaporanGI(selected);
+}
+
 // ── LAPORAN MTU CRITICAL/POOR PER GI ─────────────────────────────────────────
-function cetakLaporanGI(){
+function cetakLaporanGI(filterUpts){
+  // filterUpts: array UPT yang dipilih (tanpa prefix "UPT ")
   const tglCetak = new Date().toLocaleString('id-ID',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
   const tglData  = new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
   const e2 = s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -3800,7 +3856,16 @@ function cetakLaporanGI(){
     d.total++;
   });
 
-  if(!giData.size){ showToast('Tidak ada GI dengan MTU Critical/Poor','err'); return; }
+  // Filter per UPT yang dipilih
+  if(filterUpts && filterUpts.length){
+    [...giData.keys()].forEach(gi=>{
+      const d = giData.get(gi);
+      const upt = d.upt.replace('UPT ','');
+      if(!filterUpts.includes(upt)) giData.delete(gi);
+    });
+  }
+
+  if(!giData.size){ showToast('Tidak ada GI dengan MTU Critical/Poor untuk UPT yang dipilih','err'); return; }
 
   const giArr = [...giData.values()].sort((a,b)=>{
     if(a.isKritikal!==b.isKritikal) return b.isKritikal-a.isKritikal;
