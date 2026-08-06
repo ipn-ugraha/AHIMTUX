@@ -2875,7 +2875,7 @@ function resetPiFilters(){
   ['piOnlyUpt','piOnlyGi','piOnlyJenis','piOnlyTeg'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
-  document.querySelectorAll('#panel-pi input[type=checkbox]').forEach(cb=>cb.checked=false);
+  document.querySelectorAll('#modal-pi input[type=checkbox]').forEach(cb=>cb.checked=false);
   renderPiOnly();
 }
 
@@ -2924,7 +2924,7 @@ function renderPiOnly(){
   const fUpt=document.getElementById('piOnlyUpt').value;
   const fGi=document.getElementById('piOnlyGi').value;
   const fJenis=document.getElementById('piOnlyJenis').value;
-  const fStatus=[...document.querySelectorAll('#panel-pi input[type=checkbox]:checked')].map(cb=>cb.value);
+  const fStatus=[...document.querySelectorAll('#modal-pi input[type=checkbox]:checked')].map(cb=>cb.value);
   const fTeg=document.getElementById('piOnlyTeg').value;
   let rows=all;
   if(fUpt)    rows=rows.filter(r=>r._upt===fUpt);
