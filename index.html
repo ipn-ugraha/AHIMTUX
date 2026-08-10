@@ -1413,9 +1413,9 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <div style="font-family:var(--mono);font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Trend CRITICAL/POOR/FAIR per UPT</div>
         <div style="display:flex;gap:8px;align-items:center">
-          <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-family:var(--mono);font-size:10px"><input type="checkbox" id="trendCbCr" checked onchange="renderTrendCharts()" style="accent-color:#ef4444"><span style="color:#ef4444">CR</span></label>
-          <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-family:var(--mono);font-size:10px"><input type="checkbox" id="trendCbPo" checked onchange="renderTrendCharts()" style="accent-color:#f59e0b"><span style="color:#f59e0b">PO</span></label>
-          <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-family:var(--mono);font-size:10px"><input type="checkbox" id="trendCbFa" onchange="renderTrendCharts()" style="accent-color:#eab308"><span style="color:#eab308">FA</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-family:var(--mono);font-size:10px;padding:3px 8px;background:var(--bg3);border-radius:var(--r)"><input type="checkbox" id="trendCbCr" checked onchange="renderTrendCharts()" style="accent-color:#ef4444"><span style="color:#ef4444;font-weight:600">CRITICAL</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-family:var(--mono);font-size:10px;padding:3px 8px;background:var(--bg3);border-radius:var(--r)"><input type="checkbox" id="trendCbPo" checked onchange="renderTrendCharts()" style="accent-color:#f59e0b"><span style="color:#f59e0b;font-weight:600">POOR</span></label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-family:var(--mono);font-size:10px;padding:3px 8px;background:var(--bg3);border-radius:var(--r)"><input type="checkbox" id="trendCbFa" onchange="renderTrendCharts()" style="accent-color:#eab308"><span style="color:#eab308;font-weight:600">FAIR</span></label>
           <select id="trendUptFilter" onchange="renderTrendCharts()" style="font-family:var(--mono);font-size:10px;padding:2px 6px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text)">
             <option value="">Semua UPT</option>
           </select>
