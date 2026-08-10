@@ -1410,7 +1410,17 @@ tr.rk-row:hover td{background:rgba(99,102,241,.05)!important}
       </div>
     </div>
     <div>
-      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Status AHI per UPT (Upload Terakhir)</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Trend CRITICAL/POOR/FAIR per UPT</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-family:var(--mono);font-size:10px"><input type="checkbox" id="trendCbCr" checked onchange="renderTrendCharts()" style="accent-color:#ef4444"><span style="color:#ef4444">CR</span></label>
+          <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-family:var(--mono);font-size:10px"><input type="checkbox" id="trendCbPo" checked onchange="renderTrendCharts()" style="accent-color:#f59e0b"><span style="color:#f59e0b">PO</span></label>
+          <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-family:var(--mono);font-size:10px"><input type="checkbox" id="trendCbFa" onchange="renderTrendCharts()" style="accent-color:#eab308"><span style="color:#eab308">FA</span></label>
+          <select id="trendUptFilter" onchange="renderTrendCharts()" style="font-family:var(--mono);font-size:10px;padding:2px 6px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text)">
+            <option value="">Semua UPT</option>
+          </select>
+        </div>
+      </div>
       <div style="height:280px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:16px">
         <canvas id="trendBarC"></canvas>
       </div>
@@ -4080,25 +4090,177 @@ function renderTrendCharts(){
     options: chartOpts('Jumlah MTU')
   });
 
-  // Chart 2 — Bar: Total per UPT (snapshot terbaru vs sebelumnya)
+  // Chart 2 — Grouped bar trend per UPT (CR/PO/FA over time)
   const latest = snapshots[snapshots.length-1];
   const prev   = snapshots.length>1 ? snapshots[snapshots.length-2] : null;
-  const upts   = Object.keys(latest.per_upt||{}).sort();
-  const c2el   = document.getElementById('trendBarC');
-  if(window._trendBar) window._trendBar.destroy();
-  window._trendBar = new Chart(c2el,{
-    type:'bar',
-    data:{
-      labels: upts,
-      datasets:[
-        {label:'CRITICAL', data:upts.map(u=>latest.per_upt[u]?.critical||0), backgroundColor:'rgba(239,68,68,.8)'},
-        {label:'POOR',     data:upts.map(u=>latest.per_upt[u]?.poor||0),     backgroundColor:'rgba(245,158,11,.8)'},
-        {label:'FAIR',     data:upts.map(u=>latest.per_upt[u]?.fair||0),     backgroundColor:'rgba(234,179,8,.8)'},
-        {label:'GOOD+VG',  data:upts.map(u=>latest.per_upt[u]?.good_vg||0), backgroundColor:'rgba(34,197,94,.8)'},
-      ]
-    },
-    options:{...chartOpts('Jumlah MTU'), scales:{...chartOpts('Jumlah MTU').scales, x:{stacked:true,ticks:{color:text3,font:{size:9}},grid:{color:border}}, y:{stacked:true,ticks:{color:text3},grid:{color:border}}}}
+
+  // Isi filter UPT dari snapshot terbaru
+  const uptSel = document.getElementById('trendUptFilter');
+  const prevUptVal = uptSel?.value||'';
+  if(uptSel){
+    const uptKeys = Object.keys(latest.per_upt||{}).sort();
+    uptSel.innerHTML = '<option value="">Semua UPT</option>' +
+      uptKeys.map(u=>`<option value="${u}"${prevUptVal===u?' selected':''}>${u}</option>`).join('');
+  }
+
+  // Baca checkbox dan filter UPT
+  const showCr = document.getElementById('trendCbCr')?.checked ?? true;
+  const showPo = document.getElementById('trendCbPo')?.checked ?? true;
+  const showFa = document.getElementById('trendCbFa')?.checked ?? false;
+  const filterUpt = document.getElementById('trendUptFilter')?.value||'';
+
+  // Kumpulkan semua UPT dari semua snapshots
+  const allUpts = new Set();
+  snapshots.forEach(s=>Object.keys(s.per_upt||{}).forEach(u=>allUpts.add(u)));
+  let upts = [...allUpts].sort();
+  if(filterUpt) upts = upts.filter(u=>u===filterUpt);
+
+  // Labels = tanggal snapshot (untuk chart single UPT)
+  const labelsAll = snapshots.map(s=>{
+    const d=new Date(s.uploaded_at);
+    return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'2-digit'});
   });
+
+  // Datasets: per UPT, per status yang dicentang
+  // Format: grouped — tiap snapshot punya bar per UPT
+  // Jika filter 1 UPT: tampilkan CR/PO/FA per tanggal (trend single UPT)
+  // Jika semua UPT: tampilkan tiap UPT 1 bar per snapshot (pakai snapshot terbaru vs sebelumnya)
+  const c2el = document.getElementById('trendBarC');
+  if(window._trendBar) window._trendBar.destroy();
+
+  const UPT_COLORS = [
+    '#3b82f6','#ef4444','#22c55e','#f59e0b','#a78bfa','#14b8a6','#f97316','#e879f9'
+  ];
+
+  if(filterUpt){
+    // Mode single UPT: trend CR/PO/FA over time
+    const datasets = [];
+    if(showCr) datasets.push({
+      label:'CRITICAL', type:'line',
+      data: snapshots.map(s=>s.per_upt?.[filterUpt]?.critical||0),
+      borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,.1)',
+      tension:.3, fill:false, pointRadius:5, borderWidth:2,
+    });
+    if(showPo) datasets.push({
+      label:'POOR', type:'line',
+      data: snapshots.map(s=>s.per_upt?.[filterUpt]?.poor||0),
+      borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,.1)',
+      tension:.3, fill:false, pointRadius:5, borderWidth:2,
+    });
+    if(showFa) datasets.push({
+      label:'FAIR', type:'line',
+      data: snapshots.map(s=>s.per_upt?.[filterUpt]?.fair||0),
+      borderColor:'#eab308', backgroundColor:'rgba(234,179,8,.1)',
+      tension:.3, fill:false, pointRadius:5, borderWidth:2,
+    });
+    window._trendBar = new Chart(c2el,{
+      type:'bar',
+      data:{labels:labelsAll, datasets},
+      options:{
+        ...chartOpts('Jumlah MTU'),
+        plugins:{...chartOpts().plugins,
+          title:{display:true,text:`Trend AHI — ${filterUpt}`,color:text3,font:{size:11}}},
+        scales:{
+          x:{ticks:{color:text3,font:{size:9}},grid:{color:border}},
+          y:{ticks:{color:text3},grid:{color:border}},
+        }
+      }
+    });
+  } else {
+    // Mode semua UPT: grouped bar per UPT, tiap group = 1 periode
+    // Tampilkan 2 snapshot (terbaru vs sebelumnya) atau semua jika sedikit
+    const displaySnaps = snapshots.length<=3 ? snapshots : snapshots.slice(-3);
+    const snapLabels = displaySnaps.map(s=>new Date(s.uploaded_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short'}));
+
+    const datasets = upts.map((upt,i)=>{
+      const color = UPT_COLORS[i%UPT_COLORS.length];
+      // Ambil nilai per snapshot — prioritas CR, fallback PO+FA
+      return {
+        label: upt,
+        data: displaySnaps.map(s=>{
+          const d = s.per_upt?.[upt];
+          if(!d) return 0;
+          return (showCr?d.critical||0:0) + (showPo?d.poor||0:0) + (showFa?d.fair||0:0);
+        }),
+        backgroundColor: color+'cc',
+        borderColor: color,
+        borderWidth: 1,
+        borderRadius: 3,
+      };
+    });
+
+    window._trendBar = new Chart(c2el,{
+      type:'bar',
+      data:{labels: snapLabels, datasets},
+      options:{
+        ...chartOpts('Jumlah MTU'),
+        plugins:{...chartOpts().plugins,
+          title:{display:true,
+            text:`Grouped per UPT (${[showCr?'CR':'',showPo?'PO':'',showFa?'FA':''].filter(Boolean).join('+')})`,
+            color:text3,font:{size:10}}},
+        scales:{
+          x:{ticks:{color:text3,font:{size:9}},grid:{color:border}},
+          y:{ticks:{color:text3},grid:{color:border}},
+        }
+      }
+    });
+  }
+
+  // Delta table per UPT (beda antar 2 snapshot terakhir)
+  if(prev && latest){
+    const deltaRows = upts.map(u=>{
+      const l = latest.per_upt?.[u]||{};
+      const p = prev.per_upt?.[u]||{};
+      return {
+        upt:u,
+        dCr:(l.critical||0)-(p.critical||0),
+        dPo:(l.poor||0)-(p.poor||0),
+        dFa:(l.fair||0)-(p.fair||0),
+        cr:l.critical||0, po:l.poor||0, fa:l.fair||0,
+      };
+    }).filter(r=>r.dCr!==0||r.dPo!==0||r.dFa!==0)
+      .sort((a,b)=>Math.abs(b.dCr)-Math.abs(a.dCr)||Math.abs(b.dPo)-Math.abs(a.dPo));
+
+    const deltaHtml = deltaRows.length===0
+      ? '<div style="color:var(--text3);font-size:11px;font-family:var(--mono)">Tidak ada perubahan per UPT antar 2 upload terakhir.</div>'
+      : `<table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px">
+          <thead><tr style="background:var(--bg3)">
+            <th style="padding:5px 8px;text-align:left;color:var(--text3)">UPT</th>
+            <th style="padding:5px 8px;text-align:right;color:#ef4444">CR skrg</th>
+            <th style="padding:5px 8px;text-align:right;color:#ef4444">Δ CR</th>
+            <th style="padding:5px 8px;text-align:right;color:#f59e0b">PO skrg</th>
+            <th style="padding:5px 8px;text-align:right;color:#f59e0b">Δ PO</th>
+            <th style="padding:5px 8px;text-align:right;color:#eab308">FA skrg</th>
+            <th style="padding:5px 8px;text-align:right;color:#eab308">Δ FA</th>
+          </tr></thead>
+          <tbody>${deltaRows.map(r=>`<tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:4px 8px;color:var(--text)">${r.upt}</td>
+            <td style="padding:4px 8px;text-align:right;color:#ef4444">${r.cr}</td>
+            <td style="padding:4px 8px;text-align:right;font-weight:600;color:${r.dCr<0?'var(--grn)':r.dCr>0?'var(--red)':'var(--text3)'}">${r.dCr>0?'+':''}${r.dCr}</td>
+            <td style="padding:4px 8px;text-align:right;color:#f59e0b">${r.po}</td>
+            <td style="padding:4px 8px;text-align:right;font-weight:600;color:${r.dPo<0?'var(--grn)':r.dPo>0?'var(--red)':'var(--text3)'}">${r.dPo>0?'+':''}${r.dPo}</td>
+            <td style="padding:4px 8px;text-align:right;color:#eab308">${r.fa}</td>
+            <td style="padding:4px 8px;text-align:right;font-weight:600;color:${r.dFa<0?'var(--grn)':r.dFa>0?'var(--red)':'var(--text3)'}">${r.dFa>0?'+':''}${r.dFa}</td>
+          </tr>`).join('')}</tbody>
+        </table>`;
+
+    // Tampilkan delta table
+    let deltaEl = document.getElementById('trendDeltaUpt');
+    if(!deltaEl){
+      deltaEl = document.createElement('div');
+      deltaEl.id = 'trendDeltaUpt';
+      deltaEl.style.cssText = 'margin-top:14px';
+      document.getElementById('trendCharts').appendChild(deltaEl);
+    }
+    deltaEl.innerHTML = `
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">
+        Perubahan per UPT — Upload Terakhir vs Sebelumnya
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:12px">
+        ${deltaHtml}
+      </div>`;
+  }
+
 
   // Insight otomatis
   renderTrendInsight(latest, prev);
