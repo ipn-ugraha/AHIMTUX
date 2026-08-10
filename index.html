@@ -4167,22 +4167,22 @@ function renderTrendCharts(){
       }
     });
   } else {
-    // Mode semua UPT: grouped bar per UPT, tiap group = 1 periode
-    // Tampilkan 2 snapshot (terbaru vs sebelumnya) atau semua jika sedikit
-    const displaySnaps = snapshots.length<=3 ? snapshots : snapshots.slice(-3);
+    // Mode semua UPT: sumbu X = UPT, tiap UPT punya bar per snapshot (berdampingan)
+    const displaySnaps = snapshots.length<=4 ? snapshots : snapshots.slice(-4);
     const snapLabels = displaySnaps.map(s=>new Date(s.uploaded_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short'}));
 
-    const datasets = upts.map((upt,i)=>{
-      const color = UPT_COLORS[i%UPT_COLORS.length];
-      // Ambil nilai per snapshot — prioritas CR, fallback PO+FA
+    // Dataset: tiap snapshot = 1 dataset, data = nilai per UPT
+    const snapColors = ['#3b82f6','#22c55e','#f59e0b','#a78bfa'];
+    const datasets = displaySnaps.map((snap,si)=>{
+      const color = snapColors[si%snapColors.length];
       return {
-        label: upt,
-        data: displaySnaps.map(s=>{
-          const d = s.per_upt?.[upt];
+        label: snapLabels[si],
+        data: upts.map(upt=>{
+          const d = snap.per_upt?.[upt];
           if(!d) return 0;
-          return (showCr?d.critical||0:0) + (showPo?d.poor||0:0) + (showFa?d.fair||0:0);
+          return (showCr?d.critical||0:0)+(showPo?d.poor||0:0)+(showFa?d.fair||0:0);
         }),
-        backgroundColor: color+'cc',
+        backgroundColor: color+'bb',
         borderColor: color,
         borderWidth: 1,
         borderRadius: 3,
@@ -4191,16 +4191,20 @@ function renderTrendCharts(){
 
     window._trendBar = new Chart(c2el,{
       type:'bar',
-      data:{labels: snapLabels, datasets},
+      data:{labels: upts, datasets},
       options:{
-        ...chartOpts('Jumlah MTU'),
-        plugins:{...chartOpts().plugins,
+        responsive:true, maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{
+          legend:{labels:{color:text3,font:{family:'IBM Plex Mono',size:10}}},
+          tooltip:{backgroundColor:bg2,titleColor:'#f0f2f5',bodyColor:text3,borderColor:border,borderWidth:1},
           title:{display:true,
-            text:`Grouped per UPT (${[showCr?'CR':'',showPo?'PO':'',showFa?'FA':''].filter(Boolean).join('+')})`,
-            color:text3,font:{size:10}}},
+            text:`Per UPT — ${[showCr?'CRITICAL':'',showPo?'POOR':'',showFa?'FAIR':''].filter(Boolean).join('+')}`,
+            color:text3,font:{size:10,family:'IBM Plex Mono'}},
+        },
         scales:{
           x:{ticks:{color:text3,font:{size:9}},grid:{color:border}},
-          y:{ticks:{color:text3},grid:{color:border}},
+          y:{ticks:{color:text3},grid:{color:border},title:{display:true,text:'Jumlah MTU',color:text3,font:{size:10}}},
         }
       }
     });
